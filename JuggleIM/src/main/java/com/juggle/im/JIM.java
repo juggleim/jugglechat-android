@@ -161,4 +161,7 @@ public class JIM {
             }
         }
     }
+    public String getCurrentUserId(){
+        return mCore.getUserId();
+    }
 }
