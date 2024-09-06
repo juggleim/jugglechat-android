@@ -28,7 +28,6 @@ public abstract class CustomCallback<T extends HttpResult<K>, K> implements Call
             } else {
                 onFailure(call, new Exception("body is null"));
             }
-            onSuccess(response.body().getData());
         } else {
             onFailure(call, new Exception("responseCode is" + response.code()));
         }

@@ -20,7 +20,6 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.jet.im.kit.SendbirdUIKit
 import com.jet.im.kit.activities.ChannelActivity
 import com.jet.im.kit.providers.FragmentProviders
-import com.sendbird.android.SendbirdChat
 
 class GroupChannelMainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGroupChannelMainBinding
@@ -45,20 +44,23 @@ class GroupChannelMainActivity : AppCompatActivity() {
                         }
                         unreadCountTab
                     }
-                    1->{
+
+                    1 -> {
                         CustomTabView(this@GroupChannelMainActivity).apply {
                             setBadgeVisibility(View.GONE)
                             setTitle(getString(R.string.text_tab_friends))
                             setIcon(R.drawable.icon_chat_filled)
                         }
                     }
-                    2->{
+
+                    2 -> {
                         CustomTabView(this@GroupChannelMainActivity).apply {
                             setBadgeVisibility(View.GONE)
-                            setTitle(getString(R.string.text_tab_friends))
+                            setTitle(getString(R.string.text_tab_groups))
                             setIcon(R.drawable.icon_chat_filled)
                         }
                     }
+
                     else -> {
                         CustomTabView(this@GroupChannelMainActivity).apply {
                             setBadgeVisibility(View.GONE)
@@ -149,8 +151,7 @@ class GroupChannelMainActivity : AppCompatActivity() {
                 fragment = FriendListFragment()
             } else if (position == 2) {
                 fragment = GroupListFragment()
-            }
-            else {
+            } else {
                 fragment = SampleSettingsFragment()
             }
             return fragment

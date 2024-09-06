@@ -132,16 +132,13 @@ public class ChannelUtils {
     public static void loadChannelCover(@NonNull ChannelCoverView coverView, @NonNull ConversationInfo channel) {
         if (channel.getConversation().getConversationType().equals(Conversation.ConversationType.PRIVATE)) {
             UserInfo info = JIM.getInstance().getUserInfoManager().getUserInfo(channel.getConversation().getConversationId());
-            if (info != null) {
-                coverView.loadImage(info.getPortrait());
-            }
+            coverView.loadImage(info == null ? "" : info.getPortrait());
         } else if (channel.getConversation().getConversationType().equals(Conversation.ConversationType.GROUP)) {
             GroupInfo info = JIM.getInstance().getUserInfoManager().getGroupInfo(channel.getConversation().getConversationId());
-            if (info != null) {
-                coverView.loadImage(info.getPortrait());
-            }
+            coverView.loadImage(info == null ? "" :info.getPortrait());
         } else {
             //todo 头像
+            coverView.loadImage("");
         }
 
     }

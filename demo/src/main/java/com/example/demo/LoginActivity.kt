@@ -29,7 +29,7 @@ open class LoginActivity : AppCompatActivity() {
             code.visibility = View.VISIBLE
             saveButton.visibility = View.VISIBLE
             phone.setSelectAllOnFocus(true)
-            phone.setText("15822865925")
+//            phone.setText("15822865925")
             code.setText("000000")
             versionInfo.text = String.format(
                 resources.getString(R.string.text_version_info),

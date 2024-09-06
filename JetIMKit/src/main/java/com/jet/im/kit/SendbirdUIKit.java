@@ -1,7 +1,6 @@
 package com.jet.im.kit;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.os.Handler;
@@ -16,7 +15,6 @@ import androidx.annotation.StyleRes;
 import androidx.annotation.VisibleForTesting;
 import androidx.appcompat.content.res.AppCompatResources;
 
-import com.jet.im.kit.activities.ChannelActivity;
 import com.jet.im.kit.adapter.SendbirdUIKitAdapter;
 import com.jet.im.kit.consts.ReplyType;
 import com.jet.im.kit.consts.StringSet;
@@ -41,21 +39,15 @@ import com.jet.im.kit.model.configurations.UIKitConfig;
 import com.jet.im.kit.utils.FileUtils;
 import com.jet.im.kit.utils.TextUtils;
 import com.jet.im.kit.utils.UIKitPrefs;
-import com.sendbird.android.AppInfo;
+import com.juggle.im.JIM;
 import com.sendbird.android.BuildConfig;
-import com.sendbird.android.NotificationInfo;
-import com.sendbird.android.SendbirdChat;
-import com.sendbird.android.channel.GroupChannel;
-import com.sendbird.android.exception.SendbirdConnectionRequiredException;
 import com.sendbird.android.exception.SendbirdException;
-import com.sendbird.android.handler.AuthenticationHandler;
 import com.sendbird.android.handler.CompletionHandler;
 import com.sendbird.android.handler.DisconnectHandler;
 import com.sendbird.android.handler.InitResultHandler;
 import com.sendbird.android.internal.sb.SendbirdPlatform;
 import com.sendbird.android.internal.sb.SendbirdProduct;
 import com.sendbird.android.internal.sb.SendbirdSdkInfo;
-import com.sendbird.android.params.GroupChannelCreateParams;
 import com.sendbird.android.params.InitParams;
 import com.sendbird.android.params.UserUpdateParams;
 import com.sendbird.android.user.User;
@@ -63,7 +55,6 @@ import com.sendbird.android.user.User;
 import org.jetbrains.annotations.TestOnly;
 
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
@@ -77,6 +68,7 @@ public class SendbirdUIKit {
     public static volatile String userId;
 
     public static volatile String authorization;
+
     /**
      * UIKit log level. It depends on android Log level.
      */
@@ -653,12 +645,11 @@ public class SendbirdUIKit {
      * @param handler Callback handler.
      */
     public static void disconnect(@Nullable DisconnectHandler handler) {
-        SendbirdChat.disconnect(() -> {
-            clearAll();
-            if (handler != null) {
-                handler.onDisconnected();
-            }
-        });
+        JIM.getInstance().getConnectionManager().disconnect(false);
+        clearAll();
+        if (handler != null) {
+            handler.onDisconnected();
+        }
     }
 
     /**
@@ -668,7 +659,8 @@ public class SendbirdUIKit {
      * @param handler Callback handler.
      */
     public static void updateUserInfo(@NonNull UserUpdateParams params, @Nullable CompletionHandler handler) {
-        SendbirdChat.updateCurrentUserInfo(params, handler);
+        //todo 更新用户信息
+        //JIM.getInstance().
     }
 
     private static void updateUserInfoBlocking(@NonNull SendbirdChatContract sendbirdChatContract, @NonNull UserUpdateParams params) throws SendbirdException, InterruptedException {
@@ -726,19 +718,6 @@ public class SendbirdUIKit {
     @NonNull
     public static UIKitFragmentFactory getFragmentFactory() {
         return fragmentFactory;
-    }
-
-    private static void updateEmojiList() {
-        Logger.d(">> SendBirdUIkit::updateEmojiList()");
-        SendbirdChat.getAllEmoji((emojiContainer, e) -> {
-            if (e != null) {
-                Logger.e(e);
-            } else {
-                if (emojiContainer != null) {
-                    EmojiManager.upsertEmojiContainer(emojiContainer);
-                }
-            }
-        });
     }
 
     /**

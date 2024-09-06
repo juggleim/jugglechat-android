@@ -32,7 +32,6 @@ import com.example.demo.common.preferences.PreferenceUtils
 import com.example.demo.common.widgets.WaitingDialog
 import com.example.demo.databinding.FragmentSampleSettingsBinding
 import com.example.demo.databinding.ViewCustomMenuTextButtonBinding
-import com.juggle.im.JIM
 import com.jet.im.kit.SendbirdUIKit
 import com.jet.im.kit.consts.DialogEditTextParams
 import com.jet.im.kit.interfaces.OnEditTextResultListener
@@ -45,18 +44,11 @@ import com.jet.im.kit.utils.FileUtils
 import com.jet.im.kit.utils.IntentUtils
 import com.jet.im.kit.utils.PermissionUtils
 import com.jet.im.kit.utils.TextUtils
-import com.sendbird.android.SendbirdChat.autoBackgroundDetection
-import com.sendbird.android.SendbirdChat.currentUser
-import com.sendbird.android.SendbirdChat.getDoNotDisturb
-import com.sendbird.android.SendbirdChat.setDoNotDisturb
-import com.sendbird.android.SendbirdChat.updateCurrentUserInfo
+import com.juggle.im.JIM
 import com.sendbird.android.exception.SendbirdException
-import com.sendbird.android.handler.CompletionHandler
-import com.sendbird.android.handler.DoNotDisturbHandler
 import com.sendbird.android.params.UserUpdateParams
 import java.io.File
 import java.util.Locale
-import java.util.TimeZone
 
 /**
  * Displays a settings screen.
@@ -82,7 +74,6 @@ class SampleSettingsFragment : Fragment() {
         }
     private val takeCameraLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            autoBackgroundDetection = true
             val resultCode = result.resultCode
             if (resultCode != Activity.RESULT_OK || context == null) return@registerForActivityResult
             val mediaUri = mediaUri
@@ -93,7 +84,6 @@ class SampleSettingsFragment : Fragment() {
         }
     private val getContentLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
-            autoBackgroundDetection = true
             val intent = result.data
             val resultCode = result.resultCode
             if (resultCode != Activity.RESULT_OK || intent == null || context == null) return@registerForActivityResult
@@ -169,7 +159,6 @@ class SampleSettingsFragment : Fragment() {
 
     override fun onDestroy() {
         super.onDestroy()
-        autoBackgroundDetection = true
     }
 
     private fun requestPermission(permissions: Array<String>) {
@@ -292,10 +281,11 @@ class SampleSettingsFragment : Fragment() {
                 Logger.d("++ edit button clicked")
                 showEditProfileDialog()
             }
-            currentUser?.let {
-                loadUserProfileUrl(it.profileUrl)
+
+            JIM.getInstance().userInfoManager.getUserInfo(SendbirdUIKit.userId)?.let {
+                loadUserProfileUrl(it.portrait)
                 binding.tvUserId.text = it.userId
-                binding.tvNickname.text = it.nickname
+                binding.tvNickname.text = it.userName
             } ?: run {
                 loadUserProfileUrl(PreferenceUtils.profileUrl)
                 binding.tvUserId.text = PreferenceUtils.userId
@@ -439,20 +429,20 @@ class SampleSettingsFragment : Fragment() {
         WaitingDialog.show(requireContext())
         val params = UserUpdateParams()
         params.profileImageFile = profileImage
-        updateCurrentUserInfo(params, CompletionHandler { e: SendbirdException? ->
-            WaitingDialog.dismiss()
-            if (e != null) {
-                Logger.e(e)
-                ContextUtils.toastError(context, R.string.text_error_update_user_information)
-                return@CompletionHandler
-            }
-            val currentUser = currentUser
-            if (currentUser != null) {
-                val profileUrl = currentUser.profileUrl
-                PreferenceUtils.profileUrl = profileUrl
-                loadUserProfileUrl(profileUrl)
-            }
-        })
+//        updateCurrentUserInfo(params, CompletionHandler { e: SendbirdException? ->
+//            WaitingDialog.dismiss()
+//            if (e != null) {
+//                Logger.e(e)
+//                ContextUtils.toastError(context, R.string.text_error_update_user_information)
+//                return@CompletionHandler
+//            }
+//            val currentUser = currentUser
+//            if (currentUser != null) {
+//                val profileUrl = currentUser.profileUrl
+//                PreferenceUtils.profileUrl = profileUrl
+//                loadUserProfileUrl(profileUrl)
+//            }
+//        })
     }
 
     private fun updateDarkTheme() {
@@ -470,24 +460,24 @@ class SampleSettingsFragment : Fragment() {
     private fun updateDoNotDisturb() {
         binding.scDisturbSwitch.isChecked = !PreferenceUtils.doNotDisturb
         Logger.d("update do not disturb : " + !PreferenceUtils.doNotDisturb)
-        setDoNotDisturb(
-            !PreferenceUtils.doNotDisturb,
-            0,
-            0,
-            23,
-            59,
-            TimeZone.getDefault().id,
-            CompletionHandler { e: SendbirdException? ->
-                if (e != null) {
-                    ContextUtils.toastError(context, R.string.text_error_update_do_not_disturb)
-                    if (isActive) {
-                        binding.scDisturbSwitch.isChecked = PreferenceUtils.doNotDisturb
-                    }
-                    return@CompletionHandler
-                }
-                Logger.d("update do not disturb on callback : " + !PreferenceUtils.doNotDisturb)
-                PreferenceUtils.doNotDisturb = !PreferenceUtils.doNotDisturb
-            })
+//        setDoNotDisturb(
+//            !PreferenceUtils.doNotDisturb,
+//            0,
+//            0,
+//            23,
+//            59,
+//            TimeZone.getDefault().id,
+//            CompletionHandler { e: SendbirdException? ->
+//                if (e != null) {
+//                    ContextUtils.toastError(context, R.string.text_error_update_do_not_disturb)
+//                    if (isActive) {
+//                        binding.scDisturbSwitch.isChecked = PreferenceUtils.doNotDisturb
+//                    }
+//                    return@CompletionHandler
+//                }
+//                Logger.d("update do not disturb on callback : " + !PreferenceUtils.doNotDisturb)
+//                PreferenceUtils.doNotDisturb = !PreferenceUtils.doNotDisturb
+//            })
     }
 
     private fun showMediaSelectDialog() {
@@ -515,7 +505,6 @@ class SampleSettingsFragment : Fragment() {
     }
 
     private fun takeCamera() {
-        autoBackgroundDetection = false
         mediaUri = FileUtils.createImageFileUri(requireContext())
         val uri = mediaUri ?: return
         val intent = IntentUtils.getCameraIntent(requireContext(), uri)
@@ -525,7 +514,6 @@ class SampleSettingsFragment : Fragment() {
     }
 
     private fun takePhoto() {
-        autoBackgroundDetection = false
         val intent = IntentUtils.getImageGalleryIntent()
         getContentLauncher.launch(intent)
     }

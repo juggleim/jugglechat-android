@@ -22,6 +22,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 
 import com.jet.im.kit.R;
+import com.jet.im.kit.SendbirdUIKit;
 
 @SuppressWarnings("unused")
 public class DrawableUtils {
@@ -169,19 +170,28 @@ public class DrawableUtils {
     @NonNull
     public static ColorStateList createTextColorSelector(int selectedColor, int defaultColor) {
         final int[][] states = new int[][]{
-            new int[]{android.R.attr.state_checked},
-            new int[]{android.R.attr.state_pressed},
-            new int[]{-android.R.attr.state_checked},
-            new int[]{-android.R.attr.state_pressed}
+                new int[]{android.R.attr.state_checked},
+                new int[]{android.R.attr.state_pressed},
+                new int[]{-android.R.attr.state_checked},
+                new int[]{-android.R.attr.state_pressed}
         };
 
         final int[] colors = new int[]{
-            selectedColor,
-            selectedColor,
-            defaultColor,
-            defaultColor
+                selectedColor,
+                selectedColor,
+                defaultColor,
+                defaultColor
         };
 
         return new ColorStateList(states, colors);
+    }
+
+    public static Drawable getDefaultDrawable(Context context) {
+        int color = SendbirdUIKit.isDarkMode() ? R.color.onlight_01 : R.color.ondark_01;
+
+        return DrawableUtils.createOvalIcon(
+                context,
+                R.color.background_300, R.drawable.icon_user, color
+        );
     }
 }

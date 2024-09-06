@@ -58,7 +58,7 @@ internal class ChannelCoverView @JvmOverloads constructor(
             .into(imageView)
     }
 
-    private fun getDefaultDrawable(): Drawable? {
+    private  fun getDefaultDrawable(): Drawable? {
         return if (defaultImageResId != 0) {
             AppCompatResources.getDrawable(context, defaultImageResId)
         } else {
