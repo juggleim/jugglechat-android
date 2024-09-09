@@ -30,14 +30,12 @@ open class LoginActivity : AppCompatActivity() {
             saveButton.visibility = View.VISIBLE
             phone.setSelectAllOnFocus(true)
 //            phone.setText("15822865925")
-            code.setText("000000")
             versionInfo.text = String.format(
                 resources.getString(R.string.text_version_info),
                 "1.0.0",
                 sdkVersion
             )
 
-            title.text = "Kit Sample"
             saveButton.setOnClickListener {
                 val phone = binding.phone.text.toString().replace("\\s".toRegex(), "")
 //                onSendCode(phone)

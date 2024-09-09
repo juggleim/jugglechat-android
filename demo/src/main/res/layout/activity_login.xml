@@ -18,7 +18,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/sb_size_56"
-            android:background="@drawable/logo_notifications"
+            android:background="@drawable/logo_sendbird"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
@@ -36,33 +36,8 @@
             app:layout_constraintTop_toBottomOf="@id/logoImageView"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/code"
+            app:layout_constraintBottom_toTopOf="@id/userIdLayout"
             />
-
-        <TextView
-            android:id="@+id/notificationTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:layout_marginTop="@dimen/sb_size_4"
-            android:textSize="@dimen/sb_text_size_16"
-            android:textStyle="bold"
-            android:textColor="@color/onlight_01"
-            android:text="@string/text_title_uikit_sample_app"
-            android:layout_marginBottom="@dimen/sb_size_32"
-            app:layout_constraintTop_toBottomOf="@id/logoImageView"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/code"
-            />
-
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/titleBarrier"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="title, notificationTitle"/>
-
 
 
         <com.google.android.material.textfield.TextInputLayout
@@ -77,7 +52,7 @@
             android:background="@drawable/selector_edittext_background_with_focusable"
             app:hintTextColor="@color/primary_300"
             app:boxBackgroundMode="outline"
-            app:layout_constraintTop_toBottomOf="@id/titleBarrier"
+            app:layout_constraintTop_toBottomOf="@id/title"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@id/code"
