@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.example.demo.common.widgets.refresh.SmartRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.juggle.chat.common.widgets.refresh.SmartRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rc_refresh"
     android:layout_width="match_parent"
@@ -11,4 +11,4 @@
         android:layout_height="match_parent"
         android:overScrollMode="never"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-</com.example.demo.common.widgets.refresh.SmartRefreshLayout>
+</com.juggle.chat.common.widgets.refresh.SmartRefreshLayout>

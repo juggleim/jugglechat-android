@@ -25,7 +25,7 @@
             android:fontFamily="sans-serif"
             android:text="@string/text_title_basic_sample"/>
 
-        <com.example.demo.common.widgets.EntryButton
+        <com.juggle.chat.common.widgets.EntryButton
             android:id="@+id/groupChannelButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,7 +35,7 @@
             android:layout_marginEnd="@dimen/sb_size_24"
             android:layout_marginBottom="@dimen/sb_size_16"/>
 
-        <com.example.demo.common.widgets.EntryButton
+        <com.juggle.chat.common.widgets.EntryButton
             android:id="@+id/openChannelButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

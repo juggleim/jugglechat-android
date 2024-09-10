@@ -5,18 +5,18 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.example.demo.component.HeadComponent
+    <com.juggle.chat.component.HeadComponent
         android:id="@+id/rc_head_component"
         android:layout_width="match_parent"
         android:layout_height="44dp"
         app:head_title_text="添加好友" />
 
-    <com.example.demo.component.SearchComponent
+    <com.juggle.chat.component.SearchComponent
         android:id="@+id/rc_search_component"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <com.example.demo.component.ListComponent
+    <com.juggle.chat.component.ListComponent
         android:id="@+id/rc_list_component"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

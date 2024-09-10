@@ -33,7 +33,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@id/basicSampleButton"/>
 
-        <com.example.demo.common.widgets.EntryButton
+        <com.juggle.chat.common.widgets.EntryButton
             android:id="@+id/basicSampleButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -47,7 +47,7 @@
             app:layout_constraintBottom_toTopOf="@id/customizationSampleButton"
             />
 
-        <com.example.demo.common.widgets.EntryButton
+        <com.juggle.chat.common.widgets.EntryButton
             android:id="@+id/customizationSampleButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -61,7 +61,7 @@
             app:layout_constraintBottom_toTopOf="@id/aiChatBotSampleButton"
             />
 
-        <com.example.demo.common.widgets.EntryButton
+        <com.juggle.chat.common.widgets.EntryButton
             android:id="@+id/aiChatBotSampleButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -75,7 +75,7 @@
             app:layout_constraintBottom_toTopOf="@id/notificationSampleButton"
             />
 
-        <com.example.demo.common.widgets.EntryButton
+        <com.juggle.chat.common.widgets.EntryButton
             android:id="@+id/notificationSampleButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

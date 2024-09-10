@@ -1,4 +1,4 @@
-package com.example.demo
+package com.juggle.chat
 
 import org.junit.Test
 
