@@ -141,22 +141,22 @@ public class ChannelViewModel extends BaseMessageListViewModel {
         this.sendbirdChatContract.addChannelHandler(ID_CHANNEL_EVENT_HANDLER, new IMessageManager.IMessageListener() {
             @Override
             public void onMessageReceive(Message message) {
-                notifyDataSetChanged(new MessageContext(CollectionEventSource.EVENT_MESSAGE_RECEIVED, SendingStatus.SUCCEEDED));
+                loadInitial(0);
             }
 
             @Override
             public void onMessageRecall(Message message) {
-                notifyDataSetChanged(new MessageContext(CollectionEventSource.EVENT_MESSAGE_RECEIVED, SendingStatus.SUCCEEDED));
+                loadInitial(0);
             }
 
             @Override
             public void onMessageDelete(Conversation conversation, List<Long> clientMsgNos) {
-                notifyDataSetChanged(new MessageContext(CollectionEventSource.EVENT_MESSAGE_DELETED, SendingStatus.SUCCEEDED));
+                loadInitial(0);
             }
 
             @Override
             public void onMessageClear(Conversation conversation, long timestamp, String senderId) {
-                notifyDataSetChanged(new MessageContext(CollectionEventSource.EVENT_MESSAGE_DELETED, SendingStatus.SUCCEEDED));
+                loadInitial(0);
             }
         });
     }

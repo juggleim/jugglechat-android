@@ -51,6 +51,7 @@ import com.jet.im.kit.vm.ChannelViewModel;
 import com.jet.im.kit.widgets.MentionEditText;
 import com.jet.im.kit.widgets.MessageInputView;
 import com.jet.im.kit.widgets.StatusFrameView;
+import com.juggle.im.JIM;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.Message;
@@ -166,12 +167,25 @@ public class ChannelFragment extends BaseMessageListFragment<MessageListAdapter,
         viewModel.onChannelDeleted().observe(getViewLifecycleOwner(), channelUrl -> shouldActivityFinish());
         final MessageListComponent messageListComponent = module.getMessageListComponent();
         final long startingPoint = messageListComponent.getParams().getInitialStartingPoint();
-        loadInitial(startingPoint);
+        if (channel.getConversation().getConversationType().equals(Conversation.ConversationType.CHATROOM)) {
+            JIM.getInstance().getChatroomManager().joinChatroom(channel.getConversation().getConversationId());
+            loadInitial(startingPoint);
+        } else {
+            loadInitial(startingPoint);
+        }
+
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        final ConversationInfo channel = getViewModel().getChannel();
+        if (channel == null) {
+            return;
+        }
+        if (channel.getConversation().getConversationType().equals(Conversation.ConversationType.CHATROOM)) {
+            JIM.getInstance().getChatroomManager().quitChatroom(channel.getConversation().getConversationId());
+        }
         VoicePlayerManager.disposeAll();
         if (!isInitCallFinished.get()) {
             shouldDismissLoadingDialog();

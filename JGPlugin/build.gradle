@@ -44,6 +44,6 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 
-    implementation project(path: ':JuggleIM')
+    implementation 'com.juggle.im:juggle:1.7.0'
     implementation 'cn.jiguang.sdk:jpush:5.2.4'//必选，此处以JPush 5.2.4 版本为例，注意：5.0.0 版本开始可以自动拉取 JCore 包，无需另外配置
 }

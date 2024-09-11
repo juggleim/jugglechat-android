@@ -13,16 +13,15 @@ dependencyResolutionManagement {
         maven {url 'https://developer.hihonor.com/repo'}
         maven { url 'https://developer.huawei.com/repo/' }
         maven { url "https://repo.sendbird.com/public/maven" }
+        maven { url "https://maven.jugglechat.com/repository/maven-releases" }
         google()
         mavenCentral()
     }
 }
 
 rootProject.name = "JetIMDemo"
-include ':app'
 include ':demo'
 include ':JetIMKit'
-include ':JuggleIM'
 include ':HWPlugin'
 include ':JGPlugin'
 include ':GooglePlugin'

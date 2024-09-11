@@ -20,6 +20,7 @@ import com.google.android.material.tabs.TabLayoutMediator
 import com.jet.im.kit.SendbirdUIKit
 import com.jet.im.kit.activities.ChannelActivity
 import com.jet.im.kit.providers.FragmentProviders
+import com.juggle.chat.chatroom.ChatRoomListFragment
 
 class GroupChannelMainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityGroupChannelMainBinding
@@ -57,6 +58,13 @@ class GroupChannelMainActivity : AppCompatActivity() {
                         CustomTabView(this@GroupChannelMainActivity).apply {
                             setBadgeVisibility(View.GONE)
                             setTitle(getString(R.string.text_tab_groups))
+                            setIcon(R.drawable.icon_chat_filled)
+                        }
+                    }
+                    3 -> {
+                        CustomTabView(this@GroupChannelMainActivity).apply {
+                            setBadgeVisibility(View.GONE)
+                            setTitle(getString(R.string.text_tab_chatroom))
                             setIcon(R.drawable.icon_chat_filled)
                         }
                     }
@@ -151,14 +159,17 @@ class GroupChannelMainActivity : AppCompatActivity() {
                 fragment = FriendListFragment()
             } else if (position == 2) {
                 fragment = GroupListFragment()
-            } else {
+            }
+            else if (position == 3) {
+                fragment = ChatRoomListFragment()
+            }else {
                 fragment = SampleSettingsFragment()
             }
             return fragment
         }
 
         companion object {
-            private const val PAGE_SIZE = 4
+            private const val PAGE_SIZE = 5
         }
     }
 
