@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">UIKitSamples</string>
+    <string name="app_name">JuggleChat</string>
 
     <!-- LOGIN -->
     <string name="text_title_login_activity">JuggleChat</string>
