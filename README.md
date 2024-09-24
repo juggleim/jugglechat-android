@@ -1,6 +1,6 @@
 # JuggleChat-Android
 
-基于开源 IM SDK [JuggleIM](https://github.com/juggleim) 集成的 iOS demo 示例，包含单群聊、消息发送、聊天室等核心功能。
+基于开源 IM SDK [JuggleIM](https://github.com/juggleim) 集成的 Android demo 示例，包含单群聊、消息发送、聊天室等核心功能。
 
 ### 社区讨论
 
