@@ -1,2 +1,0 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file('vivo_pushSDK_v4.0.4.0_504.aar'))

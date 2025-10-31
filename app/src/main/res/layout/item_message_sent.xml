@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="6dp">
+
+    <!-- selection checkbox, hidden by default -->
+    <ImageView
+        android:id="@+id/image_select_box"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_gravity="start|center_vertical"
+        android:layout_marginEnd="8dp"
+        android:contentDescription="select"
+        android:padding="8dp"
+        android:src="@drawable/ic_checkbox_uncheck" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/send_error"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="start|center_vertical"
+                android:layout_marginEnd="8dp"
+                android:contentDescription="select"
+                android:src="@drawable/ic_send_error"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/msg_send_status"
+                style="?android:attr/progressBarStyleSmallInverse"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="start|center_vertical"
+                android:indeterminate="true"
+                android:indeterminateTint="@color/black"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:gravity="end"
+                android:orientation="vertical">
+
+                <!-- container where a single content layout will be inflated at runtime -->
+                <FrameLayout
+                    android:id="@+id/message_content_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_message_sent" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/image_avatar"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="avatar"
+                android:src="@drawable/ic_avatar_placeholder" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/msg_status_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="40dp"
+            android:visibility="gone"
+            android:gravity="center_vertical|end"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/msg_sent_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/gray"
+                android:textSize="10sp" />
+
+            <ImageView
+                android:id="@+id/msg_read_status"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:padding="4dp"
+                android:src="@drawable/ic_msg_read" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

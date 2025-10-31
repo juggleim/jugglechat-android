@@ -1,0 +1,20 @@
+<resources>
+    <color name="app_primary">#64B5F6</color>
+    <color name="app_primary_inverse">#F5F5F5</color>
+    <color name="voice_input">#E6E6E6F6</color>
+    <color name="hint_bg">#BBDEFB</color>
+    <color name="white">#ffffff</color>
+    <color name="black">#000000</color>
+    <color name="notification_red">#EF4444</color>
+    <color name="btn_gray">#E6E6E6</color>
+    <color name="gray">#AAA</color>
+    <color name="primary_300">#2196F3</color>
+    <color name="secondary_300">#64B5F6</color>
+    <color name="background">#FFFFFF</color>
+    <color name="divider">#e0e0e0</color>
+    <color name="red">#EF4444</color>
+    <color name="primary_bg_light">#64B5F6</color>
+    <color name="primary_bg_dark">#122017</color>
+    <color name="bg_light">#f6f8f7</color>
+    <color name="input_bg_light">#f6f8f7</color>
+</resources>

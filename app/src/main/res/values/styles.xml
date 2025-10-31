@@ -1,0 +1,30 @@
+<resources>
+
+    <style name="Theme.Splash" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@mipmap/ic_launcher</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="android:statusBarColor">@color/primary_bg_light</item>
+        <item name="colorPrimary">@color/primary_bg_light</item>
+        <item name="colorPrimaryDark">@color/primary_bg_dark</item>
+        <item name="colorAccent">@color/bg_light</item>
+    </style>
+    <style name="Widget" parent="android:Widget"/>
+
+    <style name="NoTitleTextAppearance">
+        <item name="android:textColor">@android:color/transparent</item>
+        <item name="android:textSize">0sp</item>
+    </style>
+    <style name="TitleTextAppearance">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+    <style name="PopupAnimation">
+        <item name="android:windowEnterAnimation">@anim/slide_in_left</item>
+    </style>
+</resources>

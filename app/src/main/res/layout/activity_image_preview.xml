@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000">
+
+    <com.github.chrisbanes.photoview.PhotoView
+        android:id="@+id/preview_photo_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/image_preview"
+        android:scaleType="fitCenter" />
+
+    <ProgressBar
+        android:id="@+id/preview_progress"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:visibility="gone"
+        android:layout_gravity="center" />
+
+    <!-- bottom-right controls -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="end|bottom"
+        android:layout_gravity="end|bottom">
+
+        <ImageView
+            android:id="@+id/preview_btn_forward"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_forward_pic"
+            android:contentDescription="@string/forward" />
+
+        <ImageView
+            android:id="@+id/preview_btn_save"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="15dp"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_save_pic"
+            android:contentDescription="@string/save_to_gallery" />
+
+    </LinearLayout>
+
+</FrameLayout>

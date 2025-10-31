@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingLeft="12dp"
+    android:paddingTop="12dp"
+    android:paddingRight="12dp">
+
+    <FrameLayout
+        android:id="@+id/avatar_container"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_avatar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:background="@android:color/transparent"
+            android:contentDescription="avatar"
+            android:layout_margin="0dp"
+            android:clipToOutline="true"
+            android:useLevel="false"
+            android:adjustViewBounds="true"
+            android:rotation="0" />
+
+        <TextView
+            android:id="@+id/unread_dot"
+            android:layout_width="21dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="0dp"
+            android:gravity="center"
+            android:text="99"
+            android:textSize="10sp"
+            android:textColor="@color/white"
+            android:background="@drawable/unread_circle_bg" />
+
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_name"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        app:layout_constraintStart_toEndOf="@id/avatar_container"
+        app:layout_constraintTop_toTopOf="@id/avatar_container"
+        app:layout_constraintEnd_toStartOf="@id/tv_time"
+        tools:text="群聊名称"/>
+
+    <TextView
+        android:id="@+id/tv_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tv_name"
+        tools:text="12:34"/>
+
+    <TextView
+        android:id="@+id/tv_last_message"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="14sp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        app:layout_constraintStart_toStartOf="@id/tv_name"
+        app:layout_constraintEnd_toStartOf="@id/iv_mute"
+        app:layout_constraintTop_toBottomOf="@id/tv_name"
+        tools:text="最后一条消息内容"/>
+
+    <ImageView
+        android:id="@+id/iv_mute"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:src="@drawable/ic_mute"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_name" />
+
+    <View
+        android:layout_marginTop="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_marginStart="50dp"
+        app:layout_constraintTop_toBottomOf="@id/tv_last_message"
+        android:background="@color/divider" />
+</androidx.constraintlayout.widget.ConstraintLayout>

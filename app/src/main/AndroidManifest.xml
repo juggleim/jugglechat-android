@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission
+        android:name="android.permission.VIBRATE"
+        android:maxSdkVersion="18" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Camera (used by camera plugin) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Microphone for voice recording -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Read gallery images: for older devices and Android 13+ -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" /> <!-- only needed up to Android 9 for legacy writes -->
+
+    <!-- For Android 13+ prefer this to access images in media provider -->
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"
+        tools:ignore="PhotoAndVideoPolicy" />
+
+    <application
+        android:name="com.juggle.im.android.Application"
+
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme"
+        android:requestLegacyExternalStorage="true">
+        <!-- FileProvider: use applicationId substitution so authority matches runtime packageName -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            android:label="File Provider">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <activity
+            android:name=".app.MainActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustPan|stateHidden">
+
+        </activity>
+
+        <activity
+            android:name=".app.AddFriendActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="com.juggle.im.android.app.LoginActivity"
+            android:exported="true"
+            tools:ignore="MissingClass">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity android:name="com.juggle.im.android.app.RegisterActivity" />
+
+        <activity
+            android:name=".chat.ConversationActivity"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+        <activity
+            android:name=".chat.MomentsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+        <activity android:name=".chat.ConversationSettingsActivity" />
+        <activity android:name=".app.CreateGroupActivity" />
+        <activity android:name=".chat.MergeMessageActivity" />
+        <activity
+            android:name=".chat.ForwardConversationListActivity"
+            android:exported="false" />
+        <activity android:name=".chat.ImagePreviewActivity" />
+        <activity android:name=".chat.CreatePostActivity"/>
+        <activity android:name=".chat.AlbumActivity"/>
+        <activity android:name=".chat.EditNicknameActivity"/>
+    </application>
+
+</manifest>

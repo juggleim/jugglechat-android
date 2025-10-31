@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <include layout="@layout/toolbar_simple" />
+
+    <!-- Selected members container (will be populated programmatically) -->
+    <FrameLayout
+        android:id="@+id/selected_flow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:padding="12dp" />
+
+    <!-- Divider -->
+    <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="@color/divider" />
+
+    <!-- Friend list fragment container -->
+    <FrameLayout
+        android:id="@+id/friends_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <Button
+        android:id="@+id/btn_create"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="@string/create_group"
+        android:layout_margin="12dp"
+        android:background="@drawable/rectangle_bg"
+        android:backgroundTint="@color/app_primary"
+        android:textColor="@color/white" />
+
+</LinearLayout>

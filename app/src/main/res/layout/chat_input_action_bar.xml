@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@android:color/transparent"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@color/divider" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/input_action_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/input_bg_light"
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/button_voice"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="voice"
+                android:src="@drawable/ic_input_voice" />
+
+            <FrameLayout
+                android:id="@+id/input_area"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/action_input_background">
+
+                <FrameLayout
+
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <com.juggle.im.android.chat.view.SendImeEditText
+                        android:id="@+id/edit_message"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@null"
+                        android:gravity="center_vertical"
+                        android:hint="@string/input_msg"
+                        android:inputType="textMultiLine"
+                        android:maxLines="4"
+                        android:minLines="1"
+                        android:overScrollMode="ifContentScrolls"
+                        android:padding="8dp" />
+                </FrameLayout>
+
+                <com.juggle.im.android.chat.view.VoiceInputAction
+                    android:id="@+id/voice_input_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@drawable/rectangle_bg"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <ImageView
+                android:id="@+id/button_emoji"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="emoji"
+                android:src="@drawable/ic_input_emoji" />
+
+            <ImageView
+                android:id="@+id/button_more"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="more"
+                android:src="@drawable/ic_input_more" />
+
+        </LinearLayout>
+
+        <!--        refer msg-->
+
+        <FrameLayout
+            android:id="@+id/refer_msg_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="50dp"
+            android:layout_marginEnd="95dp"
+            android:visibility="gone"
+            android:background="@color/app_primary_inverse">
+
+            <TextView
+                android:id="@+id/message_content"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="30dp"
+                android:gravity="center_vertical"
+                android:maxLines="2"
+                android:padding="3dp"
+                android:textColor="#666666"
+                android:textSize="12sp"
+                tools:text="sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfssdfsdfsdfsdfsdfsdf: " />
+
+            <ImageView
+                android:id="@+id/button_del_ref"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_gravity="end"
+                android:contentDescription="voice"
+                android:gravity="center_vertical"
+                android:padding="2dp"
+                android:src="@drawable/ic_delete" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <!-- container for panels like emoji and more; hidden by default -->
+    <FrameLayout
+        android:id="@+id/panel_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+</LinearLayout>
