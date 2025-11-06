@@ -20,10 +20,10 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
     }
 
     @Override
-    public void bind(UiMessage m, FileMessage f, boolean isGroup) {
-        ImageView ivIcon = itemView.findViewById(R.id.image_file_icon);
-        TextView tvName = itemView.findViewById(R.id.text_file_name);
-        ImageView btnDownload = itemView.findViewById(R.id.button_download_file);
+    public void bindItem(UiMessage m, FileMessage f, boolean isGroup) {
+        ImageView ivIcon = this.itemView.findViewById(R.id.image_file_icon);
+        TextView tvName = this.itemView.findViewById(R.id.text_file_name);
+        ImageView btnDownload = this.itemView.findViewById(R.id.button_download_file);
         ivIcon.setImageResource(R.drawable.ic_file);
         String name = f.getName();
         String url = f.getUrl();

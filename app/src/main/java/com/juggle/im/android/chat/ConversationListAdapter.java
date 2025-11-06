@@ -118,7 +118,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         
         // 设置选中状态
         if (position == selectedPosition) {
-            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(R.color.grey));
+            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(R.color.gray));
         } else if (uiConversation.isTop()) {
             holder.itemView.setBackgroundResource(R.drawable.bg_pinned);
         } else {
@@ -185,7 +185,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                     // 延迟一点时间后恢复原状
                     itemView.postDelayed(() -> {
                         if (position == selectedPosition) {
-                            itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.grey));
+                            itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.gray));
                         } else if (uiConversations.size() > position && uiConversations.get(position).isTop()) {
                             itemView.setBackgroundResource(R.drawable.bg_pinned);
                         } else {

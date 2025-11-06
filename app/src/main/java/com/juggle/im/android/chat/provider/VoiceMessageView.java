@@ -25,9 +25,9 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
 
     @SuppressLint("DefaultLocale")
     @Override
-    public void bind(UiMessage m, VoiceMessage voice, boolean isGroup) {
-        ImageView btnPlay = itemView.findViewById(R.id.button_play_voice);
-        TextView tvDuration = itemView.findViewById(R.id.text_voice_duration);
+    public void bindItem(UiMessage m, VoiceMessage voice, boolean isGroup) {
+        ImageView btnPlay = this.itemView.findViewById(R.id.button_play_voice);
+        TextView tvDuration = this.itemView.findViewById(R.id.text_voice_duration);
         int duration = voice.getDuration()/1000;
         final String url = voice.getUrl() == null ? voice.getLocalPath() : voice.getUrl();
         tvDuration.setText(duration == 0 ? "" : String.format("%02d:%02d", duration / 60, duration % 60));

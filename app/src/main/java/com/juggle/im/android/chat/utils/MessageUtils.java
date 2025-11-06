@@ -3,6 +3,7 @@ package com.juggle.im.android.chat.utils;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -28,6 +29,7 @@ import com.juggle.im.model.MessageContent;
 import com.juggle.im.model.messages.FileMessage;
 import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.MergeMessage;
+import com.juggle.im.model.messages.RecallInfoMessage;
 import com.juggle.im.model.messages.TextMessage;
 import com.juggle.im.model.messages.UnknownMessage;
 import com.juggle.im.model.messages.VoiceMessage;
@@ -44,6 +46,8 @@ import java.util.Map;
 
 public class MessageUtils {
     public static final Map<Class<? extends MessageContent>, Class<? extends MessageView>> messageViewCache = new HashMap<>();
+    public static final Map<Class<? extends MessageView>, Integer> messageTemplateCache = new HashMap<>();
+
 
     static {
         registerMessageView(TextMessage.class, TextMessageView.class);
@@ -55,6 +59,9 @@ public class MessageUtils {
         registerMessageView(FriendNotifyMessage.class, StatusMessageView.class);
         registerMessageView(GroupNotifyMessage.class, StatusMessageView.class);
         registerMessageView(InsertTimeStatusMessage.class, StatusMessageView.class);
+        registerMessageView(RecallInfoMessage.class, StatusMessageView.class);
+
+        registerMessageViewTemplate(StatusMessageView.class, R.layout.item_message_notification);
     }
 
     /**
@@ -162,6 +169,33 @@ public class MessageUtils {
         messageViewCache.put(message, holder);
     }
 
+    public static void registerMessageViewTemplate(Class<? extends MessageView> message, int resId) {
+        messageTemplateCache.put(message, resId);
+    }
+
+    public static int getViewTemplateResId(UiMessage t) {
+        if (t.getMessage().getDirection() == Message.MessageDirection.SEND) {
+            return R.layout.item_message_sent;
+        } else if (t.getMessage().getDirection() == Message.MessageDirection.RECEIVE) {
+            return R.layout.item_message_received;
+        } else {
+            return R.layout.item_message_notification;
+        }
+    }
+
+    public static int getMessageViewTemplate(UiMessage msg) {
+        Class<? extends MessageView> holderClass = messageViewCache.get(msg.getMessage().getContent().getClass());
+        Integer resId = messageTemplateCache.get(holderClass);
+        if (resId == null) {
+            if (msg.getMessage().getDirection() == Message.MessageDirection.SEND) {
+                resId = R.layout.item_message_sent;
+            } else {
+                resId = R.layout.item_message_received;
+            }
+        }
+        return resId;
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     public static MessageView createMessageViewHolder(@NonNull UiMessage msg, @NonNull ViewGroup container) {
         Class<? extends MessageView> holderClass = messageViewCache.get(msg.getMessage().getContent().getClass());
@@ -254,5 +288,11 @@ public class MessageUtils {
         } else {
             return false;
         }
+    }
+
+    public static String formatTimestamp(long ts) {
+        DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
+        String text = df.format(new Date(ts));
+        return text;
     }
 }

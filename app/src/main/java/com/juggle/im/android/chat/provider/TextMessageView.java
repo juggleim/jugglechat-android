@@ -2,7 +2,6 @@ package com.juggle.im.android.chat.provider;
 
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -18,8 +17,8 @@ public class TextMessageView extends MessageView<UiMessage, TextMessage> {
     }
 
     @Override
-    public void bind(UiMessage m, TextMessage t, boolean isGroup) {
-        TextView tvContent = itemView.findViewById(R.id.text_message_content);
+    public void bindItem(UiMessage m, TextMessage t, boolean isGroup) {
+        TextView tvContent = this.itemView.findViewById(R.id.text_message_content);
         tvContent.setText(t.getContent());
     }
 }

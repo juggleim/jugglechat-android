@@ -1,6 +1,7 @@
 package com.juggle.im.android.chat.provider;
 
 import android.content.Intent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
@@ -24,8 +25,8 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
     }
 
     @Override
-    public void bind(UiMessage m, ImageMessage img, boolean isGroup) {
-        ImageView imageView = itemView.findViewById(R.id.image_message_thumb);
+    public void bindItem(UiMessage m, ImageMessage img, boolean isGroup) {
+        ImageView imageView = this.itemView.findViewById(R.id.image_message_thumb);
         String url = img.getLocalPath() != null ? img.getLocalPath() : (img.getThumbnailUrl() != null ? img.getThumbnailUrl() : img.getUrl());
         Glide.with(imageView)
                 .load(url)
@@ -49,7 +50,7 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
         // Forward long-clicks on the image to the parent itemView so the adapter's
         // long-click listener (e.g. for selection/actions) can run.
         imageView.setOnLongClickListener(v -> {
-            ((ViewGroup)itemView.getParent()).performLongClick();
+            ((ViewGroup) this.itemView.getParent()).performLongClick();
             return false;
         });
     }

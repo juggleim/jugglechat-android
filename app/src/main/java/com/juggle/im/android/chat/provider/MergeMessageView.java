@@ -6,7 +6,6 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 
-import com.google.gson.Gson;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.MergeMessageActivity;
@@ -27,9 +26,9 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
     }
 
     @Override
-    public void bind(UiMessage m, MergeMessage merge, boolean isGroup) {
-        TextView tvPreview = itemView.findViewById(R.id.merge_preview_text);
-        TextView tvTitle = itemView.findViewById(R.id.merge_msg_title);
+    public void bindItem(UiMessage m, MergeMessage merge, boolean isGroup) {
+        TextView tvPreview = this.itemView.findViewById(R.id.merge_preview_text);
+        TextView tvTitle = this.itemView.findViewById(R.id.merge_msg_title);
         tvTitle.setText(merge.getTitle());
         List<MergeMessagePreviewUnit> msgs = merge.getPreviewList();
         StringBuilder sb = new StringBuilder();
@@ -42,13 +41,17 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
             }
             sb.append(name)
                     .append(": ")
-                    .append(msgs.get(i).getPreviewContent()).append('\n');
+                    .append(msgs.get(i).getPreviewContent());
         }
         if (msgs.size() > 4) sb.append("...");
         tvPreview.setText(sb.toString());
 
-        itemView.setOnClickListener(v -> {
-            MergeMessageActivity.start(itemView.getContext(), m.getMessageId());
+        this.itemView.setOnClickListener(v -> {
+            MergeMessageActivity.start(this.itemView.getContext(), m.getMessageId());
+        });
+        this.itemView.setOnLongClickListener(v -> {
+            ((ViewGroup) this.itemView.getParent()).performLongClick();
+            return false;
         });
     }
 }

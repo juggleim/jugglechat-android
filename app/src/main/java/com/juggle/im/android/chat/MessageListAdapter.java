@@ -3,7 +3,6 @@ package com.juggle.im.android.chat;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
-import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.util.DisplayMetrics;
@@ -41,7 +40,6 @@ import java.util.Locale;
 public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.ViewHolder> {
     private static final int BASE_SENT = 100;
     private static final int BASE_RECEIVED = 200;
-    private static final int BASE_STATUS = 300;
     private final boolean isGroup;
     private final OnMessageActionListener actionListener;
     // selection mode state
@@ -153,20 +151,16 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     @Override
     public int getItemViewType(int position) {
         UiMessage m = getItem(position);
-        boolean sent = m.getDirection() == com.juggle.im.model.Message.MessageDirection.SEND;
-        boolean isState = MessageUtils.isStatusMessage(m.getMessage());
-        return isState ? BASE_STATUS : (sent ? BASE_SENT : BASE_RECEIVED);
+        int resId = MessageUtils.getMessageViewTemplate(m);
+        return resId;
     }
 
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
-        View v = viewType != BASE_STATUS
-                ? (viewType == BASE_SENT ? inflater.inflate(R.layout.item_message_sent, parent, false)
-                : inflater.inflate(R.layout.item_message_received, parent, false))
-                : inflater.inflate(R.layout.item_message_notification, parent, false);
-        return new MessageHolder(v, viewType, actionListener);
+        View v = inflater.inflate(viewType, parent, false);
+        return new MessageHolder(v, actionListener);
     }
 
     @Override
@@ -180,26 +174,15 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     }
 
     static class MessageHolder extends RecyclerView.ViewHolder {
-        private final int viewType;
         private final View container;
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final ImageView selectBox;
-        private final ProgressBar progressBar;
-        private final ViewGroup msgStatusContainer;
-        private final TextView msgTimeV;
-        private final ImageView errorView;
-
-        MessageHolder(@NonNull View itemView, int viewType, OnMessageActionListener listener) {
+        MessageHolder(@NonNull View itemView, OnMessageActionListener listener) {
             super(itemView);
-            this.viewType = viewType;
             this.container = itemView.findViewById(R.id.message_content_container);
             this.actionListener = listener;
             this.selectBox = itemView.findViewById(R.id.image_select_box);
-            this.progressBar = itemView.findViewById(R.id.msg_send_status);
-            this.errorView = itemView.findViewById(R.id.send_error);
-            this.msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
-            this.msgTimeV = itemView.findViewById(R.id.msg_sent_time);
         }
 
         void bind(UiMessage m, boolean isGroup, boolean isSend, boolean inSelectionMode, boolean selected) {
@@ -213,55 +196,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 return;
             }
             delegate = MessageUtils.createMessageViewHolder(m, (ViewGroup) container);
-            if (viewType != BASE_STATUS) {
-                delegate.bind(m, m.getMessage().getContent(), isGroup);
-                ImageView ivAvatar = itemView.findViewById(R.id.image_avatar);
-                UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(m.getSenderId());
-                if (sendUser != null) {
-                    String name = sendUser.getUserName();
-                    m.setSenderName(name);
-                    AvatarUtils.loadAvatar(ivAvatar, sendUser.getPortrait(), name);
-                    TextView txSender = itemView.findViewById(R.id.text_sender_name);
-                    if (txSender != null) {
-                        if (isGroup && !isSend) {
-                            txSender.setVisibility(VISIBLE);
-                            txSender.setText(sendUser.getUserName());
-                        } else {
-                            txSender.setVisibility(GONE);
-                        }
-                    }
-                }
-                if (viewType == BASE_SENT) {
-                    if (progressBar != null) {
-                        if (m.getMessage().getState().getValue() == Message.MessageState.SENDING.getValue()
-                                || m.getMessage().getState().getValue() == Message.MessageState.UPLOADING.getValue()) {
-                            progressBar.setVisibility(VISIBLE);
-                        } else {
-                            progressBar.setVisibility(GONE);
-                        }
-                    }
-                    if (errorView != null) {
-                        if (m.getMessage().getState().getValue() == Message.MessageState.FAIL.getValue()) {
-                            errorView.setVisibility(VISIBLE);
-                        } else if (m.getMessage().getState().getValue() == Message.MessageState.SENT.getValue()) {
-                            errorView.setVisibility(GONE);
-                        }
-                    }
-                    if (msgStatusContainer != null) {
-                        msgStatusContainer.setVisibility(VISIBLE);
-                        ImageView iv = msgStatusContainer.findViewById(R.id.msg_read_status);
-                        if (m.getMessage().isHasRead())
-                            iv.setImageResource(R.drawable.ic_msg_read);
-                        else
-                            iv.setImageResource(R.drawable.ic_msg_sent);
-                    }
-                }
-                DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
-                String text = df.format(new Date(m.getMessage().getTimestamp()));
-                msgTimeV.setText(text);
-            } else {
-                delegate.bind(m, m.getMessage().getContent(), isGroup);
-            }
+            delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
 
             // set long click to either enter selection mode (if supported) or show actions
             container.setOnLongClickListener(v -> {
