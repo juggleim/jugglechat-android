@@ -52,6 +52,15 @@
         </provider>
 
         <activity
+            android:name=".app.FlashActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
             android:name=".app.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustPan|stateHidden">
@@ -66,10 +75,6 @@
             android:name="com.juggle.im.android.app.LoginActivity"
             android:exported="true"
             tools:ignore="MissingClass">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity android:name="com.juggle.im.android.app.RegisterActivity" />

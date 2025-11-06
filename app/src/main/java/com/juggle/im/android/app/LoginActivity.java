@@ -1,6 +1,8 @@
 package com.juggle.im.android.app;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +31,12 @@ public class LoginActivity extends AppCompatActivity {
     private TextView registerText;
     private CardView loginFormContainer;
     private ProgressBar loginProgress;
+
+    private static final String PREFS_NAME = "login_prefs";
+    public static final String KEY_APP_TOKEN = "app_token";
+    public static final String KEY_IM_TOKEN = "im_token";
+    private static final String KEY_EXPIRE_TIME = "expire_time";
+    private static final long TOKEN_VALIDITY_DURATION = 1 * 24 * 60 * 60 * 1000; // 2天
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +83,10 @@ public class LoginActivity extends AppCompatActivity {
                 ConfigUtils.myUserId = data.getUser_id();
                 ConfigUtils.myName = data.getNickname();
                 ConfigUtils.myAvatarUrl = data.getAvatar();
+                
+                // 保存token和过期时间
+                saveToken(data.getAuthorization(), data.getIm_token());
+                
                 JIMChatCore.getInstance().connect(ConfigUtils.imToken);
                 // 隐藏loading状态
                 showLoading(false);
@@ -88,6 +100,15 @@ public class LoginActivity extends AppCompatActivity {
                 Toast.makeText(LoginActivity.this, "登录失败: " + message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void saveToken(String token, String imToken) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(KEY_APP_TOKEN, token);
+        editor.putString(KEY_IM_TOKEN, imToken);
+        editor.putLong(KEY_EXPIRE_TIME, System.currentTimeMillis() + TOKEN_VALIDITY_DURATION);
+        editor.apply();
     }
 
     private void showLoading(boolean show) {

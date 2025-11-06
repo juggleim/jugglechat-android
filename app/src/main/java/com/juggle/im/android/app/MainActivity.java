@@ -5,6 +5,7 @@ import static android.view.View.VISIBLE;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -23,6 +24,7 @@ import com.juggle.im.android.chat.MessageListFragment;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.event.ConversationUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
+import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
@@ -48,6 +50,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        JIMChatCore.getInstance().connect(ConfigUtils.imToken);
+
         setContentView(R.layout.activity_main);
 
         // add conversation fragment as default
@@ -203,5 +207,15 @@ public class MainActivity extends AppCompatActivity {
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this);
         }
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // 当用户按下返回键时，将应用移至后台而不是关闭
+            moveTaskToBack(true);
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
