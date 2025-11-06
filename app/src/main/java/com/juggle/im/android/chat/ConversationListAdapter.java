@@ -1,6 +1,8 @@
 package com.juggle.im.android.chat;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,9 +28,14 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     private final List<UiConversation> uiConversations = new ArrayList<>();
     private OnConversationClickListener listener;
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+    // 添加一个变量来跟踪当前选中的项目位置
+    private int selectedPosition = -1;
+    private Drawable selectableItemBackground;
 
     public interface OnConversationClickListener {
         void onConversationClick(UiConversation uiConversation);
+
+        void onConversationLongClick(UiConversation uiConversation);
     }
 
     public void setOnConversationClickListener(OnConversationClickListener listener) {
@@ -91,6 +98,16 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_conversation_list, parent, false);
+        
+        // 获取系统点击效果
+        if (selectableItemBackground == null) {
+            int[] attrs = new int[]{android.R.attr.selectableItemBackground};
+            Context context = parent.getContext();
+            android.content.res.TypedArray typedArray = context.obtainStyledAttributes(attrs);
+            selectableItemBackground = typedArray.getDrawable(0);
+            typedArray.recycle();
+        }
+        
         return new ViewHolder(view);
     }
 
@@ -98,11 +115,45 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UiConversation uiConversation = uiConversations.get(position);
         holder.bind(uiConversation);
+        
+        // 设置选中状态
+        if (position == selectedPosition) {
+            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(R.color.grey));
+        } else if (uiConversation.isTop()) {
+            holder.itemView.setBackgroundResource(R.drawable.bg_pinned);
+        } else {
+            holder.itemView.setBackgroundResource(android.R.color.transparent);
+        }
     }
 
     @Override
     public int getItemCount() {
         return uiConversations.size();
+    }
+    
+    // 添加方法来清除选中状态
+    public void clearSelectedPosition() {
+        if (selectedPosition >= 0) {
+            int previousPosition = selectedPosition;
+            selectedPosition = -1;
+            notifyItemChanged(previousPosition);
+        }
+    }
+    
+    // 添加方法来设置选中状态
+    public void setSelectedPosition(int position) {
+        // 清除之前的选中状态
+        if (selectedPosition >= 0) {
+            int previousPosition = selectedPosition;
+            selectedPosition = -1;
+            notifyItemChanged(previousPosition);
+        }
+        
+        // 设置新的选中状态
+        if (position >= 0) {
+            selectedPosition = position;
+            notifyItemChanged(position);
+        }
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
@@ -110,6 +161,9 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         private TextView timeView;
         private TextView lastMessageView;
         private ImageView muteView;
+        private ImageView avatarView;
+        private TextView unreadDot;
+
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -117,20 +171,43 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             timeView = itemView.findViewById(R.id.tv_time);
             lastMessageView = itemView.findViewById(R.id.tv_last_message);
             muteView = itemView.findViewById(R.id.iv_mute);
+            avatarView = itemView.findViewById(R.id.iv_avatar);
+            unreadDot = itemView.findViewById(R.id.unread_dot);
 
             itemView.setOnClickListener(v -> {
                 int position = getAbsoluteAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
+                    // 添加点击效果
+                    if (selectableItemBackground != null) {
+                        itemView.setBackground(selectableItemBackground);
+                    }
+                    
+                    // 延迟一点时间后恢复原状
+                    itemView.postDelayed(() -> {
+                        if (position == selectedPosition) {
+                            itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.grey));
+                        } else if (uiConversations.size() > position && uiConversations.get(position).isTop()) {
+                            itemView.setBackgroundResource(R.drawable.bg_pinned);
+                        } else {
+                            itemView.setBackgroundResource(android.R.color.transparent);
+                        }
+                    }, 100);
+                    
                     listener.onConversationClick(uiConversations.get(position));
                 }
+            });
+            itemView.setOnLongClickListener(v -> {
+                int position = getAbsoluteAdapterPosition();
+                if (position != RecyclerView.NO_POSITION && listener != null) {
+                    listener.onConversationLongClick(uiConversations.get(position));
+                    return true;
+                }
+                return false;
             });
         }
 
         @SuppressLint("DefaultLocale")
         void bind(UiConversation uiConversation) {
-            ImageView avatarView = itemView.findViewById(R.id.iv_avatar);
-            TextView unreadDot = itemView.findViewById(R.id.unread_dot);
-
             AvatarUtils.loadAvatar(avatarView, uiConversation.getAvatar(), uiConversation.getName());
 
             // 设置名称
@@ -155,12 +232,38 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             } else {
                 unreadDot.setVisibility(View.GONE);
             }
+        }
+    }
 
-            // pinned background
-            if (uiConversation.isTop()) {
-                itemView.setBackgroundResource(R.drawable.bg_pinned);
-            } else {
-                itemView.setBackgroundResource(android.R.color.transparent);
+    /**
+     * 获取会话在列表中的位置
+     *
+     * @param uiConversation 会话对象
+     * @return 位置索引，未找到返回-1
+     */
+    public int getPosition(UiConversation uiConversation) {
+        for (int i = 0; i < uiConversations.size(); i++) {
+            if (uiConversations.get(i).getId().equals(uiConversation.getId())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * 从列表中移除指定会话
+     *
+     * @param uiConversation 要移除的会话
+     */
+    public void removeConversation(UiConversation uiConversation) {
+        int position = getPosition(uiConversation);
+        if (position >= 0) {
+            uiConversations.remove(position);
+            notifyItemRemoved(position);
+            
+            // 如果删除的是选中的项目，清除选中状态
+            if (position == selectedPosition) {
+                selectedPosition = -1;
             }
         }
     }

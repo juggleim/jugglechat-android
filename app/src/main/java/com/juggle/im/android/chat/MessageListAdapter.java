@@ -3,10 +3,16 @@ package com.juggle.im.android.chat;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.util.DisplayMetrics;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -21,6 +27,7 @@ import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.provider.MessageView;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.utils.ResourceUtils;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
 
@@ -291,20 +298,52 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         private void showActionPopup(View anchor, UiMessage ui) {
             if (anchor == null || ui == null || actionListener == null) return;
-            android.view.LayoutInflater inflater = android.view.LayoutInflater.from(anchor.getContext());
+            // 1. 创建 PopupWindow
+            LayoutInflater inflater = LayoutInflater.from(anchor.getContext());
             View popupView = inflater.inflate(R.layout.layout_message_popup, null);
-            final android.widget.PopupWindow pw = new android.widget.PopupWindow(popupView,
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
-                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+
+            final PopupWindow pw = new PopupWindow(
+                    popupView,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
+            );
             pw.setOutsideTouchable(true);
             pw.setFocusable(true);
-            pw.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            pw.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-            int[] loc = new int[2];
-            anchor.getLocationOnScreen(loc);
-            // show above the anchor if possible
-            pw.showAtLocation(anchor, android.view.Gravity.NO_GRAVITY,
-                    loc[0], loc[1] - 30 - (int) (8 * anchor.getContext().getResources().getDisplayMetrics().density));
+            int[] location = new int[2];
+            anchor.getLocationOnScreen(location);
+            int anchorX = location[0];
+            int anchorY = location[1];
+            int anchorWidth = anchor.getWidth();
+            int anchorHeight = anchor.getHeight();
+
+            popupView.measure(
+                    View.MeasureSpec.UNSPECIFIED,
+                    View.MeasureSpec.UNSPECIFIED
+            );
+            int popupWidth = popupView.getMeasuredWidth();
+            int popupHeight = popupView.getMeasuredHeight();
+
+            DisplayMetrics dm = anchor.getContext().getResources().getDisplayMetrics();
+            int screenWidth = dm.widthPixels;
+            int screenHeight = dm.heightPixels;
+
+//            float touchX = lastTouchX; // 你在 onLongClick/onTouch 里记录的点击坐标
+            float centerX = anchorX;// + touchX;
+
+            int x = (int) (centerX - popupWidth / 2);
+            int y = anchorY - popupHeight - ResourceUtils.dp2px(anchor.getContext(), 6); // 上方间距 6dp
+
+            if (x < ResourceUtils.dp2px(anchor.getContext(), 4)) {
+                x = ResourceUtils.dp2px(anchor.getContext(), 4);
+            } else if (x + popupWidth > screenWidth - ResourceUtils.dp2px(anchor.getContext(), 4)) {
+                x = screenWidth - popupWidth - ResourceUtils.dp2px(anchor.getContext(), 4);
+            }
+
+            pw.showAtLocation(anchor, Gravity.NO_GRAVITY, x, y);
+
 
             // wire buttons
             View vCopy = popupView.findViewById(R.id.action_copy);

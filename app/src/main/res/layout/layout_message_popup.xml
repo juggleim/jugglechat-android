@@ -2,11 +2,11 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="36dp"
-    android:orientation="horizontal"
-    android:padding="6dp"
     android:layout_gravity="center"
+    android:background="@drawable/rectangle_black_bg_5"
     android:gravity="center_vertical"
-    android:background="@drawable/rectangle_black_bg_5">
+    android:orientation="horizontal"
+    android:padding="6dp">
 
     <TextView
         android:id="@+id/action_copy"
@@ -15,20 +15,20 @@
         android:layout_height="wrap_content"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:textSize="14sp"
         android:text="@string/txt_copy"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:textSize="16sp" />
 
-<!--    <TextView-->
-<!--        android:id="@+id/action_top"-->
-<!--        style="?android:attr/textAppearanceSmall"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:paddingLeft="10dp"-->
-<!--        android:paddingRight="10dp"-->
-<!--        android:textSize="14sp"-->
-<!--        android:text="Top"-->
-<!--        android:textColor="@color/white" />-->
+    <!--    <TextView-->
+    <!--        android:id="@+id/action_top"-->
+    <!--        style="?android:attr/textAppearanceSmall"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:paddingLeft="10dp"-->
+    <!--        android:paddingRight="10dp"-->
+    <!--        android:textSize="14sp"-->
+    <!--        android:text="Top"-->
+    <!--        android:textColor="@color/white" />-->
 
     <TextView
         android:id="@+id/action_forward"
@@ -38,7 +38,8 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:text="@string/forward"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/action_relay"
@@ -48,7 +49,8 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:text="引用"
-        android:textColor="@color/white" />
+        android:textColor="@color/white"
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/action_delete"
@@ -57,8 +59,8 @@
         android:layout_height="wrap_content"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:textSize="14sp"
         android:text="@string/txt_del"
-        android:textColor="#d32f2f" />
+        android:textColor="#d32f2f"
+        android:textSize="16sp"/>
 
 </LinearLayout>
