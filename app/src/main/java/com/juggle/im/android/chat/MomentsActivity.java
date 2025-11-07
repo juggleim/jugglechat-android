@@ -88,6 +88,7 @@ public class MomentsActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_TAKE_PHOTO = 1002;
     private static final int REQUEST_CODE_CREATE_POST = 1003;
     private Uri photoUri;
+    private int currentPaddingBottom;
 
     protected static class CommentDetail {
         String content;
@@ -132,8 +133,9 @@ public class MomentsActivity extends AppCompatActivity {
         adapter = new MomentsAdapter(new ArrayList<>());
         recyclerView.setAdapter(adapter);
 
+        // 修改获取评论输入框相关视图的代码
         commentBar = findViewById(R.id.comment_bar);
-        editTextField = commentBar.findViewById(R.id.edit_comment);
+        editTextField = findViewById(R.id.edit_comment);
 
         findViewById(R.id.btn_camera).setOnClickListener(v -> {
             showCameraOptions();
@@ -154,7 +156,7 @@ public class MomentsActivity extends AppCompatActivity {
         });
         recyclerView.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN ||
-            event.getAction() == MotionEvent.ACTION_UP) {
+                    event.getAction() == MotionEvent.ACTION_UP) {
                 hideCommentInput();
             }
             return false;
@@ -204,6 +206,8 @@ public class MomentsActivity extends AppCompatActivity {
                 }
             }
         });
+        currentPaddingBottom = recyclerView.getPaddingBottom();
+
 
         adapter.setListener(new Listener() {
             @Override
@@ -403,17 +407,9 @@ public class MomentsActivity extends AppCompatActivity {
 
     private void showPostComment(int position, PostBean post, TopCommentBean topCommentBean) {
         if (commentBar.getVisibility() == GONE) {
-            showCommentInput();
-            recyclerView.postDelayed(() -> {
-                recyclerView.smoothScrollToPosition(position);
-                appBarLayout.setExpanded(false, true); // Collapse AppBarLayout to ensure visibility
-                recyclerView.post(() -> {
-                    int editTextHeight = editTextField.getHeight();
-                    recyclerView.smoothScrollBy(0, editTextHeight * 2); // Scroll up by EditText height
-                });
-            }, 50);
             selectedPost = post;
             selectedTopComment = topCommentBean;
+            showCommentInput(position);
         }
         if (topCommentBean != null) {
             String hint = topCommentBean.getUser_info().getNickname();
@@ -421,18 +417,101 @@ public class MomentsActivity extends AppCompatActivity {
         }
     }
 
-    private void showCommentInput() {
+    private void showCommentInput(int position) {
         commentBar.setVisibility(VISIBLE);
         editTextField.requestFocus();
-        editTextField.post(() -> {
-            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-            if (imm != null) {
-                // Adding a small delay to ensure the view is fully laid out before showing keyboard
-                editTextField.postDelayed(() -> {
-                    imm.showSoftInput(editTextField, InputMethodManager.SHOW_IMPLICIT);
-                }, 100);
+
+        // 监听布局变化以处理键盘弹出后的滚动定位
+        View rootView = findViewById(android.R.id.content);
+        View.OnLayoutChangeListener layoutChangeListener = new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom,
+                                       int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                // 移除监听器避免重复调用
+                v.removeOnLayoutChangeListener(this);
+
+                // 获取布局管理器
+                LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                if (layoutManager == null) return;
+
+                // 折叠AppBarLayout确保可见性
+                appBarLayout.setExpanded(false, true);
+
+                // 获取目标视图
+                View targetView = layoutManager.findViewByPosition(position);
+                if (targetView == null) {
+                    // 如果目标视图不可见，先滚动到目标位置
+                    recyclerView.smoothScrollToPosition(position);
+                    // 添加延时处理，确保滚动完成后再进行精确调整
+                    recyclerView.postDelayed(() -> {
+                        View newTargetView = layoutManager.findViewByPosition(position);
+                        if (newTargetView != null) {
+                            adjustScrollPosition(newTargetView, layoutManager, position);
+                        }
+                    }, 300);
+                    return;
+                }
+
+                // 调整滚动位置
+                adjustScrollPosition(targetView, layoutManager, position);
             }
-        });
+
+            private void adjustScrollPosition(View targetView, LinearLayoutManager layoutManager, int position) {
+                // 计算键盘高度
+                int screenHeight = getResources().getDisplayMetrics().heightPixels;
+                int rootViewHeight = rootView.getHeight();
+                int keyboardHeight = screenHeight - rootViewHeight;
+
+                // 计算目标视图在屏幕中的位置
+                int[] location = new int[2];
+                targetView.getLocationInWindow(location);
+                int targetTop = location[1];
+                int targetBottom = targetTop + targetView.getHeight();
+
+                // 计算需要滚动的距离
+                int scrollDistance = 0;
+
+                if (keyboardHeight > 0) {
+                    // 键盘可见，计算目标视图与键盘顶部的距离
+                    int visibleAreaBottom = screenHeight - keyboardHeight;
+                    // 考虑EditText的高度，确保输入框不被遮挡
+                    int editTextHeight = editTextField.getHeight();
+                    int safeAreaBottom = visibleAreaBottom - editTextHeight - dpToPx(MomentsActivity.this, 10);
+
+                    if (targetBottom > safeAreaBottom) {
+                        // 目标视图被键盘遮挡，需要向上滚动
+                        scrollDistance = targetBottom - safeAreaBottom;
+                    }
+                } else {
+                    // 键盘高度无法确定时使用默认策略
+                    int editTextHeight = editTextField.getHeight();
+                    // 检查是否在底部
+                    int totalItemCount = layoutManager.getItemCount();
+                    int lastVisiblePosition = layoutManager.findLastVisibleItemPosition();
+                    boolean isAtBottom = (totalItemCount > 0) && (lastVisiblePosition >= totalItemCount - 1);
+
+                    // 在底部时增加滚动距离确保可见
+                    int extraScroll = isAtBottom ? editTextHeight * 3 : editTextHeight * 2;
+                    scrollDistance = extraScroll;
+                }
+
+                // 执行滚动 TODO 执行无效，已经在最底部
+                if (scrollDistance > 0) {
+                    recyclerView.smoothScrollBy(0, scrollDistance);
+                }
+            }
+        };
+
+        // 添加布局变化监听器
+
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            // 添加小延迟确保视图完全布局后再显示键盘
+            editTextField.postDelayed(() -> {
+                rootView.addOnLayoutChangeListener(layoutChangeListener);
+                imm.showSoftInput(editTextField, InputMethodManager.SHOW_IMPLICIT);
+            }, 100);
+        }
     }
 
     private void hideCommentInput() {
@@ -550,7 +629,7 @@ public class MomentsActivity extends AppCompatActivity {
                 holder.tvName.setText(post.getUser_info().getNickname());
                 if (post.getUser_info().getUserId().equals(JIM.getInstance().getCurrentUserId())) {
                     holder.vDelete.setVisibility(VISIBLE);
-                    holder.vDelete.setOnClickListener( v -> {
+                    holder.vDelete.setOnClickListener(v -> {
                         if (listener != null) listener.onDeletePost(position, post);
                     });
                 }
