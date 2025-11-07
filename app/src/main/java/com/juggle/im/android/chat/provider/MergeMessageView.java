@@ -42,6 +42,7 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
             sb.append(name)
                     .append(": ")
                     .append(msgs.get(i).getPreviewContent());
+            if (i < show - 1) sb.append('\n');
         }
         if (msgs.size() > 4) sb.append("...");
         tvPreview.setText(sb.toString());

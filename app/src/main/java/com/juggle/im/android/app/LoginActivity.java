@@ -80,7 +80,6 @@ public class LoginActivity extends AppCompatActivity {
                 Log.i("login", "登录成功");
                 ConfigUtils.imToken = data.getIm_token();
                 ConfigUtils.appToken = data.getAuthorization();
-                ConfigUtils.myUserId = data.getUser_id();
                 ConfigUtils.myName = data.getNickname();
                 ConfigUtils.myAvatarUrl = data.getAvatar();
                 

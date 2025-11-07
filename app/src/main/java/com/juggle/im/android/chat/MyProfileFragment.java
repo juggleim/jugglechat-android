@@ -15,6 +15,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
+import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.app.LoginActivity;
 import com.juggle.im.android.model.ConfigUtils;
@@ -59,12 +60,7 @@ public class MyProfileFragment extends Fragment {
     }
 
     private void loadUserInfo() {
-        if (TextUtils.isEmpty(ConfigUtils.myUserId)) {
-            Toast.makeText(getContext(), "用户未登录", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        ServiceManager.getUserService().getUserInfo(ConfigUtils.myUserId, new ApiCallback<UserInfoBean>() {
+        ServiceManager.getUserService().getUserInfo(JIM.getInstance().getCurrentUserId(), new ApiCallback<UserInfoBean>() {
             @Override
             public void onSuccess(UserInfoBean data) {
                 if (getActivity() == null) return;
@@ -137,7 +133,7 @@ public class MyProfileFragment extends Fragment {
 
     private void updateUserInfo(String nickname, String avatar) {
         UserInfoRequest request = new UserInfoRequest();
-        request.setUserId(ConfigUtils.myUserId);
+        request.setUserId(JIM.getInstance().getCurrentUserId());
         if (nickname != null) {
             request.setNickname(nickname);
         }
@@ -180,7 +176,6 @@ public class MyProfileFragment extends Fragment {
         // 清除用户信息
         ConfigUtils.appToken = null;
         ConfigUtils.imToken = null;
-        ConfigUtils.myUserId = null;
         ConfigUtils.myName = null;
         ConfigUtils.myAvatarUrl = null;
 

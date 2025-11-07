@@ -14,8 +14,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +53,7 @@ import com.juggle.im.android.chat.utils.FileUtils;
 import android.widget.GridLayout;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -237,7 +236,7 @@ public class MomentsActivity extends AppCompatActivity {
 
                     bottomSheetDialog.show();
                 } else {
-                    commentPost(position, post, topCommentBean);
+                    showPostComment(position, post, topCommentBean);
                 }
             }
 
@@ -257,6 +256,21 @@ public class MomentsActivity extends AppCompatActivity {
                 it.putStringArrayListExtra(ImagePreviewActivity.EXTRA_IMAGE_URLS, urls);
                 it.putExtra(ImagePreviewActivity.EXTRA_IMAGE_INDEX, startIndex);
                 startActivity(it);
+            }
+
+            @Override
+            public void onDeletePost(int position, PostBean post) {
+                ServiceManager.getMomentService().deletePost(Arrays.asList(post.getPost_id()), new ApiCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void data) {
+                        adapter.notifyItemRemoved(position);
+                    }
+
+                    @Override
+                    public void onError(int code, String message) {
+                        Toast.makeText(MomentsActivity.this, "Failed to delete post: " + message, Toast.LENGTH_SHORT).show();
+                    }
+                });
             }
         });
 
@@ -387,7 +401,7 @@ public class MomentsActivity extends AppCompatActivity {
         });
     }
 
-    private void commentPost(int position, PostBean post, TopCommentBean topCommentBean) {
+    private void showPostComment(int position, PostBean post, TopCommentBean topCommentBean) {
         if (commentBar.getVisibility() == GONE) {
             showCommentInput();
             recyclerView.postDelayed(() -> {
@@ -482,6 +496,8 @@ public class MomentsActivity extends AppCompatActivity {
         void onComment(int position, PostBean post, TopCommentBean topCommentBean);
 
         void onClickImage(int position, PostBean post, String imageUrl);
+
+        void onDeletePost(int position, PostBean post);
     }
 
     class MomentsAdapter extends RecyclerView.Adapter<MomentsAdapter.VH> {
@@ -532,9 +548,16 @@ public class MomentsActivity extends AppCompatActivity {
             // name
             if (post.getUser_info() != null) {
                 holder.tvName.setText(post.getUser_info().getNickname());
+                if (post.getUser_info().getUserId().equals(JIM.getInstance().getCurrentUserId())) {
+                    holder.vDelete.setVisibility(VISIBLE);
+                    holder.vDelete.setOnClickListener( v -> {
+                        if (listener != null) listener.onDeletePost(position, post);
+                    });
+                }
             } else {
                 holder.tvName.setText("匿名");
             }
+
             AvatarUtils.loadAvatar(holder.ivAvatar, post.getUser_info().getAvatar(), post.getUser_info().getNickname());
 
             // content text
@@ -710,7 +733,7 @@ public class MomentsActivity extends AppCompatActivity {
                 popupView.findViewById(R.id.btn_comment).setOnClickListener(view -> {
                     popupWindow.dismiss();
                     // Handle comment action
-                    commentPost(position, post, null);
+                    showPostComment(position, post, null);
                 });
 
                 // 获取 PopupWindow 宽度
@@ -736,6 +759,7 @@ public class MomentsActivity extends AppCompatActivity {
         class VH extends RecyclerView.ViewHolder {
             ImageView ivAvatar;
             TextView tvName;
+            ImageView vDelete;
             ImageView btnMore;
             TextView tvContent;
             GridLayout mediaContainer;
@@ -760,6 +784,7 @@ public class MomentsActivity extends AppCompatActivity {
                 dividerLikes = itemView.findViewById(R.id.divider_likes);
                 commentsContainer = itemView.findViewById(R.id.comments_container);
                 likesContainer = itemView.findViewById(R.id.likes_container);
+                vDelete = itemView.findViewById(R.id.delete_moment);
             }
         }
     }

@@ -47,5 +47,19 @@ public interface MomentService {
      */
     void addReaction(String postId, String key, String value, ApiCallback<Void> callback);
 
+    /**
+     * DELETE /jim/posts/comments/delete
+     * Delete a comment.
+     * @param commentIds
+     * @param callback
+     */
     public void deleteComment(List<String> commentIds, ApiCallback<Void> callback);
+
+    /**
+     * DELETE /jim/posts/delete
+     * Delete a post.
+     * @param postIds
+     * @param callback
+     */
+    public void deletePost(List<String> postIds, ApiCallback<Void> callback);
 }

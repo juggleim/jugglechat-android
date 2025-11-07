@@ -173,16 +173,6 @@ public class MessageUtils {
         messageTemplateCache.put(message, resId);
     }
 
-    public static int getViewTemplateResId(UiMessage t) {
-        if (t.getMessage().getDirection() == Message.MessageDirection.SEND) {
-            return R.layout.item_message_sent;
-        } else if (t.getMessage().getDirection() == Message.MessageDirection.RECEIVE) {
-            return R.layout.item_message_received;
-        } else {
-            return R.layout.item_message_notification;
-        }
-    }
-
     public static int getMessageViewTemplate(UiMessage msg) {
         Class<? extends MessageView> holderClass = messageViewCache.get(msg.getMessage().getContent().getClass());
         Integer resId = messageTemplateCache.get(holderClass);
@@ -232,6 +222,8 @@ public class MessageUtils {
             return String.format(content, view.getResources().getString(R.string.msg_file));
         } else if (message.getContent() instanceof MergeMessage) {
             return String.format(content, view.getResources().getString(R.string.history_messages));
+        } else if (message.getContent() instanceof RecallInfoMessage) {
+            return  senderName + String.format(content, view.getResources().getString(R.string.msg_recall));
         }
         // notify message
         else if (message.getContentType().equals("jgd:grpntf")) {
@@ -241,19 +233,6 @@ public class MessageUtils {
         } else {
             Log.i("formater", "conv msg: " + message.getConversation().getConversationType().toString());
             return String.format(content, message.getContent().toString());
-        }
-    }
-
-    /**
-     * 格式化消息类型
-     */
-    public static boolean isStatusMessage(Message message) {
-        if (message.getContent() instanceof FriendNotifyMessage
-                || message.getContent() instanceof GroupNotifyMessage
-                || message.getContent() instanceof InsertTimeStatusMessage) {
-            return true;
-        } else {
-            return false;
         }
     }
 

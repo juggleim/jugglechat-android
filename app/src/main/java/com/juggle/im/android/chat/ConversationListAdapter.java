@@ -12,6 +12,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.model.UiConversation;
@@ -219,7 +220,8 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             // 设置最后一条消息
             Message lastMessage = uiConversation.getLastMessage();
             if (lastMessage != null) {
-                lastMessageView.setText(MessageUtils.formatChatListMessageSummary(itemView, uiConversation.getLastMessageUserName(), lastMessage));
+                String senderName = lastMessage.getSenderUserId().equals(JIM.getInstance().getCurrentUserId()) ? "你" : uiConversation.getLastMessageUserName();
+                lastMessageView.setText(MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
             }
 
             // 设置免打扰图标

@@ -13,7 +13,6 @@ public class ConfigUtils {
     // im Token
     public static String imToken = null;
 
-    public static String myUserId = null;
     public static String myAvatarUrl = null;
     public static String myName = null;
 }

@@ -12,30 +12,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.provider.MessageView;
 import com.juggle.im.android.model.UiMessage;
-import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ResourceUtils;
 import com.juggle.im.model.Message;
-import com.juggle.im.model.UserInfo;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.ViewHolder> {
     private static final int BASE_SENT = 100;
@@ -178,6 +169,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final ImageView selectBox;
+
         MessageHolder(@NonNull View itemView, OnMessageActionListener listener) {
             super(itemView);
             this.container = itemView.findViewById(R.id.message_content_container);
@@ -285,6 +277,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             View vForward = popupView.findViewById(R.id.action_forward);
             View vRelay = popupView.findViewById(R.id.action_relay);
             View vDelete = popupView.findViewById(R.id.action_delete);
+            View vRecall = popupView.findViewById(R.id.action_recall);
+            if (ui.getMessage().getDirection() == Message.MessageDirection.SEND) {
+                if (ui.getMessage().getState() != Message.MessageState.SENT) {
+                    vRecall.setVisibility(GONE);
+                }
+            } else {
+                vRecall.setVisibility(GONE);
+            }
 
             vCopy.setOnClickListener(v -> {
                 pw.dismiss();
@@ -302,6 +302,10 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 pw.dismiss();
                 actionListener.onMessageAction(ui, Action.DELETE);
             });
+            vRecall.setOnClickListener(v -> {
+                pw.dismiss();
+                actionListener.onMessageAction(ui, Action.RECALL);
+            });
         }
     }
 
@@ -312,6 +316,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     public static class Action {
         public static final String COPY = "copy";
         public static final String TOP = "top";
+        public static final String RECALL = "recall";
         public static final String FORWARD = "forward";
         public static final String RELAY = "relay";
         public static final String DELETE = "delete";
@@ -321,11 +326,13 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     private static final DiffUtil.ItemCallback<UiMessage> DIFF = new DiffUtil.ItemCallback<UiMessage>() {
         @Override
         public boolean areItemsTheSame(@NonNull UiMessage oldItem, @NonNull UiMessage newItem) {
+            boolean sameId = false;
             if (oldItem.getMessageId() != null) {
-                return oldItem.getMessageId().equals(newItem.getMessageId());
+                sameId = oldItem.getMessageId().equals(newItem.getMessageId());
             } else {
-                return oldItem.getMessage().getClientMsgNo() == newItem.getMessage().getClientMsgNo();
+                sameId = oldItem.getMessage().getClientMsgNo() == newItem.getMessage().getClientMsgNo();
             }
+            return sameId && (oldItem.getMessage().getContentType() == null || oldItem.getMessage().getContentType().equals(newItem.getMessage().getContentType()));
         }
 
         @Override

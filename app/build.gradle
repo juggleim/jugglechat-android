@@ -79,7 +79,7 @@ dependencies {
 
 
     // juggleim
-    implementation 'com.juggle.im:juggle:1.8.13.2'
+    implementation 'com.juggle.im:juggle:1.8.27.1'
     implementation 'org.java-websocket:Java-WebSocket:1.5.5'
     implementation 'com.google.protobuf:protobuf-javalite:3.18.0'
     implementation 'com.qiniu:qiniu-android-sdk:8.7.0'

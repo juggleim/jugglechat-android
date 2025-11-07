@@ -84,7 +84,6 @@
             android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity
             android:name=".chat.MomentsActivity"
-            android:exported="false"
             android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity android:name=".chat.ConversationSettingsActivity" />
         <activity android:name=".app.CreateGroupActivity" />

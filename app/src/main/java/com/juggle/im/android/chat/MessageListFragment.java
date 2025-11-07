@@ -356,7 +356,7 @@ public class MessageListFragment extends Fragment {
             cursor = oldest.getTimestamp();
         }
 
-        JIMChatCore.getInstance().getMessages(conversationId, isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, 30, cursor, new IMessageManager.IGetMessagesCallbackV3() {
+        JIMChatCore.getInstance().getMessages(conversationId, isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, 20, cursor, new IMessageManager.IGetMessagesCallbackV3() {
             @Override
             public void onGetMessages(List<Message> list, long timestamp, boolean hasMore, int code) {
                 if (list == null || list.isEmpty()) {
@@ -532,6 +532,9 @@ public class MessageListFragment extends Fragment {
             case MessageListAdapter.Action.TOP:
                 android.widget.Toast.makeText(requireContext(), "Top/Pin not implemented", android.widget.Toast.LENGTH_SHORT).show();
                 break;
+            case MessageListAdapter.Action.RECALL:
+                this.recallMessage(message);
+                break;
             case MessageListAdapter.Action.FORWARD:
                 // If not in selection mode, enter selection mode selecting this message
                 if (!selectionMode) {
@@ -575,6 +578,23 @@ public class MessageListFragment extends Fragment {
             default:
                 break;
         }
+    }
+
+    private void recallMessage(UiMessage message) {
+        JIM.getInstance().getMessageManager().recallMessage(message.getMessageId(), null, new IMessageManager.IRecallMessageCallback() {
+            @Override
+            public void onSuccess(Message recalledMsg) {
+                List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
+                final int idx = adapter.getIndexByMessageNo(message.getMessage().getClientMsgNo());
+                current.set(idx, UiMessage.fromMessage(recalledMsg));
+                adapter.submitList(current);
+            }
+
+            @Override
+            public void onError(int i) {
+                Toast.makeText(getActivity(), "Recall failed: " + i, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void deleteMessages(List<UiMessage> messages, List<UiMessage> newDataSet) {

@@ -69,7 +69,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             ProgressBar progressBar = itemView.findViewById(R.id.msg_send_status);
             ImageView errorView = itemView.findViewById(R.id.send_error);
             ViewGroup msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
-            TextView msgTimeV = itemView.findViewById(R.id.msg_sent_time);
+            TextView vMsgTime = itemView.findViewById(R.id.msg_sent_time);
             if (progressBar != null) {
                 if (message.getMessage().getState().getValue() == Message.MessageState.SENDING.getValue()
                         || message.getMessage().getState().getValue() == Message.MessageState.UPLOADING.getValue()) {
@@ -81,7 +81,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             if (errorView != null) {
                 if (message.getMessage().getState().getValue() == Message.MessageState.FAIL.getValue()) {
                     errorView.setVisibility(VISIBLE);
-                } else if (message.getMessage().getState().getValue() == Message.MessageState.SENT.getValue()) {
+                } else {
                     errorView.setVisibility(GONE);
                 }
             }
@@ -93,7 +93,9 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                 else
                     iv.setImageResource(R.drawable.ic_msg_sent);
             }
-            msgTimeV.setText(MessageUtils.formatTimestamp(message.getMessage().getTimestamp()));
+            if (vMsgTime != null) {
+                vMsgTime.setText(MessageUtils.formatTimestamp(message.getMessage().getTimestamp()));
+            }
         }
         this.bindItem(message, content, isGroup);
     }

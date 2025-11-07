@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,7 +20,10 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.juggle.im.JIM;
+import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.utils.FileUtils;
 import com.juggle.im.android.server.beans.ContentBean;
 import com.juggle.im.android.server.beans.ImageBean;
 import com.juggle.im.android.server.beans.PostBean;
@@ -27,15 +31,20 @@ import com.juggle.im.android.server.beans.VideoBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.qiniu.android.utils.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CreatePostActivity extends AppCompatActivity {
     private EditText editPostContent;
     private RecyclerView mImageRecyclerView;
     private MediaAdapter mMediaAdapter;
-    private List<String> mImageUrls = new ArrayList<>();
+    private LinkedHashMap<String, String> mImageUrls = new LinkedHashMap<>();
     private String mVideoUrl = null;
     private static final int REQUEST_CODE_PICK_IMAGES = 1001;
 
@@ -76,7 +85,21 @@ public class CreatePostActivity extends AppCompatActivity {
         if (intent != null) {
             ArrayList<String> imageUrls = intent.getStringArrayListExtra("image_urls");
             if (imageUrls != null && !imageUrls.isEmpty()) {
-                mImageUrls.addAll(imageUrls);
+                for (String path: imageUrls) {
+                    mImageUrls.put(path, "");
+                    String u = FileUtils.convertContentUriToFile(getApplicationContext(), path);
+                    JIM.getInstance().getMessageManager().uploadImage(u, new JIMConst.IResultCallback<String>() {
+                        @Override
+                        public void onSuccess(String s) {
+                            mImageUrls.put(path, s);
+                        }
+
+                        @Override
+                        public void onError(int i) {
+                            Log.e("createpost", "error: " + i);
+                        }
+                    });
+                }
                 mMediaAdapter.notifyDataSetChanged();
             }
         }
@@ -106,7 +129,7 @@ public class CreatePostActivity extends AppCompatActivity {
                 // 添加新选择的图片，最多9张
                 for (String imageUrl : selectedImages) {
                     if (mImageUrls.size() < 9) {
-                        mImageUrls.add(imageUrl);
+                        mImageUrls.put(imageUrl, "");
                     }
                 }
                 mMediaAdapter.notifyDataSetChanged();
@@ -126,7 +149,8 @@ public class CreatePostActivity extends AppCompatActivity {
 
         if (!mImageUrls.isEmpty()) {
             List<ImageBean> images = new ArrayList<>();
-            for (String url : mImageUrls) {
+            for (String url : mImageUrls.values()) {
+                if (StringUtils.isBlank(url)) continue;
                 ImageBean image = new ImageBean();
                 image.setUrl(url);
                 images.add(image);
@@ -166,9 +190,9 @@ public class CreatePostActivity extends AppCompatActivity {
     // 媒体适配器内部类
     private class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHolder> {
         private Context mContext;
-        private List<String> mImageUrls;
+        private LinkedHashMap<String, String> mImageUrls ;
 
-        public MediaAdapter(Context context, List<String> imageUrls) {
+        public MediaAdapter(Context context, LinkedHashMap<String, String> imageUrls) {
             this.mContext = context;
             this.mImageUrls = imageUrls;
         }
@@ -198,14 +222,13 @@ public class CreatePostActivity extends AppCompatActivity {
                 holder.btnDelete.setVisibility(View.VISIBLE);
 
                 // 显示图片
-                String imageUrl = mImageUrls.get(position);
+                final String imageUrl = new ArrayList<>(mImageUrls.keySet()).get(position);
                 AvatarUtils.loadImage(holder.ivMedia, imageUrl);
 
                 // 删除按钮点击事件
-                int pos = position;
                 holder.btnDelete.setOnClickListener(v -> {
-                    mImageUrls.remove(pos);
-                    notifyDataSetChanged();
+                    mImageUrls.remove(imageUrl);
+                    notifyItemRemoved(position);
                 });
 
                 // 图片点击事件

@@ -22,7 +22,7 @@
         android:maxLines="4"
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
-        android:textColor="@color/primary_bg_dark"
+        android:textColor="@color/gray"
         android:textSize="12sp" />
 
     <View
@@ -36,5 +36,5 @@
         android:layout_marginTop="3dp"
         android:textSize="12sp"
         android:text="@string/history_messages"
-        android:textColor="@color/primary_bg_dark" />
+        android:textColor="@color/gray" />
 </LinearLayout>

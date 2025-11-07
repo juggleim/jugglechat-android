@@ -1,16 +1,14 @@
 package com.juggle.im.android.server.http;
 
-import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.PostBean;
 import com.juggle.im.android.server.beans.PostsListData;
 
+import org.json.JSONArray;
+
 import java.util.HashMap;
 import java.util.List;
-
-import okhttp3.Request;
-import okhttp3.RequestBody;
 
 /**
  * Simple OkHttp based implementation for moment endpoints.
@@ -72,4 +70,17 @@ public class MomentServiceImpl extends BaseService implements MomentService {
         params.put("comment_ids", commentIds);
         enqueueJson(url, params, Void.class, callback);;
     }
+
+    @Override
+    public void deletePost(List<String> postIds, ApiCallback<Void> callback) {
+        String url = "/jim/posts/del";
+        JsonArray ids = new JsonArray();
+        for (String id : postIds) {
+            ids.add(id);
+        }
+        JsonObject body = new JsonObject();
+        body.add("post_ids", ids);
+        enqueueJson(url, body, Void.class, callback);
+    }
+
 }

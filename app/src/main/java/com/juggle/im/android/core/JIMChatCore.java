@@ -7,6 +7,7 @@ import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.chat.message.FriendNotifyMessage;
 import com.juggle.im.android.chat.message.GroupNotifyMessage;
+import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
@@ -27,6 +28,7 @@ import com.juggle.im.model.GetMessageOptions;
 import com.juggle.im.model.GroupMessageReadInfo;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.MessageReaction;
+import com.juggle.im.model.UserInfo;
 
 /**
  * IM核心类，负责IM功能的初始化和连接管理
@@ -79,6 +81,7 @@ public class JIMChatCore {
             @Override
             public void onStatusChange(JIMConst.ConnectionStatus connectionStatus, int i, String s) {
                 Log.i(tag, "connection status change: " + connectionStatus + ", user = " + s);
+                EventBus.getDefault().post(new ConnectStatusEvent(connectionStatus, i, s));
             }
 
             @Override
@@ -193,6 +196,11 @@ public class JIMChatCore {
 
             @Override
             public void onMessageReactionRemove(Conversation conversation, MessageReaction messageReaction) {
+
+            }
+
+            @Override
+            public void onMessageSetTop(Message message, UserInfo userInfo, boolean b) {
 
             }
         });

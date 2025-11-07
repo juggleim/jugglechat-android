@@ -15,6 +15,7 @@ import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import com.juggle.im.JIM;
+import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
@@ -22,6 +23,7 @@ import com.juggle.im.android.chat.DiscoverFragment;
 import com.juggle.im.android.chat.MyProfileFragment;
 import com.juggle.im.android.chat.MessageListFragment;
 import com.juggle.im.android.core.JIMChatCore;
+import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.ConversationUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.android.model.ConfigUtils;
@@ -156,6 +158,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onConnectStatusChanged(ConnectStatusEvent event) {
+        Log.i("MainActivity", event.getConnectionStatus().toString() + "," + event.getCode());
+        View v = findViewById(R.id.connect_status);
+        if (event.getConnectionStatus() == JIMConst.ConnectionStatus.FAILURE
+        || event.getConnectionStatus() == JIMConst.ConnectionStatus.DISCONNECTED) {
+            v.setVisibility(VISIBLE);
+            TextView vStatus = findViewById(R.id.connect_text_view);
+            if (event.getCode() == 11011) {
+                vStatus.setText("账户在其他设备登录");
+            } else {
+                vStatus.setText("连接失败，请检查网络");
+            }
+        } else {
+            v.setVisibility(GONE);
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
     public void onConversationUpdated(ConversationUpdatedEvent event) {
         Log.i("MainActivity", "onConversationUpdated");
         List<ConversationInfo> infoList = event.getConversationInfoList();
@@ -185,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
                 if (userInfo != null) {
                     ui.setName(userInfo.getUserName());
                     ui.setAvatar(userInfo.getPortrait());
+                    ui.setLastMessageUserName(userInfo.getUserName());
                 }
             }
             uiList.add(ui);

@@ -19,16 +19,16 @@
         android:textColor="@color/white"
         android:textSize="16sp" />
 
-    <!--    <TextView-->
-    <!--        android:id="@+id/action_top"-->
-    <!--        style="?android:attr/textAppearanceSmall"-->
-    <!--        android:layout_width="wrap_content"-->
-    <!--        android:layout_height="wrap_content"-->
-    <!--        android:paddingLeft="10dp"-->
-    <!--        android:paddingRight="10dp"-->
-    <!--        android:textSize="14sp"-->
-    <!--        android:text="Top"-->
-    <!--        android:textColor="@color/white" />-->
+    <TextView
+        android:id="@+id/action_recall"
+        style="?android:attr/textAppearanceSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="10dp"
+        android:paddingRight="10dp"
+        android:text="@string/recall"
+        android:textColor="@color/white"
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/action_forward"
@@ -60,7 +60,7 @@
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
         android:text="@string/txt_del"
-        android:textColor="#d32f2f"
-        android:textSize="16sp"/>
+        android:textColor="@color/white"
+        android:textSize="16sp" />
 
 </LinearLayout>

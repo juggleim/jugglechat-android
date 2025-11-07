@@ -156,6 +156,7 @@ public class ForwardConversationListFragment extends Fragment implements Forward
                         if (userInfo != null) {
                             ui.setName(userInfo.getUserName());
                             ui.setAvatar(userInfo.getPortrait());
+                            ui.setLastMessageUserName(userInfo.getUserName());
                         }
                     }
                     uiList.add(ui);
