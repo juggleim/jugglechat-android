@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="42dp"
+    android:layout_gravity="start"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <View
+        android:layout_width="4dp"
+        android:layout_height="match_parent"
+        android:background="@color/gray"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="5dp"/>
+    <ImageView
+        android:id="@+id/reply_image_id"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:visibility="gone"
+        android:src="@drawable/default_image"/>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/text_message_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:textColor="@color/gray"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="回复：xxxx" />
+
+        <TextView
+            android:id="@+id/reply_text_message_content"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/gray"
+            android:textSize="12sp"
+            tools:text="xxxx" />
+    </LinearLayout>
+
+
+</LinearLayout>

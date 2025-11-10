@@ -39,6 +39,7 @@ import com.juggle.im.android.chat.plugin.ImagePlugin;
 import com.juggle.im.android.chat.plugin.LocationPlugin;
 import com.juggle.im.android.chat.plugin.MorePlugin;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.model.MessageMentionInfo;
 
 import androidx.core.app.ActivityCompat;
 import androidx.viewpager.widget.PagerAdapter;
@@ -92,7 +93,7 @@ public class ChatInputActionBar extends LinearLayout {
     private static final String KEY_RECENT = "emoji_recent";
 
     public interface Listener {
-        void onSend(String text);
+        void onSend(String text, String replyMsgId, MessageMentionInfo mentionInfo);
 
         void onRequestVoice(); // legacy
 
@@ -183,8 +184,7 @@ public class ChatInputActionBar extends LinearLayout {
                 if (!event.isShiftPressed()) {
                     String msg = editMessage.getText().toString().trim();
                     if (!android.text.TextUtils.isEmpty(msg)) {
-                        if (listener != null) listener.onSend(msg);
-                        editMessage.setText("");
+                        handleSendMessage(msg);
                     }
                     return true; // consume event
                 }
@@ -199,8 +199,7 @@ public class ChatInputActionBar extends LinearLayout {
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
                 String msg = editMessage.getText().toString().trim();
                 if (!TextUtils.isEmpty(msg)) {
-                    if (listener != null) listener.onSend(msg);
-                    editMessage.setText("");
+                    handleSendMessage(msg);
                     return true;
                 }
                 return false;
@@ -212,14 +211,20 @@ public class ChatInputActionBar extends LinearLayout {
                 if (!event.isShiftPressed()) {
                     String msg = editMessage.getText().toString().trim();
                     if (!TextUtils.isEmpty(msg)) {
-                        if (listener != null) listener.onSend(msg);
-                        editMessage.setText("");
+                        handleSendMessage(msg);
                         return true;
                     }
                 }
             }
             return false;
         });
+    }
+
+    private void handleSendMessage(String text) {
+        View referView = findViewById(R.id.refer_msg_container);
+        listener.onSend(text, referView.getVisibility() == VISIBLE ? (String)referView.getTag(): null, null);
+        editMessage.setText("");
+        referView.setVisibility(GONE);
     }
 
     private void initKeyboardListener() {
@@ -498,8 +503,7 @@ public class ChatInputActionBar extends LinearLayout {
             sendBtn.setOnClickListener(v -> {
                 String msg = editMessage.getText().toString().trim();
                 if (!TextUtils.isEmpty(msg) && listener != null) {
-                    listener.onSend(msg);
-                    editMessage.setText("");
+                    handleSendMessage(msg);
                 }
             });
             applySelectableBackground(sendBtn, android.R.attr.selectableItemBackground);
@@ -531,7 +535,7 @@ public class ChatInputActionBar extends LinearLayout {
         editMessage.getText().delete(deleteFrom, sel);
     }
 
-    public void showReferMsgPanel(String name, String msg) {
+    public void showReferMsgPanel(String name, String msg, String msgId) {
         View referView = findViewById(R.id.refer_msg_container);
         referView.setVisibility(VISIBLE);
         findViewById(R.id.button_del_ref).setOnClickListener((v) -> {
@@ -539,6 +543,7 @@ public class ChatInputActionBar extends LinearLayout {
         });
         TextView tvContent = findViewById(R.id.message_content);
         tvContent.setText(name + ": " + msg);
+        referView.setTag(msgId);
     }
 
     private View getMorePanel() {

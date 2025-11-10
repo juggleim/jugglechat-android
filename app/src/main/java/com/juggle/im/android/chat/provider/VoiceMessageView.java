@@ -1,6 +1,8 @@
 package com.juggle.im.android.chat.provider;
 
 import android.annotation.SuppressLint;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.view.View;
 import android.view.ViewGroup;
@@ -8,14 +10,18 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.model.Message;
 import com.juggle.im.model.messages.VoiceMessage;
 
 import java.io.IOException;
 
-/** Voice message view. */
+/**
+ * Voice message view.
+ */
 public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
     private MediaPlayer player;
 
@@ -28,7 +34,7 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
     public void bindItem(UiMessage m, VoiceMessage voice, boolean isGroup) {
         ImageView btnPlay = this.itemView.findViewById(R.id.button_play_voice);
         TextView tvDuration = this.itemView.findViewById(R.id.text_voice_duration);
-        int duration = voice.getDuration()/1000;
+        int duration = voice.getDuration() / 1000;
         final String url = voice.getUrl() == null ? voice.getLocalPath() : voice.getUrl();
         tvDuration.setText(duration == 0 ? "" : String.format("%02d:%02d", duration / 60, duration % 60));
         btnPlay.setVisibility(View.VISIBLE);
@@ -54,9 +60,17 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
                     btnPlay.setImageResource(R.drawable.ic_play);
                 });
             } catch (IOException e) {
-                try { player.release(); } catch (Exception ignored) {}
+                try {
+                    player.release();
+                } catch (Exception ignored) {
+                }
                 player = null;
             }
         });
+        if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
+            tvDuration.setTextColor(ColorStateList.valueOf(Color.WHITE));
+        } else {
+            tvDuration.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
+        }
     }
 }

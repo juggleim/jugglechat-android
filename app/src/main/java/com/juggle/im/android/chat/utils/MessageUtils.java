@@ -86,7 +86,7 @@ public class MessageUtils {
             return true;
         }
         // if gap > 5 minutes (300000 ms)
-        if (Math.abs(t2 - t1) > 5 * 60 * 1000L) return true;
+//        if (Math.abs(t2 - t1) > 5 * 60 * 1000L) return true;
         return false;
     }
 
@@ -111,7 +111,7 @@ public class MessageUtils {
 
         if (sameDay) {
             java.text.DateFormat df = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault());
-            text = df.format(new Date(timestamp));
+            text = "今天";// df.format(new Date(timestamp));
         } else if (isYesterday) {
             java.text.DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
             text = "昨天 " + df.format(new Date(timestamp));

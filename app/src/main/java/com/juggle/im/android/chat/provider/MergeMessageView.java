@@ -1,16 +1,20 @@
 package com.juggle.im.android.chat.provider;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.MergeMessageActivity;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.model.MergeMessagePreviewUnit;
+import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.MergeMessage;
 import com.qiniu.android.utils.StringUtils;
@@ -54,5 +58,12 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
             ((ViewGroup) this.itemView.getParent()).performLongClick();
             return false;
         });
+        if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
+            tvTitle.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.gray));
+            tvPreview.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.gray));
+        } else {
+            tvTitle.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
+            tvPreview.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
+        }
     }
 }

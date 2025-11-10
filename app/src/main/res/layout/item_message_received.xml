@@ -37,9 +37,10 @@
             android:textColor="#666666"
             android:visibility="gone" />
 
-        <FrameLayout
+        <LinearLayout
             android:background="@drawable/bg_message_received"
             android:id="@+id/message_content_container"
+            android:orientation="vertical"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 

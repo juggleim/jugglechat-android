@@ -1,14 +1,18 @@
 package com.juggle.im.android.chat.provider;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.model.Message;
 import com.juggle.im.model.messages.FileMessage;
 
 /**
@@ -30,9 +34,15 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
         if (tvName != null) tvName.setText(name);
         if (btnDownload != null) {
             btnDownload.setOnClickListener(v -> {
-                // placeholder: in prod implement download/preview
                 btnDownload.setImageResource(R.drawable.ic_download);
             });
+        }
+        if (tvName != null) {
+            if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
+                tvName.setTextColor(ColorStateList.valueOf(Color.WHITE));
+            } else {
+                tvName.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
+            }
         }
     }
 }

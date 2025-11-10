@@ -563,9 +563,9 @@ public class MessageListFragment extends Fragment {
                     updateOptionBarState(selectedIds.size());
                 }
                 break;
-            case MessageListAdapter.Action.RELAY:
+            case MessageListAdapter.Action.REPLY:
                 ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
-                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()));
+                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId());
                 break;
             case MessageListAdapter.Action.DELETE:
                 List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());

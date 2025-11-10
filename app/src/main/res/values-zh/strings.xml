@@ -68,4 +68,5 @@
     <string name="txt_post_comment">发表评论：</string>
     <string name="txt_register">注册</string>
     <string name="txt_copy">复制</string>
+    <string name="txt_reply">回复</string>
 </resources>

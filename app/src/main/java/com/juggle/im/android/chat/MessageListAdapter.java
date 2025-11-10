@@ -12,18 +12,23 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.provider.MessageView;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ResourceUtils;
 import com.juggle.im.model.Message;
+import com.juggle.im.model.UserInfo;
+import com.juggle.im.model.messages.ImageMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -165,7 +170,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     }
 
     static class MessageHolder extends RecyclerView.ViewHolder {
-        private final View container;
+        private final ViewGroup container;
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final ImageView selectBox;
@@ -179,7 +184,6 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         void bind(UiMessage m, boolean isGroup, boolean isSend, boolean inSelectionMode, boolean selected) {
             if (container == null) return;
-            // remove previous content
             container.setVisibility(VISIBLE);
             if (container instanceof ViewGroup) {
                 ((ViewGroup) container).removeAllViews();
@@ -187,7 +191,28 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 container.setVisibility(GONE);
                 return;
             }
-            delegate = MessageUtils.createMessageViewHolder(m, (ViewGroup) container);
+            // 回复消息
+            if (m.getMessage().getReferredMessage() != null) {
+                LayoutInflater inflater = LayoutInflater.from(itemView.getContext());
+                View vReply = inflater.inflate(R.layout.content_reply, container, false);
+                Message replyMsg = m.getMessage().getReferredMessage();
+                TextView vTitle = vReply.findViewById(R.id.text_message_title);
+                TextView vContent = vReply.findViewById(R.id.reply_text_message_content);
+                ImageView ivImage = vReply.findViewById(R.id.reply_image_id);
+                UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(replyMsg.getSenderUserId());
+                if (sendUser != null) {
+                    vTitle.setText("回复：" + sendUser.getUserName());
+                }
+                vContent.setText(MessageUtils.getMessageSummary(itemView.getContext(), replyMsg));
+                if (replyMsg.getContent() instanceof ImageMessage) {
+                    ivImage.setVisibility(VISIBLE);
+                    AvatarUtils.loadImage(ivImage, ((ImageMessage)replyMsg.getContent()).getThumbnailUrl());
+                } else {
+                    ivImage.setVisibility(GONE);
+                }
+                container.addView(vReply);
+            }
+            delegate = MessageUtils.createMessageViewHolder(m, container);
             delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
 
             // set long click to either enter selection mode (if supported) or show actions
@@ -275,7 +300,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             // wire buttons
             View vCopy = popupView.findViewById(R.id.action_copy);
             View vForward = popupView.findViewById(R.id.action_forward);
-            View vRelay = popupView.findViewById(R.id.action_relay);
+            View vReply = popupView.findViewById(R.id.action_reply);
             View vDelete = popupView.findViewById(R.id.action_delete);
             View vRecall = popupView.findViewById(R.id.action_recall);
             if (ui.getMessage().getDirection() == Message.MessageDirection.SEND) {
@@ -294,9 +319,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 pw.dismiss();
                 actionListener.onMessageAction(ui, Action.FORWARD);
             });
-            vRelay.setOnClickListener(v -> {
+            vReply.setOnClickListener(v -> {
                 pw.dismiss();
-                actionListener.onMessageAction(ui, Action.RELAY);
+                actionListener.onMessageAction(ui, Action.REPLY);
             });
             vDelete.setOnClickListener(v -> {
                 pw.dismiss();
@@ -318,7 +343,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         public static final String TOP = "top";
         public static final String RECALL = "recall";
         public static final String FORWARD = "forward";
-        public static final String RELAY = "relay";
+        public static final String REPLY = "relay";
         public static final String DELETE = "delete";
     }
 

@@ -25,6 +25,9 @@ import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.MergeMessagePreviewUnit;
 import com.juggle.im.model.Message;
+import com.juggle.im.model.MessageMentionInfo;
+import com.juggle.im.model.MessageOptions;
+import com.juggle.im.model.PushData;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.FileMessage;
 import com.juggle.im.model.messages.ImageMessage;
@@ -126,10 +129,15 @@ public class ConversationActivity extends AppCompatActivity {
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
             inputBar.setListener(new ChatInputActionBar.Listener() {
-                @Override
-                public void onSend(String text) {
+                public void onSend(String text, String replyMsgId, MessageMentionInfo mentionInfo) {
                     TextMessage msg = new TextMessage(text);
-                    sendTextMessage(msg, conversation);
+                    MessageOptions options = new MessageOptions();
+                    PushData pushData = new PushData();
+                    pushData.setContent(text);
+                    options.setPushData(pushData);
+                    options.setMentionInfo(mentionInfo);
+                    options.setReferredMessageId(replyMsgId);
+                    sendTextMessage(msg, options, conversation);
                 }
 
                 @Override
@@ -212,9 +220,9 @@ public class ConversationActivity extends AppCompatActivity {
                         if (um == null || um.getMessage() == null) continue;
                         Message m = um.getMessage();
                         if (m.getContent() instanceof TextMessage) {
-                            sendTextMessage(new TextMessage(((TextMessage) m.getContent()).getContent()), targetConv);
+                            sendTextMessage(new TextMessage(((TextMessage) m.getContent()).getContent()), null, targetConv);
                         } else if (m.getContent() instanceof ImageMessage) {
-                            sendImageMessage((ImageMessage) m.getContent(), targetConv);
+                            sendImageMessage((ImageMessage) m.getContent(), null, targetConv);
                         } else if (m.getContent() instanceof VoiceMessage) {
                             sendVoiceMessage((VoiceMessage) m.getContent(), targetConv);
                         } else if (m.getContent() instanceof FileMessage) {
@@ -280,7 +288,7 @@ public class ConversationActivity extends AppCompatActivity {
                 String fileUrl = FileUtils.convertContentUriToFile(this, url);
                 image.setLocalPath(fileUrl);
                 image.setThumbnailLocalPath(fileUrl);
-                sendImageMessage(image, conversation);
+                sendImageMessage(image, null, conversation);
             }
         } else if (pluginId.equals("camera")) {
             ImageMessage image = new ImageMessage();
@@ -289,7 +297,7 @@ public class ConversationActivity extends AppCompatActivity {
             String fileUrl = FileUtils.convertContentUriToFile(this, data.toString());
             image.setLocalPath(fileUrl);
             image.setThumbnailLocalPath(fileUrl);
-            sendImageMessage(image, conversation);
+            sendImageMessage(image, null, conversation);
         } else if (pluginId.equals("location")) {
         } else if (pluginId.equals("contact")) {
 
@@ -298,7 +306,7 @@ public class ConversationActivity extends AppCompatActivity {
         }
     }
 
-    private void sendTextMessage(TextMessage text, Conversation conversation) {
+    private void sendTextMessage(TextMessage text, MessageOptions options, Conversation conversation) {
         IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
             @Override
             public void onSuccess(Message message) {
@@ -317,14 +325,14 @@ public class ConversationActivity extends AppCompatActivity {
                 }
             }
         };
-        Message message = JIM.getInstance().getMessageManager().sendMessage(text, conversation, callback);
+        Message message = JIM.getInstance().getMessageManager().sendMessage(text, conversation, options, callback);
         MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         if (frag != null) {
             frag.onNewMessage(message);
         }
     }
 
-    private void sendImageMessage(ImageMessage image, Conversation conversation) {
+    private void sendImageMessage(ImageMessage image, MessageOptions options, Conversation conversation) {
         final MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override

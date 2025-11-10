@@ -42,13 +42,13 @@
         android:textSize="16sp" />
 
     <TextView
-        android:id="@+id/action_relay"
+        android:id="@+id/action_reply"
         style="?android:attr/textAppearanceSmall"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"
-        android:text="引用"
+        android:text="@string/txt_reply"
         android:textColor="@color/white"
         android:textSize="16sp" />
 

@@ -38,6 +38,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
     public MessageView(@NonNull ViewGroup itemView) {
         super(itemView);
     }
+
     public abstract void bindItem(T message, K content, boolean isGroup);
 
     /**
@@ -65,11 +66,11 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                 }
             }
         }
+        TextView vMsgTime = itemView.findViewById(R.id.msg_sent_time);
         if (message.getDirection() == com.juggle.im.model.Message.MessageDirection.SEND) {
             ProgressBar progressBar = itemView.findViewById(R.id.msg_send_status);
             ImageView errorView = itemView.findViewById(R.id.send_error);
             ViewGroup msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
-            TextView vMsgTime = itemView.findViewById(R.id.msg_sent_time);
             if (progressBar != null) {
                 if (message.getMessage().getState().getValue() == Message.MessageState.SENDING.getValue()
                         || message.getMessage().getState().getValue() == Message.MessageState.UPLOADING.getValue()) {
@@ -87,15 +88,25 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             }
             if (msgStatusContainer != null) {
                 msgStatusContainer.setVisibility(VISIBLE);
-                ImageView iv = msgStatusContainer.findViewById(R.id.msg_read_status);
-                if (message.getMessage().isHasRead())
-                    iv.setImageResource(R.drawable.ic_msg_read);
-                else
-                    iv.setImageResource(R.drawable.ic_msg_sent);
+                ImageView ivStatus = msgStatusContainer.findViewById(R.id.msg_read_status);
+                // 已读
+                if (message.getMessage().isHasRead()) {
+                    ivStatus.setVisibility(VISIBLE);
+                    ivStatus.setImageResource(R.drawable.ic_msg_read);
+                }
+                // 已发送
+                if (message.getMessage().getState().getValue() == Message.MessageState.SENT.getValue()) {
+                    ivStatus.setVisibility(VISIBLE);
+                    ivStatus.setImageResource(R.drawable.ic_msg_sent);
+                }
+                // 发送中或者失败
+                else {
+                    ivStatus.setVisibility(GONE);
+                }
             }
-            if (vMsgTime != null) {
-                vMsgTime.setText(MessageUtils.formatTimestamp(message.getMessage().getTimestamp()));
-            }
+        }
+        if (vMsgTime != null) {
+            vMsgTime.setText(MessageUtils.formatTimestamp(message.getMessage().getTimestamp()));
         }
         this.bindItem(message, content, isGroup);
     }
