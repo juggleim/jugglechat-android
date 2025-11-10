@@ -145,8 +145,8 @@ public class ChatInputActionBar extends LinearLayout {
         morePlugins.add(new ImagePlugin());
         morePlugins.add(new CameraPlugin());
         morePlugins.add(new FilePlugin());
-        morePlugins.add(new LocationPlugin());
-        morePlugins.add(new ContactPlugin());
+//        morePlugins.add(new LocationPlugin());
+//        morePlugins.add(new ContactPlugin());
     }
 
     private void setupListeners() {

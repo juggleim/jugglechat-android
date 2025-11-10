@@ -39,6 +39,7 @@ import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -302,7 +303,14 @@ public class ConversationActivity extends AppCompatActivity {
         } else if (pluginId.equals("contact")) {
 
         } else if (pluginId.equals("file")) {
-
+            String fileUrl = FileUtils.convertContentUriToFile(this, data.toString());
+            FileMessage fileMessage = new FileMessage();
+            File f = new File(fileUrl);
+            fileMessage.setLocalPath(fileUrl);
+            fileMessage.setName(f.getName().length() > 10 ? f.getName().substring(0, 10) : f.getName());
+            long size = f.length();
+            fileMessage.setSize(size);
+            sendFileMessage(fileMessage, conversation);
         }
     }
 
