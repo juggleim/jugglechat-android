@@ -7,6 +7,7 @@ import static com.juggle.im.android.chat.ConversationActivity.EXTRA_TITLE;
 
 import android.os.Bundle;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -155,7 +156,7 @@ public class MessageListFragment extends Fragment {
         selectionOptionBar = getActivity().findViewById(R.id.selection_option_bar);
         btnForwardSelected = getActivity().findViewById(R.id.btn_forward_selected);
         btnDeleteSelected = getActivity().findViewById(R.id.btn_delete_selected);
-        overlayForwardContainer = getActivity().findViewById(R.id.overlay_container);
+        overlayForwardContainer = getActivity().findViewById(R.id.overlay_forward_container);
 
         // option bar actions
         if (btnForwardSelected != null) {
@@ -530,7 +531,18 @@ public class MessageListFragment extends Fragment {
                 android.widget.Toast.makeText(requireContext(), "Copied", android.widget.Toast.LENGTH_SHORT).show();
                 break;
             case MessageListAdapter.Action.TOP:
-                android.widget.Toast.makeText(requireContext(), "Top/Pin not implemented", android.widget.Toast.LENGTH_SHORT).show();
+                Conversation conversation = message.getMessage().getConversation();
+                JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, true, new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        Log.d("MessageListFragment", "set top success");
+                    }
+
+                    @Override
+                    public void onError(int i) {
+                        Log.d("MessageListFragment", "set top failed: " + i);
+                    }
+                });
                 break;
             case MessageListAdapter.Action.RECALL:
                 this.recallMessage(message);

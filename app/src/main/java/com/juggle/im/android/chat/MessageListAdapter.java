@@ -206,7 +206,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 vContent.setText(MessageUtils.getMessageSummary(itemView.getContext(), replyMsg));
                 if (replyMsg.getContent() instanceof ImageMessage) {
                     ivImage.setVisibility(VISIBLE);
-                    AvatarUtils.loadImage(ivImage, ((ImageMessage)replyMsg.getContent()).getThumbnailUrl());
+                    AvatarUtils.loadImage(ivImage, ((ImageMessage) replyMsg.getContent()).getThumbnailUrl());
                 } else {
                     ivImage.setVisibility(GONE);
                 }
@@ -303,6 +303,8 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             View vReply = popupView.findViewById(R.id.action_reply);
             View vDelete = popupView.findViewById(R.id.action_delete);
             View vRecall = popupView.findViewById(R.id.action_recall);
+            View vTop = popupView.findViewById(R.id.action_top);
+
             if (ui.getMessage().getDirection() == Message.MessageDirection.SEND) {
                 if (ui.getMessage().getState() != Message.MessageState.SENT) {
                     vRecall.setVisibility(GONE);
@@ -314,6 +316,10 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             vCopy.setOnClickListener(v -> {
                 pw.dismiss();
                 actionListener.onMessageAction(ui, Action.COPY);
+            });
+            vTop.setOnClickListener(v -> {
+                pw.dismiss();
+                actionListener.onMessageAction(ui, Action.TOP);
             });
             vForward.setOnClickListener(v -> {
                 pw.dismiss();

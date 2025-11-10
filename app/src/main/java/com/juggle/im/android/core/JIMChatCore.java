@@ -9,6 +9,7 @@ import com.juggle.im.android.chat.message.FriendNotifyMessage;
 import com.juggle.im.android.chat.message.GroupNotifyMessage;
 import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
+import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.interfaces.IConnectionManager;
@@ -171,7 +172,7 @@ public class JIMChatCore {
 
             @Override
             public void onMessageRecall(Message message) {
-
+                Log.d(tag, "onMessageRecall: " + message.toString());
             }
 
             @Override
@@ -186,22 +187,24 @@ public class JIMChatCore {
 
             @Override
             public void onMessageUpdate(Message message) {
+                Log.d(tag, "onMessageUpdate: " + message.toString());
 
             }
 
             @Override
             public void onMessageReactionAdd(Conversation conversation, MessageReaction messageReaction) {
-
+                Log.d(tag, "onMessageReactionAdd: " + messageReaction.toString());
             }
 
             @Override
             public void onMessageReactionRemove(Conversation conversation, MessageReaction messageReaction) {
-
+                Log.d(tag, "onMessageReactionRemove: " + messageReaction.toString());
             }
 
             @Override
             public void onMessageSetTop(Message message, UserInfo userInfo, boolean b) {
-
+                Log.d(tag, "onMessageSetTop: " + message.toString());
+                EventBus.getDefault().post(new MessageTopEvent(message, userInfo, b));
             }
         });
 

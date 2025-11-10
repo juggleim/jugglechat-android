@@ -1,5 +1,8 @@
 package com.juggle.im.android.chat;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -19,8 +22,10 @@ import com.juggle.im.android.chat.utils.FileUtils;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
+import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.MergeMessagePreviewUnit;
@@ -122,7 +127,7 @@ public class ConversationActivity extends AppCompatActivity {
             MessageListFragment frag = MessageListFragment.newInstance(conversationId, isGroup);
             getSupportFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.fragment_container, frag)
+                    .replace(R.id.fragment_messages_container, frag)
                     .commit();
         }
 
@@ -183,12 +188,37 @@ public class ConversationActivity extends AppCompatActivity {
                 public void onKeyboardVisibilityChanged(boolean visible) {
                     if (visible) {
                         // when keyboard shows, ensure messages are scrolled to bottom so input isn't obscured
-                        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
                         if (frag != null) frag.scrollToBottomIfNeeded();
                     }
                 }
             });
         }
+
+        // 消息置顶
+        JIM.getInstance().getMessageManager().getTopMessage(conversation, new IMessageManager.IGetTopMessageCallback() {
+            @Override
+            public void onSuccess(Message message, UserInfo userInfo, long l) {
+                handleTopMessage(message, userInfo);
+            }
+
+            @Override
+            public void onError(int i) {
+                Log.i("TAG", "getTopMessage error: " + i);
+            }
+        });
+    }
+
+    private void handleTopMessage(Message message, UserInfo userInfo) {
+        View vPin = findViewById(R.id.layout_pin_message);
+        TextView tvContent = vPin.findViewById(R.id.pin_message_content);
+        tvContent.setText(userInfo.getUserName() + "：" + MessageUtils.getMessageSummary(ConversationActivity.this, message));
+        View del = findViewById(R.id.button_del_pin);
+        del.setOnClickListener( v -> {
+            JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, false, null);
+            vPin.setVisibility(GONE);
+        });
+        vPin.setVisibility(VISIBLE);
     }
 
     @Override
@@ -206,7 +236,7 @@ public class ConversationActivity extends AppCompatActivity {
             boolean targetIsGroup = data.getBooleanExtra(ForwardConversationListActivity.EXTRA_IS_GROUP, false);
             String mode = data.getStringExtra(ForwardConversationListActivity.EXTRA_FORWARD_MODE);
             // obtain the message list fragment to get selected messages
-            MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+            MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
             if (frag != null) {
                 List<UiMessage> selected = frag.getSelectedMessagesForForward();
                 Conversation targetConv = new Conversation(
@@ -239,13 +269,25 @@ public class ConversationActivity extends AppCompatActivity {
 
     private void scrollMessageListIfNeed(boolean panelVisible) {
         // find the fragment and notify it when a panel opens so it can scroll to bottom if needed
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         if (frag != null) {
             if (panelVisible) {
                 frag.scrollToBottomIfNeeded();
             } else {
                 // nothing special for hide currently
             }
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void MessageTopEvent(MessageTopEvent event) {
+        if (!event.getMessage().getConversation().getConversationId().equals(conversationId)) {
+            return;
+        }
+        if (event.isTop()) {
+            handleTopMessage(event.getMessage(), event.getUserInfo());
+        } else {
+            findViewById(R.id.layout_pin_message).setVisibility(GONE);
         }
     }
 
@@ -257,7 +299,7 @@ public class ConversationActivity extends AppCompatActivity {
         }
         Message m = event.getMessage();
         if (m == null || !MessageUtils.shownInMessageList(m)) return;
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         if (frag != null) {
             frag.onNewMessage(m);
         }
@@ -273,7 +315,7 @@ public class ConversationActivity extends AppCompatActivity {
         if (!event.getConversation().getConversationId().equals(conversationId)) {
             return;
         }
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         if (frag != null) {
             List<Message> messages = JIM.getInstance().getMessageManager().getMessagesByMessageIds(event.getMessageIds());
             frag.onUpdateMessage(messages);
@@ -318,7 +360,7 @@ public class ConversationActivity extends AppCompatActivity {
         IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
             @Override
             public void onSuccess(Message message) {
-                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
                 if (frag != null) {
                     frag.onUpdateMessage(Arrays.asList(message));
                 }
@@ -327,21 +369,21 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onError(Message message, int errorCode) {
                 Log.i("TAG", "send message error: " + errorCode);
-                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
                 if (frag != null) {
                     frag.onUpdateMessage(Arrays.asList(message));
                 }
             }
         };
         Message message = JIM.getInstance().getMessageManager().sendMessage(text, conversation, options, callback);
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         if (frag != null) {
             frag.onNewMessage(message);
         }
     }
 
     private void sendImageMessage(ImageMessage image, MessageOptions options, Conversation conversation) {
-        final MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        final MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override
             public void onProgress(int progress, Message message) {
@@ -373,7 +415,7 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     public void sendFileMessage(FileMessage fileMessage, Conversation conversation) {
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override
             public void onProgress(int progress, Message message) {
@@ -406,7 +448,7 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void sendVoiceMessage(VoiceMessage voice, Conversation conversation) {
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override
             public void onProgress(int progress, Message message) {
@@ -449,7 +491,7 @@ public class ConversationActivity extends AppCompatActivity {
             msgIds.add(forwardMsg.get(i).getMessageId());
         }
         MergeMessage merge = new MergeMessage(targetName, conversation, msgIds, previewList);
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         Message m = JIM.getInstance().getMessageManager().sendMessage(merge, targetConv, new IMessageManager.ISendMessageCallback() {
             @Override
             public void onSuccess(Message message) {

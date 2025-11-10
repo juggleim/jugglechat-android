@@ -39,7 +39,7 @@
     </LinearLayout>
 
     <FrameLayout
-        android:id="@+id/fragment_container"
+        android:id="@+id/fragment_messages_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="48dp"
@@ -61,7 +61,7 @@
         android:orientation="vertical">
 
         <FrameLayout
-            android:id="@+id/overlay_container"
+            android:id="@+id/overlay_forward_container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="#80000000"
@@ -112,4 +112,12 @@
 
     </FrameLayout>
 
+    <include
+        android:id="@+id/layout_pin_message"
+        layout="@layout/layout_pin_message"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:layout_height="30dp"
+        android:layout_marginTop="50dp"
+        android:layout_gravity="top"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
