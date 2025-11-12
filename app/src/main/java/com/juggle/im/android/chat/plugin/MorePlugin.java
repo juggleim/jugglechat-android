@@ -7,18 +7,24 @@ import android.content.Intent;
 /**
  * Interface describing a "more" panel plugin item.
  */
-public interface MorePlugin {
-    String getId();
-    int getIconRes();
-    String getLabel(Context ctx);
+public abstract class MorePlugin {
+    protected Callback callback = null;
+
+    public MorePlugin(Callback callback) {
+        this.callback = callback;
+    }
+
+    public abstract String getId();
+    public abstract int getIconRes();
+    public abstract String getLabel(Context ctx);
     /**
      * Secondary action id (optional) e.g. "camera", "gallery"; can be null.
      */
-    String getAction();
+    public abstract String getAction();
     /**
      * Permissions required to execute this plugin (may be null or empty).
      */
-    String[] getRequiredPermissions();
+    public abstract String[] getRequiredPermissions();
 
     /**
      * Called when the plugin is clicked. If permissions are missing, the plugin
@@ -26,9 +32,9 @@ public interface MorePlugin {
      * call callback.onPluginAction(...) to notify the host to perform the real work
      * (e.g. start camera intent).
      */
-    void onClick(Activity activity, Callback callback);
+    public abstract void onClick(Activity activity);
 
-    interface Callback {
+    public interface Callback {
         /**
          * Notify host that plugin wants to perform an action.
          * @param pluginId plugin id
@@ -48,17 +54,17 @@ public interface MorePlugin {
          * Register that a plugin started an activity for result with requestCode so the host
          * can forward the result back to the plugin.
          */
-        void registerForActivityResult(int requestCode, String pluginId);
+        void registerForActivityResult(int requestCode, MorePlugin plugin);
     }
 
     /**
      * Give the plugin the host Activity so it can call startActivityForResult.
      */
-    void setHostActivity(Activity activity);
+    public abstract void setHostActivity(Activity activity);
 
     /**
      * Called by the host when an activity result for a requestCode registered by this plugin arrives.
      * Return true if the plugin consumed the result.
      */
-    boolean onActivityResult(int requestCode, int resultCode, Intent data);
+    public abstract boolean onActivityResult(int requestCode, int resultCode, Intent data);
 }

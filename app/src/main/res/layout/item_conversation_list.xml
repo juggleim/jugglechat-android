@@ -40,7 +40,7 @@
             android:text="99"
             android:textSize="10sp"
             android:textColor="@color/white"
-            android:background="@drawable/unread_circle_bg" />
+            android:background="@drawable/red_circle_bg" />
 
     </FrameLayout>
 

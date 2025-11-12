@@ -69,6 +69,7 @@ public class JIMChatCore {
         if (context == null || serverList == null || appKey == null) {
             throw new IllegalArgumentException("Invalid arguments");
         }
+        JIM.getInstance().getCallManager().initZegoEngine(1881186044, context);
         JIM.getInstance().setServerUrls(serverList);
         JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();
         JLogConfig.Builder logBuilder = new JLogConfig.Builder(context);

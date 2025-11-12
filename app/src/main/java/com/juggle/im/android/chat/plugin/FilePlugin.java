@@ -6,12 +6,15 @@ import android.content.Intent;
 
 import com.juggle.im.android.R;
 
-public class FilePlugin implements MorePlugin {
+public class FilePlugin extends MorePlugin {
     public static final String ID = "file";
     public static final int REQ = 2002;
 
     private Activity host;
-    private MorePlugin.Callback callback;
+
+    public FilePlugin(Callback callback) {
+        super(callback);
+    }
 
     @Override
     public String getId() { return ID; }
@@ -29,8 +32,7 @@ public class FilePlugin implements MorePlugin {
     public String[] getRequiredPermissions() { return new String[]{}; }
 
     @Override
-    public void onClick(Activity activity, Callback callback) {
-        this.callback = callback;
+    public void onClick(Activity activity) {
         Activity act = activity != null ? activity : host;
         if (act == null) {
             callback.onPluginAction(getId(), getAction(), null);
@@ -39,7 +41,7 @@ public class FilePlugin implements MorePlugin {
         Intent pickFile = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         pickFile.addCategory(Intent.CATEGORY_OPENABLE);
         pickFile.setType("*/*");
-        callback.registerForActivityResult(REQ, getId());
+        callback.registerForActivityResult(REQ, this);
         act.startActivityForResult(Intent.createChooser(pickFile, "Select file"), REQ);
     }
 

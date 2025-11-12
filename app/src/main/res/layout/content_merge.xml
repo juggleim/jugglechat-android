@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:padding="3dp">
+    android:padding="6dp">
 
     <TextView
         android:id="@+id/merge_msg_title"

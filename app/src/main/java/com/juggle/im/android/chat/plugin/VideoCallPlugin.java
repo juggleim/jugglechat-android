@@ -1,16 +1,17 @@
 package com.juggle.im.android.chat.plugin;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 
 import com.juggle.im.android.R;
 
-public class LocationPlugin extends MorePlugin {
-    public static final String ID = "location";
+public class VideoCallPlugin extends MorePlugin {
+    public static final String ID = "call_video";
     public static final int REQ = 2003;
 
-    public LocationPlugin(Callback callback) {
+    public VideoCallPlugin(Callback callback) {
         super(callback);
     }
 
@@ -21,12 +22,12 @@ public class LocationPlugin extends MorePlugin {
 
     @Override
     public int getIconRes() {
-        return R.drawable.ic_input_location;
+        return R.drawable.ic_video;
     }
 
     @Override
     public String getLabel(Context ctx) {
-        return ctx.getString(R.string.location);
+        return ctx.getString(R.string.call_video);
     }
 
     @Override
@@ -36,7 +37,7 @@ public class LocationPlugin extends MorePlugin {
 
     @Override
     public String[] getRequiredPermissions() {
-        return new String[]{};
+        return new String[]{Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO};
     }
 
     @Override

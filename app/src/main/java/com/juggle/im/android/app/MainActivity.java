@@ -3,6 +3,7 @@ package com.juggle.im.android.app;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -22,20 +23,27 @@ import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
 import com.juggle.im.android.chat.MyProfileFragment;
 import com.juggle.im.android.chat.MessageListFragment;
+import com.juggle.im.android.chat.call.SingleCallActivity;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.ConversationUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.model.UiConversation;
+import com.juggle.im.call.CallConst;
+import com.juggle.im.call.ICallManager;
+import com.juggle.im.call.ICallSession;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.GroupInfo;
 import com.juggle.im.model.UserInfo;
+import com.qiniu.android.utils.StringUtils;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,6 +99,28 @@ public class MainActivity extends AppCompatActivity {
             });
         }
         EventBus.getDefault().register(this);
+
+        JIM.getInstance().getCallManager().addReceiveListener("CallReceive", iCallSession -> {
+            Log.d("MainActivity", "receive call: " + iCallSession.getCallId());
+            Intent it = new Intent(this, SingleCallActivity.class);
+            it.putExtra("inviter", iCallSession.getInviter());
+            it.putExtra("is_video_call", iCallSession.getMediaType() == CallConst.CallMediaType.VIDEO);
+            it.putExtra("user_id", JIM.getInstance().getCurrentUserId());
+            it.putExtra("direction", "incoming");
+            it.putExtra("callId", iCallSession.getCallId());
+            String extra = iCallSession.getExtra();
+            if (!StringUtils.isBlank(extra)) {
+                try {
+                    JSONObject jsonObject = new JSONObject(extra);
+                    String conversationId = jsonObject.getString("conversationId");
+                    it.putExtra("conversationId", conversationId);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            startActivity(it);
+        });
     }
 
 
@@ -134,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
                 if (myProfileFragment != null) tx.hide(myProfileFragment);
                 tx.show(friendsFragment);
                 tvTitle.setText("联系人");
-                btnMore.setVisibility(GONE);
                 break;
             case 3:
                 if (myProfileFragment == null) {
@@ -162,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
         Log.i("MainActivity", event.getConnectionStatus().toString() + "," + event.getCode());
         View v = findViewById(R.id.connect_status);
         if (event.getConnectionStatus() == JIMConst.ConnectionStatus.FAILURE
-        || event.getConnectionStatus() == JIMConst.ConnectionStatus.DISCONNECTED) {
+                || event.getConnectionStatus() == JIMConst.ConnectionStatus.DISCONNECTED) {
             v.setVisibility(VISIBLE);
             TextView vStatus = findViewById(R.id.connect_text_view);
             if (event.getCode() == 11011) {

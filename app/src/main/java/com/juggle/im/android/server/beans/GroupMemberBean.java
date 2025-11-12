@@ -2,6 +2,8 @@ package com.juggle.im.android.server.beans;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Objects;
+
 public class GroupMemberBean {
     @SerializedName("user_id")
     private String userId;
@@ -49,5 +51,17 @@ public class GroupMemberBean {
 
     public void setUserId(String userId) {
         this.userId = userId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof GroupMemberBean)) return false;
+        GroupMemberBean that = (GroupMemberBean) o;
+        return Objects.equals(userId, that.userId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(userId);
     }
 }

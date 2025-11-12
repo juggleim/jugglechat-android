@@ -18,6 +18,13 @@ import android.widget.TextView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 
+import com.juggle.im.android.chat.call.BaseCallActivity;
+import com.juggle.im.android.chat.call.SingleCallActivity;
+import com.juggle.im.android.chat.plugin.CameraPlugin;
+import com.juggle.im.android.chat.plugin.FilePlugin;
+import com.juggle.im.android.chat.plugin.ImagePlugin;
+import com.juggle.im.android.chat.plugin.VideoCallPlugin;
+import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.android.chat.utils.FileUtils;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
@@ -25,7 +32,6 @@ import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.model.UiMessage;
-import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.MergeMessagePreviewUnit;
@@ -47,6 +53,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public class ConversationActivity extends AppCompatActivity {
@@ -171,12 +178,7 @@ public class ConversationActivity extends AppCompatActivity {
 
                 @Override
                 public void onMoreAction(String pluginId, String action, Object data) {
-                    // plugin may directly return data (Uri/Bitmap) or just notify action; delegate to handler
-                    if (data != null) {
-                        handlePluginResult(pluginId, action, data);
-                    } else {
-                        // no data yet: plugin most likely requested permissions and will retry, or will call again when done
-                    }
+                    handlePluginResult(pluginId, action, data);
                 }
 
                 @Override
@@ -214,7 +216,7 @@ public class ConversationActivity extends AppCompatActivity {
         TextView tvContent = vPin.findViewById(R.id.pin_message_content);
         tvContent.setText(userInfo.getUserName() + "：" + MessageUtils.getMessageSummary(ConversationActivity.this, message));
         View del = findViewById(R.id.button_del_pin);
-        del.setOnClickListener( v -> {
+        del.setOnClickListener(v -> {
             JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, false, null);
             vPin.setVisibility(GONE);
         });
@@ -323,7 +325,7 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void handlePluginResult(String pluginId, String action, Object data) {
-        if (pluginId.equals("photo")) {
+        if (pluginId.equals(ImagePlugin.ID)) {
             for (String url : (ArrayList<String>) data) {
                 ImageMessage image = new ImageMessage();
                 image.setHeight(600);
@@ -333,7 +335,7 @@ public class ConversationActivity extends AppCompatActivity {
                 image.setThumbnailLocalPath(fileUrl);
                 sendImageMessage(image, null, conversation);
             }
-        } else if (pluginId.equals("camera")) {
+        } else if (pluginId.equals(CameraPlugin.ID)) {
             ImageMessage image = new ImageMessage();
             image.setHeight(600);
             image.setWidth(800);
@@ -344,7 +346,7 @@ public class ConversationActivity extends AppCompatActivity {
         } else if (pluginId.equals("location")) {
         } else if (pluginId.equals("contact")) {
 
-        } else if (pluginId.equals("file")) {
+        } else if (pluginId.equals(FilePlugin.ID)) {
             String fileUrl = FileUtils.convertContentUriToFile(this, data.toString());
             FileMessage fileMessage = new FileMessage();
             File f = new File(fileUrl);
@@ -353,6 +355,15 @@ public class ConversationActivity extends AppCompatActivity {
             long size = f.length();
             fileMessage.setSize(size);
             sendFileMessage(fileMessage, conversation);
+        } else if (pluginId.equals(VoiceCallPlugin.ID) || pluginId.equals(VideoCallPlugin.ID)) {
+            ArrayList<String> ids = new ArrayList<>();
+            ids.add(conversationId);
+            BaseCallActivity.startSingleCall(this,
+                    conversationId,
+                    isGroup,
+                    pluginId.equals(VideoCallPlugin.ID),
+                    JIM.getInstance().getCurrentUserId(),
+                    ids, "outgoing");
         }
     }
 
@@ -512,7 +523,7 @@ public class ConversationActivity extends AppCompatActivity {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
-            inputBar.onRequestPermissionsResult(requestCode, permissions, grantResults);
+            inputBar.onPluginRequestPermissionsResult(requestCode, permissions, grantResults);
         }
     }
 

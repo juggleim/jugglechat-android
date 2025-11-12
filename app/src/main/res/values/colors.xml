@@ -8,6 +8,8 @@
     <color name="notification_red">#EF4444</color>
     <color name="btn_gray">#E6E6E6</color>
     <color name="gray">#BFBEBE</color>
+    <color name="call_gray">#717182</color>"
+    <color name="call_green">#09B83E</color>"
     <color name="primary_300">#2196F3</color>
     <color name="secondary_300">#64B5F6</color>
     <color name="background">#FFFFFF</color>

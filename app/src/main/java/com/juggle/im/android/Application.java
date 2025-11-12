@@ -12,5 +12,6 @@ public class Application extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         JIMChatCore.getInstance().init(this, Collections.singletonList(ConfigUtils.imServer), ConfigUtils.appKey);
+
     }
 }

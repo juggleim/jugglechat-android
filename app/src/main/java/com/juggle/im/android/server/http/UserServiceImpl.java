@@ -5,6 +5,8 @@ import android.os.Looper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.juggle.im.android.server.beans.GroupBean;
+import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.HttpResult;
 import com.juggle.im.android.server.beans.LoginRequest;
 import com.juggle.im.android.server.beans.LoginResult;
@@ -97,5 +99,12 @@ public class UserServiceImpl extends BaseService implements UserService {
     @Override
     public void createGroup(Object body, ApiCallback<com.juggle.im.android.server.beans.CreateGroupResult> callback) {
         enqueueJson("/jim/groups/add", body, com.juggle.im.android.server.beans.CreateGroupResult.class, callback);
+    }
+
+    @Override
+    public void getGroupInfo(String groupId, ApiCallback<GroupDetailBean> callback) {
+        StringBuilder sb = new StringBuilder("/jim/groups/info?group_id");
+        sb.append("=").append(groupId);
+        enqueueGet(sb.toString(), GroupDetailBean.class, callback);
     }
 }

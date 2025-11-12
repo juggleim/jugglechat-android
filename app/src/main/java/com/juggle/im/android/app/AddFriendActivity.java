@@ -201,4 +201,10 @@ public class AddFriendActivity extends AppCompatActivity {
             ItemHolder(@NonNull View v) { super(v); ivAvatar = v.findViewById(R.id.iv_avatar); tvName = v.findViewById(R.id.tv_name); }
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        hideKeyboard();
+    }
 }

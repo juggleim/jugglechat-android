@@ -6,12 +6,15 @@ import android.content.Intent;
 
 import com.juggle.im.android.R;
 
-public class ContactPlugin implements MorePlugin {
+public class ContactPlugin extends MorePlugin {
     public static final String ID = "contact";
     public static final int REQ = 2004;
 
     private Activity host;
-    private MorePlugin.Callback callback;
+
+    public ContactPlugin(Callback callback) {
+        super(callback);
+    }
 
     @Override
     public String getId() { return ID; }
@@ -29,15 +32,14 @@ public class ContactPlugin implements MorePlugin {
     public String[] getRequiredPermissions() { return new String[]{}; }
 
     @Override
-    public void onClick(Activity activity, Callback callback) {
-        this.callback = callback;
+    public void onClick(Activity activity) {
         Activity act = activity != null ? activity : host;
         if (act == null) {
             callback.onPluginAction(getId(), getAction(), null);
             return;
         }
         Intent pickContact = new Intent(Intent.ACTION_PICK, android.provider.ContactsContract.Contacts.CONTENT_URI);
-        callback.registerForActivityResult(REQ, getId());
+        callback.registerForActivityResult(REQ, this);
         act.startActivityForResult(pickContact, REQ);
     }
 

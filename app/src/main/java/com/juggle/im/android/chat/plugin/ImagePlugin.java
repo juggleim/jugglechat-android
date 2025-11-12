@@ -12,12 +12,15 @@ import com.juggle.im.android.chat.AlbumActivity;
 
 import java.util.ArrayList;
 
-public class ImagePlugin implements MorePlugin {
+public class ImagePlugin extends MorePlugin {
     public static final String ID = "photo";
     public static final int REQ = 2001;
 
     private Activity host;
-    private MorePlugin.Callback callback;
+
+    public ImagePlugin(Callback callback) {
+        super(callback);
+    }
 
     @Override
     public String getId() { return ID; }
@@ -29,7 +32,7 @@ public class ImagePlugin implements MorePlugin {
     public String getLabel(Context ctx) { return ctx.getString(R.string.photo); }
 
     @Override
-    public String getAction() { return "photo"; }
+    public String getAction() { return ID; }
 
     @Override
     public String[] getRequiredPermissions() {
@@ -41,8 +44,7 @@ public class ImagePlugin implements MorePlugin {
     }
 
     @Override
-    public void onClick(Activity activity, Callback callback) {
-        this.callback = callback;
+    public void onClick(Activity activity) {
         Activity act = activity != null ? activity : host;
         if (act == null) return;
         // check permissions
@@ -58,7 +60,7 @@ public class ImagePlugin implements MorePlugin {
         }
         // Intent pick = new Intent(Intent.ACTION_PICK);
         // pick.setType("image/*");
-        callback.registerForActivityResult(REQ, getId());
+        callback.registerForActivityResult(REQ, this);
         // act.startActivityForResult(Intent.createChooser(pick, "Select image"), REQ);
         Intent intent = new Intent(act, AlbumActivity.class);
         act.startActivityForResult(intent, REQ);

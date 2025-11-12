@@ -39,4 +39,6 @@ public interface UserService {
      * Create a group with name, portrait and members. POST /jim/groups/add
      */
     void createGroup(Object body, ApiCallback<com.juggle.im.android.server.beans.CreateGroupResult> callback);
+
+    public void getGroupInfo(String groupId, ApiCallback<GroupDetailBean> callback);
 }

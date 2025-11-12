@@ -16,9 +16,14 @@ import androidx.core.content.ContextCompat;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.FileUtils;
 
-public class CameraPlugin implements MorePlugin {
+public class CameraPlugin extends MorePlugin {
     public static final String ID = "camera";
     public static final int REQ = 2005;
+
+    public CameraPlugin(Callback callback) {
+        super(callback);
+    }
+
     @Override
     public String getId() { return ID; }
 
@@ -29,14 +34,13 @@ public class CameraPlugin implements MorePlugin {
     public String getLabel(Context ctx) { return ctx.getString(R.string.camera); }
 
     @Override
-    public String getAction() { return "camera"; }
+    public String getAction() { return ID; }
 
     @Override
     public String[] getRequiredPermissions() { return new String[]{Manifest.permission.CAMERA}; }
 
     private Activity host;
-    private MorePlugin.Callback callback;
-    // keep the uri of the photo we asked the camera to write to
+
     private Uri photoUri;
 
     @Override
@@ -45,8 +49,7 @@ public class CameraPlugin implements MorePlugin {
     }
 
     @Override
-    public void onClick(Activity activity, Callback callback) {
-        this.callback = callback;
+    public void onClick(Activity activity) {
         Activity act = activity != null ? activity : host;
         if (act == null) return;
         boolean ok = true;
@@ -66,7 +69,7 @@ public class CameraPlugin implements MorePlugin {
             String packageName = resolveInfo.activityInfo.packageName;
             act.grantUriPermission(packageName, photoURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
         }
-        callback.registerForActivityResult(REQ, getId());
+        callback.registerForActivityResult(REQ, this);
         act.startActivityForResult(take, REQ);
     }
 

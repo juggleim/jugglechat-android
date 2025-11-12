@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -33,12 +32,11 @@ import androidx.annotation.Nullable;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
-import com.juggle.im.android.chat.plugin.ContactPlugin;
 import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
-import com.juggle.im.android.chat.plugin.LocationPlugin;
 import com.juggle.im.android.chat.plugin.MorePlugin;
-import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.android.chat.plugin.VideoCallPlugin;
+import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.model.MessageMentionInfo;
 
 import androidx.core.app.ActivityCompat;
@@ -61,10 +59,8 @@ public class ChatInputActionBar extends LinearLayout {
     private FrameLayout inputArea;
     private View morePanel;
     // plugin system
-    private List<com.juggle.im.android.chat.plugin.MorePlugin> morePlugins = new ArrayList<>();
-    private Map<Integer, String> pendingPluginRequest = new HashMap<>(); // requestCode -> pluginId
-    private Map<Integer, String> pendingPluginAction = new HashMap<>(); // requestCode -> action
-    private Map<Integer, com.juggle.im.android.chat.plugin.MorePlugin> activityResultHandlers = new HashMap<>();
+    private List<MorePlugin> morePlugins = new ArrayList<>();
+    private Map<Integer, MorePlugin> activityResultHandlers = new HashMap<>();
 
     private enum InputMode {TEXT, VOICE, EMOJI, MORE}
 
@@ -140,13 +136,28 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     private void initDefaultPlugins() {
-        // register built-in plugins; can be extended later
+        MorePlugin.Callback cb = new MorePlugin.Callback() {
+            @Override
+            public void onPluginAction(String pid, String act, Object data) {
+                if (listener != null) listener.onMoreAction(pid, act, data);
+            }
+
+            @Override
+            public void requestPermissions(String[] permissions, int reqCode, String pid) {
+                ActivityCompat.requestPermissions((Activity) getContext(), permissions, reqCode);
+            }
+
+            @Override
+            public void registerForActivityResult(int requestCode, MorePlugin plugin) {
+                activityResultHandlers.put(requestCode, plugin);
+            }
+        };
         morePlugins.clear();
-        morePlugins.add(new ImagePlugin());
-        morePlugins.add(new CameraPlugin());
-        morePlugins.add(new FilePlugin());
-//        morePlugins.add(new LocationPlugin());
-//        morePlugins.add(new ContactPlugin());
+        morePlugins.add(new ImagePlugin(cb));
+        morePlugins.add(new CameraPlugin(cb));
+        morePlugins.add(new FilePlugin(cb));
+        morePlugins.add(new VoiceCallPlugin(cb));
+        morePlugins.add(new VideoCallPlugin(cb));
     }
 
     private void setupListeners() {
@@ -222,7 +233,7 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void handleSendMessage(String text) {
         View referView = findViewById(R.id.refer_msg_container);
-        listener.onSend(text, referView.getVisibility() == VISIBLE ? (String)referView.getTag(): null, null);
+        listener.onSend(text, referView.getVisibility() == VISIBLE ? (String) referView.getTag() : null, null);
         editMessage.setText("");
         referView.setVisibility(GONE);
     }
@@ -619,26 +630,7 @@ public class ChatInputActionBar extends LinearLayout {
                         Activity act = null;
                         if (getContext() instanceof Activity) act = (Activity) getContext();
                         final Activity activity = act;
-                        pplugin.onClick(activity, new com.juggle.im.android.chat.plugin.MorePlugin.Callback() {
-                            @Override
-                            public void onPluginAction(String pluginId, String action, Object data) {
-                                if (listener != null) listener.onMoreAction(pluginId, action, data);
-                            }
-
-                            @Override
-                            public void requestPermissions(String[] permissions, int requestCode, String pluginId) {
-                                pendingPluginRequest.put(requestCode, pluginId);
-                                pendingPluginAction.put(requestCode, pplugin.getAction());
-                                if (activity != null) {
-                                    ActivityCompat.requestPermissions(activity, permissions, requestCode);
-                                }
-                            }
-
-                            @Override
-                            public void registerForActivityResult(int requestCode, String pluginId) {
-                                activityResultHandlers.put(requestCode, pplugin);
-                            }
-                        });
+                        pplugin.onClick(activity);
                     });
                     grid.addView(item, glp);
                 }
@@ -681,74 +673,8 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     // To be called from Activity's onRequestPermissionsResult
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        // first handle legacy audio request
-        if (requestCode == REQUEST_RECORD_AUDIO) {
-            boolean ok = true;
-            for (int r : grantResults) ok = ok && (r == PackageManager.PERMISSION_GRANTED);
-            if (ok && pendingVoiceStart) {
-                if (listener != null) listener.onStartVoiceRecord();
-            } else {
-                if (listener != null) listener.onCancelVoiceRecord();
-            }
-            pendingVoiceStart = false;
-            return;
-        }
+    public void onPluginRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
-        // plugin-based permission handling
-        boolean granted = true;
-        for (int r : grantResults) granted = granted && (r == PackageManager.PERMISSION_GRANTED);
-        if (pendingPluginRequest.containsKey(requestCode)) {
-            String pluginId = pendingPluginRequest.remove(requestCode);
-            String action = pendingPluginAction.remove(requestCode);
-            // find plugin instance
-            MorePlugin target = morePlugins.stream().filter(mp -> mp.getId().equals(pluginId)).findFirst().orElse(null);
-            if (granted) {
-                if (target != null) {
-                    // recreate a callback similar to the one used on click so plugin can start its activity
-                    final com.juggle.im.android.chat.plugin.MorePlugin.Callback cb = new com.juggle.im.android.chat.plugin.MorePlugin.Callback() {
-                        @Override
-                        public void onPluginAction(String pid, String act, Object data) {
-                            if (listener != null) listener.onMoreAction(pid, act, data);
-                        }
-
-                        @Override
-                        public void requestPermissions(String[] permissions, int reqCode, String pid) {
-                            pendingPluginRequest.put(reqCode, pid);
-                            pendingPluginAction.put(reqCode, target.getAction());
-                            if (getContext() instanceof Activity) {
-                                ActivityCompat.requestPermissions((Activity) getContext(), permissions, reqCode);
-                            }
-                        }
-
-                        @Override
-                        public void registerForActivityResult(int requestCode, String pluginId) {
-                            activityResultHandlers.put(requestCode, target);
-                        }
-                    };
-                    try {
-                        target.onClick(getContext() instanceof Activity ? (Activity) getContext() : null, cb);
-                    } catch (Exception ignored) {
-                    }
-                } else {
-                    if (listener != null && action != null)
-                        listener.onMoreAction(pluginId, action, null);
-                }
-            } else {
-                // permission denied - no-op
-            }
-            return;
-        }
-
-        // fallback: old camera request handling
-        if (requestCode == REQUEST_CAMERA) {
-            boolean ok = true;
-            for (int r : grantResults) ok = ok && (r == PackageManager.PERMISSION_GRANTED);
-            if (ok && pendingMoreAction != null) {
-                if (listener != null) listener.onMoreAction(null, pendingMoreAction, null);
-            }
-            pendingMoreAction = null;
-        }
     }
 
     /**
@@ -758,11 +684,7 @@ public class ChatInputActionBar extends LinearLayout {
     public boolean onActivityResult(int requestCode, int resultCode, Intent data) {
         com.juggle.im.android.chat.plugin.MorePlugin plugin = activityResultHandlers.get(requestCode);
         if (plugin != null) {
-            boolean handled = false;
-            try {
-                handled = plugin.onActivityResult(requestCode, resultCode, data);
-            } catch (Exception ignored) {
-            }
+            boolean handled = plugin.onActivityResult(requestCode, resultCode, data);
             if (handled) {
                 activityResultHandlers.remove(requestCode);
             }

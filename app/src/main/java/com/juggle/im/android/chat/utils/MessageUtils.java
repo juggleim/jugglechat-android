@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
+import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.message.FriendNotifyMessage;
 import com.juggle.im.android.chat.message.GroupNotifyMessage;
@@ -21,11 +22,13 @@ import com.juggle.im.android.chat.provider.StatusMessageView;
 import com.juggle.im.android.chat.provider.TextMessageView;
 import com.juggle.im.android.chat.provider.VoiceMessageView;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.call.model.CallFinishNotifyMessage;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.android.model.LocalMessage;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.MessageContent;
 
+import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.FileMessage;
 import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.MergeMessage;
@@ -60,6 +63,7 @@ public class MessageUtils {
         registerMessageView(GroupNotifyMessage.class, StatusMessageView.class);
         registerMessageView(InsertTimeStatusMessage.class, StatusMessageView.class);
         registerMessageView(RecallInfoMessage.class, StatusMessageView.class);
+        registerMessageView(CallFinishNotifyMessage.class, StatusMessageView.class);
 
         registerMessageViewTemplate(StatusMessageView.class, R.layout.item_message_notification);
     }
@@ -224,6 +228,8 @@ public class MessageUtils {
             return String.format(content, view.getResources().getString(R.string.history_messages));
         } else if (message.getContent() instanceof RecallInfoMessage) {
             return  senderName + String.format(content, view.getResources().getString(R.string.msg_recall));
+        } else if (message.getContent() instanceof CallFinishNotifyMessage) {
+            return "通话结束";
         }
         // notify message
         else if (message.getContentType().equals("jgd:grpntf")) {
@@ -233,6 +239,26 @@ public class MessageUtils {
         } else {
             Log.i("formater", "conv msg: " + message.getConversation().getConversationType().toString());
             return String.format(content, message.getContent().toString());
+        }
+    }
+
+    public static String getStatusMessageSummary(MessageContent t, UserInfo userInfo) {
+        if (t instanceof GroupNotifyMessage) {
+            GroupNotifyMessage msg = (GroupNotifyMessage) t;
+            return msg.description();
+        } else if (t instanceof FriendNotifyMessage) {
+            FriendNotifyMessage msg = (FriendNotifyMessage) t;
+            return (userInfo != null ? userInfo.getUserName() : "") + msg.description() + "你为好友";
+        } else if (t instanceof InsertTimeStatusMessage) {
+            InsertTimeStatusMessage msg = (InsertTimeStatusMessage) t;
+            return msg.description();
+        } else if (t instanceof RecallInfoMessage) {
+            return (userInfo != null ? userInfo.getUserName() : "") + "撤回了一条消息";
+        } else if (t instanceof CallFinishNotifyMessage) {
+            return "通话结束";
+        }
+        else {
+            return "不支持的消息类型";
         }
     }
 

@@ -37,7 +37,7 @@
                 android:visibility="gone"
                 android:textSize="10sp"
                 android:textColor="@color/white"
-                android:background="@drawable/unread_circle_bg" />
+                android:background="@drawable/red_circle_bg" />
 
             <LinearLayout
                 android:layout_width="match_parent"
