@@ -1,5 +1,7 @@
 package com.juggle.im.android.chat.call;
 
+import static android.view.View.VISIBLE;
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -42,6 +44,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     protected UserInfo inviterUserInfo;
     protected List<String> targetUserIds;
     protected boolean isVideoCall;
+    protected boolean connected = false;
 
     public static void startSingleCall(Context context, String conversationId, boolean isGroup,
                                  boolean isVideoCall, String inviter,
@@ -88,7 +91,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
             callSession = JIM.getInstance().getCallManager().getCallSession(callId);
             callSession.addListener(this.getClass().getSimpleName(), listener);
         } else {
-            startSingleCall(targetUserIds.get(0), isVideoCall ? CallConst.CallMediaType.VIDEO : CallConst.CallMediaType.VOICE);
+            onStartCall();
         }
     }
 
@@ -119,11 +122,17 @@ public abstract class BaseCallActivity extends AppCompatActivity {
         }
     }
 
+    protected abstract void onStartCall();
+
     public void onCallConnected() {
+        connected = true;
+    }
+
+    public void onRemoteUserJoin(List<String> remoteUserIds) {
 
     }
 
-    public void onRemoteUserJoin(String remoteUserId) {
+    public void onRemoteUserLeave(List<String> remoteUserIds) {
 
     }
 
@@ -157,12 +166,13 @@ public abstract class BaseCallActivity extends AppCompatActivity {
         @Override
         public void onUsersConnect(List<String> list) {
             Log.d("CallActivity", "onUsersConnect: " + list);
-            onRemoteUserJoin(list.get(0));
+            onRemoteUserJoin(list);
         }
 
         @Override
         public void onUsersLeave(List<String> list) {
             Log.d("CallActivity", "onUsersLeave: " + list);
+            onRemoteUserLeave(list);
         }
 
         @Override
@@ -245,6 +255,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     }
 
     protected void setupTimer(TextView tvCallTimer) {
+        tvCallTimer.setVisibility(VISIBLE);
         startTime = System.currentTimeMillis();
         timerRunnable = new Runnable() {
             @Override
@@ -276,6 +287,9 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (callSession != null) {
+            callSession.removeListener(this.getClass().getSimpleName());
+        }
         stopAndRelease();
         stopTimer();
     }

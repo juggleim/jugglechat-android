@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.call.BaseCallActivity;
-import com.juggle.im.android.chat.call.MultiCallActivity;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupMemberBean;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -105,6 +104,7 @@ public class SelectCallMemberActivity extends AppCompatActivity {
                             .collect(Collectors.toList()),
                     "outgoing"
             );
+            finish();
         });
     }
 

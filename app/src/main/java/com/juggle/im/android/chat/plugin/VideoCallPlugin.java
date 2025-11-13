@@ -4,6 +4,9 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+
+import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
 
@@ -42,6 +45,19 @@ public class VideoCallPlugin extends MorePlugin {
 
     @Override
     public void onClick(Activity activity) {
+        Activity act = activity != null ? activity : host;
+        if (act == null) return;
+        // check permissions
+        boolean ok = true;
+        for (String p : getRequiredPermissions()) {
+            if (ContextCompat.checkSelfPermission(act, p) != PackageManager.PERMISSION_GRANTED) {
+                ok = false; break;
+            }
+        }
+        if (!ok) {
+            callback.requestPermissions(getRequiredPermissions(), REQ, getId());
+            return;
+        }
         callback.onPluginAction(getId(), getAction(), null);
     }
 

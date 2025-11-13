@@ -69,6 +69,7 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/btn_mic"
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="60dp"
@@ -76,19 +77,19 @@
                 android:orientation="vertical">
 
                 <ImageView
-                    android:id="@+id/btn_mute"
+                    android:id="@+id/iv_mic"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:background="@drawable/gray_circle_bg"
                     android:padding="16dp"
                     android:scaleType="fitCenter"
-                    android:src="@drawable/ic_silent" />
+                    android:src="@drawable/ic_mic_on" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="静音"
+                    android:text="麦克风"
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
             </LinearLayout>
@@ -101,18 +102,19 @@
                 android:orientation="vertical">
 
                 <ImageView
+                    android:id="@+id/iv_speaker"
                     android:layout_width="64dp"
                     android:layout_height="64dp"
-                    android:background="@drawable/primary_circle_bg"
+                    android:background="@drawable/gray_circle_bg"
                     android:padding="16dp"
                     android:scaleType="fitCenter"
-                    android:src="@drawable/ic_hands_free" />
+                    android:src="@drawable/ic_speaker_on" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="免提"
+                    android:text="扬声器"
                     android:textColor="@android:color/white"
                     android:textSize="14sp" />
             </LinearLayout>

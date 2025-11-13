@@ -16,7 +16,6 @@ public class ImagePlugin extends MorePlugin {
     public static final String ID = "photo";
     public static final int REQ = 2001;
 
-    private Activity host;
 
     public ImagePlugin(Callback callback) {
         super(callback);
@@ -64,11 +63,6 @@ public class ImagePlugin extends MorePlugin {
         // act.startActivityForResult(Intent.createChooser(pick, "Select image"), REQ);
         Intent intent = new Intent(act, AlbumActivity.class);
         act.startActivityForResult(intent, REQ);
-    }
-
-    @Override
-    public void setHostActivity(Activity activity) {
-        this.host = activity;
     }
 
     @Override

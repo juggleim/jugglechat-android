@@ -9,9 +9,14 @@ import android.content.Intent;
  */
 public abstract class MorePlugin {
     protected Callback callback = null;
+    protected Activity host;
 
     public MorePlugin(Callback callback) {
         this.callback = callback;
+    }
+
+    public void setHostActivity(Activity activity) {
+        this.host = activity;
     }
 
     public abstract String getId();
@@ -56,11 +61,6 @@ public abstract class MorePlugin {
          */
         void registerForActivityResult(int requestCode, MorePlugin plugin);
     }
-
-    /**
-     * Give the plugin the host Activity so it can call startActivityForResult.
-     */
-    public abstract void setHostActivity(Activity activity);
 
     /**
      * Called by the host when an activity result for a requestCode registered by this plugin arrives.

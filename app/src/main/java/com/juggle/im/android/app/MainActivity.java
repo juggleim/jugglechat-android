@@ -23,6 +23,7 @@ import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
 import com.juggle.im.android.chat.MyProfileFragment;
 import com.juggle.im.android.chat.MessageListFragment;
+import com.juggle.im.android.chat.call.MultiCallActivity;
 import com.juggle.im.android.chat.call.SingleCallActivity;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.event.ConnectStatusEvent;
@@ -47,6 +48,7 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
     private ConversationListFragment conversationListFragment;
@@ -102,10 +104,16 @@ public class MainActivity extends AppCompatActivity {
 
         JIM.getInstance().getCallManager().addReceiveListener("CallReceive", iCallSession -> {
             Log.d("MainActivity", "receive call: " + iCallSession.getCallId());
-            Intent it = new Intent(this, SingleCallActivity.class);
+            int members = iCallSession.getMembers().size();
+            Intent it = members == 2
+                    ? new Intent(this, SingleCallActivity.class)
+                    : new Intent(this, MultiCallActivity.class);
             it.putExtra("inviter", iCallSession.getInviter());
             it.putExtra("is_video_call", iCallSession.getMediaType() == CallConst.CallMediaType.VIDEO);
-            it.putExtra("user_id", JIM.getInstance().getCurrentUserId());
+            List<String> ids = iCallSession.getMembers().stream()
+                    .map(member -> member.getUserInfo().getUserId())
+                    .collect(Collectors.toList());
+            it.putStringArrayListExtra("targetUserIds", (ArrayList<String>)ids);
             it.putExtra("direction", "incoming");
             it.putExtra("callId", iCallSession.getCallId());
             String extra = iCallSession.getExtra();

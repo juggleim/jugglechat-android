@@ -3,7 +3,6 @@ package com.juggle.im.android.chat.call;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.SurfaceView;
 import android.view.View;
@@ -17,15 +16,17 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.call.CallConst;
 
+import java.util.List;
+
 public class SingleCallActivity extends BaseCallActivity {
     private SurfaceView localSurfaceView;
     private SurfaceView remoteSurfaceView;
 
-    private boolean connected = false;
     private ViewGroup connectedContainer, userBar;
     private View btnAccept, btnHangup;
     private TextView tvTime;
-
+    private ImageView btnMicMute, btnSpeakerMute;
+    private boolean isSpeakerMute, isMicMute;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -37,10 +38,13 @@ public class SingleCallActivity extends BaseCallActivity {
         TextView tvNickname = findViewById(R.id.tv_nickname);
         btnAccept = findViewById(R.id.btn_accept);
         btnHangup = findViewById(R.id.btn_hangup);
+        btnMicMute = findViewById(R.id.iv_mic);
+        btnSpeakerMute = findViewById(R.id.iv_speaker);
         connectedContainer = findViewById(R.id.connected_container);
         tvTime = findViewById(R.id.tv_call_duration);
         userBar = findViewById(R.id.call_user_bar);
-
+        btnMicMute.setOnClickListener(v -> toggleMic());
+        btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
         if (inviterUserInfo != null) {
             tvNickname.setText(inviterUserInfo.getUserName());
             AvatarUtils.loadAvatar(imgAvatar, inviterUserInfo.getPortrait(), inviterUserInfo.getUserName());
@@ -77,6 +81,11 @@ public class SingleCallActivity extends BaseCallActivity {
         });
     }
 
+    @Override
+    protected void onStartCall() {
+        startSingleCall(targetUserIds.get(0), isVideoCall ? CallConst.CallMediaType.VIDEO : CallConst.CallMediaType.VOICE);
+    }
+
     private void setupView() {
         if (!connected) {
             connectedContainer.setVisibility(GONE);
@@ -96,15 +105,14 @@ public class SingleCallActivity extends BaseCallActivity {
     @Override
     public void onCallConnected() {
         super.onCallConnected();
-        connected = true;
         setupView();
     }
 
     @Override
-    public void onRemoteUserJoin(String remoteUserId) {
+    public void onRemoteUserJoin(List<String> remoteUserIds) {
         if (isVideoCall) {
             remoteSurfaceView.setVisibility(VISIBLE);
-            callSession.setVideoView(remoteUserId, remoteSurfaceView);
+            callSession.setVideoView(remoteUserIds.get(0), remoteSurfaceView);
             userBar.setVisibility(GONE);
         }
     }
@@ -112,5 +120,17 @@ public class SingleCallActivity extends BaseCallActivity {
     @Override
     public void onCallFinished(CallConst.CallFinishReason callFinishReason) {
         super.onCallFinished(callFinishReason);
+    }
+
+    private void toggleMic() {
+        callSession.muteMicrophone(!isMicMute);
+        isMicMute = !isMicMute;
+        btnMicMute.setImageResource(isMicMute ? R.drawable.ic_mic_off : R.drawable.ic_mic_on);
+    }
+
+    private void toggleSpeaker() {
+        callSession.muteSpeaker(!isSpeakerMute);
+        isSpeakerMute = !isSpeakerMute;
+        btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.ic_speaker_off : R.drawable.ic_speaker_on);
     }
 }

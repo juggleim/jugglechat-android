@@ -70,6 +70,7 @@ dependencies {
     // pinch-to-zoom image view for preview (fallback alternative)
     // pinch-to-zoom image view for preview
     implementation 'com.github.chrisbanes:PhotoView:2.3.0'
+    implementation 'androidx.gridlayout:gridlayout:1.0.0'
 
     // 网络
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
