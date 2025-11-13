@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.juggle.im.android.server.beans.GroupBean;
 import com.juggle.im.android.server.beans.GroupDetailBean;
+import com.juggle.im.android.server.beans.GroupListData;
 import com.juggle.im.android.server.beans.HttpResult;
 import com.juggle.im.android.server.beans.LoginRequest;
 import com.juggle.im.android.server.beans.LoginResult;
@@ -20,6 +21,7 @@ import com.juggle.im.android.server.beans.FriendsListData;
 import com.qiniu.android.utils.MD5;
 
 import java.io.IOException;
+import java.util.List;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -87,6 +89,21 @@ public class UserServiceImpl extends BaseService implements UserService {
         java.util.Map<String, String> body = new java.util.HashMap<>();
         body.put("keyword", keyword == null ? "" : keyword);
         enqueueJson("/jim/users/search", (Object) body, FriendsListData.class, callback);
+    }
+
+    @Override
+    public void searchFriends(String keyword, ApiCallback<FriendsListData> callback) {
+        java.util.Map<String, String> body = new java.util.HashMap<>();
+        body.put("key", keyword == null ? "" : keyword);
+        enqueueJson("/jim/friends/search", (Object) body, FriendsListData.class, callback);
+    }
+
+    @Override
+    public void searchMyGroups(String keyword, int limit, ApiCallback<GroupListData> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("keyword", keyword == null ? "" : keyword);
+        body.put("limit", limit);
+        enqueueJson("/jim/groups/mygroups/search", body, GroupListData.class, callback);
     }
 
     @Override

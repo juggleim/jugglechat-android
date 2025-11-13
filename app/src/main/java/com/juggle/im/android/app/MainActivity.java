@@ -23,7 +23,7 @@ import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
 import com.juggle.im.android.chat.MyProfileFragment;
-import com.juggle.im.android.chat.MessageListFragment;
+import com.juggle.im.android.chat.SearchActivity;
 import com.juggle.im.android.chat.call.MultiCallActivity;
 import com.juggle.im.android.chat.call.SingleCallActivity;
 import com.juggle.im.android.core.JIMChatCore;
@@ -33,8 +33,6 @@ import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.call.CallConst;
-import com.juggle.im.call.ICallManager;
-import com.juggle.im.call.ICallSession;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.GroupInfo;
@@ -58,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
     private MyProfileFragment myProfileFragment;
     private BottomNavView bottomNav;
     private TextView tvTitle;
-    private ImageView btnMore;
+    private ImageView btnMore, btnSearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -104,6 +102,11 @@ public class MainActivity extends AppCompatActivity {
                 popup.show();
             });
         }
+        btnSearch = findViewById(R.id.btn_search);
+        btnSearch.setOnClickListener( v -> {
+            startActivity(new Intent(MainActivity.this, SearchActivity.class));
+        });
+
         EventBus.getDefault().register(this);
 
         JIM.getInstance().getCallManager().addReceiveListener("CallReceive", iCallSession -> {

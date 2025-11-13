@@ -2,6 +2,8 @@ package com.juggle.im.android.server.http;
 
 import com.juggle.im.android.server.beans.*;
 
+import java.util.List;
+
 /**
  * Plain interface for user-related API operations. Implementations should perform
  * network requests and invoke the provided {@link ApiCallback} on the UI thread.
@@ -29,6 +31,10 @@ public interface UserService {
      * Search users by keyword. POST /jim/users/search {keyword: "..."}
      */
     void searchUsers(String keyword, ApiCallback<FriendsListData> callback);
+
+    void searchFriends(String keyword, ApiCallback<FriendsListData> callback);
+
+    void searchMyGroups(String keyword, int limit, ApiCallback<GroupListData> callback);
 
     /**
      * Apply (send friend request) to a user. POST /jim/friends/apply {friend_id: "..."}
