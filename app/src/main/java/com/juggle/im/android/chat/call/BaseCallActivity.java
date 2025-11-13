@@ -4,6 +4,7 @@ import static android.view.View.VISIBLE;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -15,9 +16,11 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -45,10 +48,17 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     protected List<String> targetUserIds;
     protected boolean isVideoCall;
     protected boolean connected = false;
+    private static final int REQUEST_CODE_CALL_PERMISSION = 1001;
 
     public static void startSingleCall(Context context, String conversationId, boolean isGroup,
                                  boolean isVideoCall, String inviter,
                                  ArrayList<String> targetUserIds, String direction) {
+        // 检查所需权限
+        if (!checkCallPermissions(context, isVideoCall)) {
+            // 如果没有权限，可以考虑通知调用方或者给出提示
+            return;
+        }
+        
         Intent it = isGroup ? new Intent(context, SelectCallMemberActivity.class) : new Intent(context, SingleCallActivity.class);
         it.putExtra("conversationId", conversationId);
         it.putExtra("is_video_call", isVideoCall);
@@ -62,6 +72,12 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     public static void startMultiCall(Context context, String conversationId,
                                        boolean isVideoCall, String inviter,
                                        List<String> targetUserIds, String direction) {
+        // 检查所需权限
+        if (!checkCallPermissions(context, isVideoCall)) {
+            // 如果没有权限，可以考虑通知调用方或者给出提示
+            return;
+        }
+        
         Intent it = new Intent(context, MultiCallActivity.class);
         it.putExtra("conversationId", conversationId);
         it.putExtra("is_video_call", isVideoCall);
@@ -70,6 +86,18 @@ public abstract class BaseCallActivity extends AppCompatActivity {
         it.putExtra("GROUP_ID", conversationId);
         it.putStringArrayListExtra("targetUserIds", (ArrayList<String>) targetUserIds);
         context.startActivity(it);
+    }
+
+    // 检查通话所需的权限
+    private static boolean checkCallPermissions(Context context, boolean isVideoCall) {
+        if (isVideoCall) {
+            // 视频通话需要相机和录音权限
+            return ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED &&
+                    ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        } else {
+            // 音频通话只需要录音权限
+            return ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        }
     }
 
     @Override
@@ -120,6 +148,8 @@ public abstract class BaseCallActivity extends AppCompatActivity {
                 window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             }
         }
+        // 设置底部导航栏颜色
+        window.setNavigationBarColor(getColor(R.color.call_gb));
     }
 
     protected abstract void onStartCall();
@@ -197,15 +227,81 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     };
 
     protected void startSingleCall(String userId, CallConst.CallMediaType mediaType) {
+        // 检查权限
+        if (!checkCurrentCallPermissions()) {
+            requestCallPermissions();
+            return;
+        }
+        
         callSession = JIM.getInstance().getCallManager().startSingleCall(userId, mediaType, listener);
     }
 
     protected void startMultiCall(List<String> userIdList, CallConst.CallMediaType mediaType) {
+        // 检查权限
+        if (!checkCurrentCallPermissions()) {
+            requestCallPermissions();
+            return;
+        }
+        
         callSession = JIM.getInstance().getCallManager().startMultiCall(userIdList, mediaType, listener);
     }
 
     protected void acceptCall() {
+        // 检查权限
+        if (!checkCurrentCallPermissions()) {
+            requestCallPermissions();
+            return;
+        }
+        
         if (callSession != null) callSession.accept();
+    }
+
+    // 检查当前通话所需权限
+    private boolean checkCurrentCallPermissions() {
+        return checkCallPermissions(this, isVideoCall);
+    }
+
+    // 请求通话所需权限
+    private void requestCallPermissions() {
+        if (isVideoCall) {
+            // 视频通话需要相机和录音权限
+            requestPermissions(new String[]{
+                    android.Manifest.permission.CAMERA,
+                    android.Manifest.permission.RECORD_AUDIO
+            }, REQUEST_CODE_CALL_PERMISSION);
+        } else {
+            // 音频通话只需要录音权限
+            requestPermissions(new String[]{
+                    android.Manifest.permission.RECORD_AUDIO
+            }, REQUEST_CODE_CALL_PERMISSION);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == REQUEST_CODE_CALL_PERMISSION) {
+            boolean allGranted = true;
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+                    break;
+                }
+            }
+            
+            if (allGranted) {
+                // 权限已授予，继续执行原来的操作
+                if (callSession == null && direction.equals("outgoing")) {
+                    // 这是发起呼叫的情况
+                    onStartCall();
+                } else if (callSession != null && direction.equals("incoming")) {
+                    // 这是接受呼叫的情况
+                    callSession.accept();
+                }
+            } else {
+                finish(); // 简单处理，直接结束Activity
+            }
+        }
     }
 
     protected void hangupCall() {

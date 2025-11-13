@@ -21,4 +21,5 @@
     <color name="bg_light">#f6f8f7</color>
     <color name="input_bg_light">#f6f8f7</color>
     <color name="connect_warning">#FBC6C4</color>
+    <color name="call_gb">#2C2C2E</color>
 </resources>

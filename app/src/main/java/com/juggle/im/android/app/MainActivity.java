@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -65,6 +66,9 @@ public class MainActivity extends AppCompatActivity {
         JIMChatCore.getInstance().connect(ConfigUtils.imToken);
 
         setContentView(R.layout.activity_main);
+
+        Window window = getWindow();
+        window.setNavigationBarColor(getColor(R.color.white));
 
         // add conversation fragment as default
         FragmentManager fm = getSupportFragmentManager();

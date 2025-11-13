@@ -1,6 +1,9 @@
 package com.juggle.im.android.chat;
 
+import static com.juggle.im.android.app.LoginActivity.PREFS_NAME;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -178,6 +181,10 @@ public class MyProfileFragment extends Fragment {
         ConfigUtils.imToken = null;
         ConfigUtils.myName = null;
         ConfigUtils.myAvatarUrl = null;
+        SharedPreferences prefs = getActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.clear();
+        editor.apply();
 
         // 跳转到登录页面
         Intent intent = new Intent(getActivity(), LoginActivity.class);

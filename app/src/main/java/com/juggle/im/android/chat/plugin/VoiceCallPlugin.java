@@ -25,7 +25,7 @@ public class VoiceCallPlugin extends MorePlugin {
 
     @Override
     public int getIconRes() {
-        return R.drawable.ic_voice;
+        return R.drawable.ic_voice_call;
     }
 
     @Override

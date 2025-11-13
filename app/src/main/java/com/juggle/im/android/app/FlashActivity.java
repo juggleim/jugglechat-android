@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Window;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -38,6 +39,8 @@ public class FlashActivity extends AppCompatActivity {
             // 延迟跳转到登录页面
             new Handler().postDelayed(this::goToLogin, 1500);
         }
+        Window window = getWindow();
+        window.setNavigationBarColor(getColor(R.color.primary_bg_light));
     }
 
     private boolean hasValidToken() {

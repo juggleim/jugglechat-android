@@ -32,7 +32,7 @@ public class LoginActivity extends AppCompatActivity {
     private CardView loginFormContainer;
     private ProgressBar loginProgress;
 
-    private static final String PREFS_NAME = "login_prefs";
+    public static final String PREFS_NAME = "login_prefs";
     public static final String KEY_APP_TOKEN = "app_token";
     public static final String KEY_IM_TOKEN = "im_token";
     private static final String KEY_EXPIRE_TIME = "expire_time";

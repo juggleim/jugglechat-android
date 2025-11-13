@@ -45,6 +45,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_width="match_parent"
+        android:visibility="gone"
         android:gravity="center_vertical"
         android:background="@color/connect_warning"
         android:layout_height="34dp"
@@ -79,6 +80,7 @@
 
     <com.juggle.im.android.app.BottomNavView
         android:id="@+id/footer_nav"
+        android:background="@color/white"
         android:layout_width="0dp"
         android:layout_height="60dp"
         app:layout_constraintBottom_toBottomOf="parent"

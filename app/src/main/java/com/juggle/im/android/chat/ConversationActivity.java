@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -209,6 +210,9 @@ public class ConversationActivity extends AppCompatActivity {
                 Log.i("TAG", "getTopMessage error: " + i);
             }
         });
+
+        Window window = getWindow();
+        window.setNavigationBarColor(getColor(R.color.input_bg_light));
     }
 
     private void handleTopMessage(Message message, UserInfo userInfo) {
