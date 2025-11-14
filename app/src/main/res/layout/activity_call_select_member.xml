@@ -50,40 +50,10 @@
     </RelativeLayout>
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_selected_members"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/rl_title"
-        android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp" />
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="@color/divider" />
-    <EditText
-        android:visibility="gone"
-        android:id="@+id/et_search"
-        android:layout_width="match_parent"
-        android:layout_height="40dp"
-        android:layout_below="@+id/rv_selected_members"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:background="@drawable/rectangle_white_bg"
-        android:drawableStart="@android:drawable/ic_menu_search"
-        android:drawablePadding="8dp"
-        android:hint="搜索"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:textColor="@android:color/white"
-        android:textColorHint="#888888" />
-
-    <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_members"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@+id/et_search"
+        android:layout_below="@+id/rl_title"
         android:layout_marginTop="8dp" />
 
 </RelativeLayout>

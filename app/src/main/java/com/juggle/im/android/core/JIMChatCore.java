@@ -69,6 +69,9 @@ public class JIMChatCore {
         if (context == null || serverList == null || appKey == null) {
             throw new IllegalArgumentException("Invalid arguments");
         }
+        /**
+         * 需要申请对应自己音视频 ID，这个仅仅用来测试
+         */
         JIM.getInstance().getCallManager().initZegoEngine(1881186044, context);
         JIM.getInstance().setServerUrls(serverList);
         JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();

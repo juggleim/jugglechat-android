@@ -53,9 +53,7 @@ public class CreateGroupActivity extends AppCompatActivity implements FriendsFra
         friendsFragment = new FriendsFragment();
         friendsFragment.setSelectionMode(true);
         friendsFragment.setSelectionListener(this);
-        FrameLayout container = findViewById(R.id.friends_container);
         getSupportFragmentManager().beginTransaction().replace(R.id.friends_container, friendsFragment).commitAllowingStateLoss();
-
         btnCreate.setOnClickListener(v -> doCreateGroup());
     }
 

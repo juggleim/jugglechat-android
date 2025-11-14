@@ -3,6 +3,11 @@ package com.juggle.im.android.chat.call;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import static com.juggle.im.android.chat.SelectCallMemberActivity.DISABLE_MEMBERS;
+import static com.juggle.im.android.chat.SelectCallMemberActivity.GROUP_ID;
+import static com.juggle.im.android.chat.SelectCallMemberActivity.SELECTED_MEMBERS;
+
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
@@ -16,6 +21,7 @@ import androidx.gridlayout.widget.GridLayout;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.SelectCallMemberActivity;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.call.CallConst;
 import com.juggle.im.model.UserInfo;
@@ -24,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MultiCallActivity extends BaseCallActivity {
+    private static final int REQUEST_SELECT_MEMBERS = 1000;
     private GridLayout gridParticipants;
     private TextView tvCallTime;
     private View btnHangup, btnInvite, btnAccept;
@@ -43,12 +50,31 @@ public class MultiCallActivity extends BaseCallActivity {
         btnSpeakerMute = findViewById(R.id.iv_speaker);
         btnAccept = findViewById(R.id.btn_accept);
 
-        btnInvite.setOnClickListener(v -> inviteUsers(getUserIds()));
+        btnInvite.setOnClickListener(v -> {
+            Intent it = new Intent(this, SelectCallMemberActivity.class);
+            it.putExtra("is_video_call", isVideoCall);
+            it.putExtra(GROUP_ID, conversationId);
+            it.putStringArrayListExtra(DISABLE_MEMBERS, targetUserIds);
+            startActivityForResult(it, REQUEST_SELECT_MEMBERS);
+        });
         btnHangup.setOnClickListener(v -> hangupCall());
         btnMicMute.setOnClickListener(v -> toggleMic());
         btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
+        updateParticipantView(targetUserIds);
+        // preview self video
+        View view = gridParticipants.findViewWithTag(JIM.getInstance().getCurrentUserId());
+        SurfaceView surfaceView = view.findViewById(R.id.surface_view);
+        callSession.startPreview(surfaceView);
 
-        for (String userId : targetUserIds) {
+        btnAccept.setOnClickListener(v -> {
+            acceptCall();
+        });
+        setupView();
+    }
+
+    private void updateParticipantView(ArrayList<String> users) {
+        if (users == null || users.isEmpty()) return;
+        for (String userId : users) {
             UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(userId);
             if (isVideoCall) {
                 addVideoParticipant(userInfo);
@@ -56,21 +82,20 @@ public class MultiCallActivity extends BaseCallActivity {
                 addAudioParticipant(userInfo);
             }
         }
-        btnAccept.setOnClickListener(v -> {
-            acceptCall();
-        });
-        setupView();
     }
+
     @Override
     protected void onStartCall() {
         startMultiCall(targetUserIds, isVideoCall ? CallConst.CallMediaType.VIDEO : CallConst.CallMediaType.VOICE);
     }
+
     @Override
     public void onCallConnected() {
         super.onCallConnected();
         setupTimer(tvCallTime);
         setupView();
     }
+
     private void setupView() {
         if (!connected) {
             if (direction.equals("outgoing")) {
@@ -85,12 +110,21 @@ public class MultiCallActivity extends BaseCallActivity {
 
     @Override
     public void onRemoteUserJoin(List<String> remoteUserIds) {
-        if (isVideoCall) {
-            for (String userId : remoteUserIds) {
-                SurfaceView surfaceView = gridParticipants.findViewWithTag(userId);
-                callSession.setVideoView(userId, surfaceView);
+        ArrayList<String> newUsers = new ArrayList<>();
+        for (String userId : remoteUserIds) {
+            if (!targetUserIds.contains(userId)) {
+                targetUserIds.add(userId);
+                newUsers.add(userId);
+            }
+            if (isVideoCall) {
+                View view = gridParticipants.findViewWithTag(userId);
+                SurfaceView surfaceView = view.findViewById(R.id.surface_view);
+                if (surfaceView != null) {
+                    callSession.setVideoView(userId, surfaceView);
+                }
             }
         }
+        updateParticipantView(newUsers);
     }
 
     @Override
@@ -99,10 +133,14 @@ public class MultiCallActivity extends BaseCallActivity {
         for (String userId : remoteUserIds) {
             View u = gridParticipants.findViewWithTag(userId);
             gridParticipants.removeView(u);
+            targetUserIds.remove(userId);
         }
+
         if (gridParticipants.getChildCount() <= 1) {
             Toast.makeText(this, "通话结束", Toast.LENGTH_SHORT).show();
             finish();
+        } else {
+            gridParticipants.requestLayout();
         }
     }
 
@@ -129,8 +167,7 @@ public class MultiCallActivity extends BaseCallActivity {
 
     private void addVideoParticipant(UserInfo userInfo) {
         View videoViewLayout = LayoutInflater.from(this).inflate(R.layout.item_video_participant, gridParticipants, false);
-        SurfaceView surfaceView = videoViewLayout.findViewById(R.id.surface_view);
-        surfaceView.setTag(userInfo.getUserId());
+        videoViewLayout.setTag(userInfo.getUserId());
         TextView tvName = videoViewLayout.findViewById(R.id.tv_name);
         tvName.setText(userInfo.getUserName());
 
@@ -158,5 +195,16 @@ public class MultiCallActivity extends BaseCallActivity {
         callSession.muteSpeaker(!isSpeakerMute);
         isSpeakerMute = !isSpeakerMute;
         btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.ic_speaker_off : R.drawable.ic_speaker_on);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SELECT_MEMBERS && resultCode == RESULT_OK) {
+            ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
+            updateParticipantView(newIds);
+            targetUserIds.addAll(newIds);
+            callSession.inviteUsers(newIds);
+        }
     }
 }

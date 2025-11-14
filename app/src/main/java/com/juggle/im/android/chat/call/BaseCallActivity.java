@@ -45,7 +45,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     private Runnable timerRunnable;
     protected String direction;
     protected UserInfo inviterUserInfo;
-    protected List<String> targetUserIds;
+    protected ArrayList<String> targetUserIds;
     protected boolean isVideoCall;
     protected boolean connected = false;
     private static final int REQUEST_CODE_CALL_PERMISSION = 1001;

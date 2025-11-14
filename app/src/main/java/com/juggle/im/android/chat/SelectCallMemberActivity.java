@@ -1,8 +1,8 @@
 package com.juggle.im.android.chat;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -13,109 +13,126 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.call.BaseCallActivity;
+import com.juggle.im.android.chat.component.UserListAdapter;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupMemberBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
-import com.juggle.im.android.server.http.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class SelectCallMemberActivity extends AppCompatActivity {
+    public final static String GROUP_ID = "GROUP_ID";
+    public final static String SELECTED_MEMBERS = "SELECTED_MEMBERS";
 
-    private RecyclerView rvMembers, rvSelectedMembers;
-    private SelectCallMemberAdapter selectCallMemberAdapter;
-    private SelectedCallMemberAdapter selectedCallMemberAdapter;
-    private List<GroupMemberBean> memberList = new ArrayList<>();
-    private List<GroupMemberBean> selectedMemberList = new ArrayList<>();
+    public final static String DISABLE_MEMBERS = "DISABLE_MEMBERS";
+
+
+    private RecyclerView rvMembers;
+    private UserListAdapter selectCallMemberAdapter;
+    private List<UserListAdapter.UserInfoObj> selectedMemberList = new ArrayList<>();
     private TextView btnConfirm;
     private TextView tvCancel;
-    private EditText etSearch;
-    private UserService userService;
+    private List<String> disabledMembers = new ArrayList<>();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call_select_member);
 
-        userService = ServiceManager.getUserService();
-
         initViews();
         setupRecyclerViews();
         setClickListeners();
 
-        String groupId = getIntent().getStringExtra("GROUP_ID");
+        String groupId = getIntent().getStringExtra(GROUP_ID);
         if (groupId != null) {
             fetchGroupMembers(groupId);
         }
+        disabledMembers = getIntent().getStringArrayListExtra(DISABLE_MEMBERS);
     }
 
     private void initViews() {
         rvMembers = findViewById(R.id.rv_members);
-        rvSelectedMembers = findViewById(R.id.rv_selected_members);
         btnConfirm = findViewById(R.id.btn_confirm);
         tvCancel = findViewById(R.id.tv_cancel);
-        etSearch = findViewById(R.id.et_search);
     }
 
     private void setupRecyclerViews() {
         // Member List
         rvMembers.setLayoutManager(new LinearLayoutManager(this));
-        selectCallMemberAdapter = new SelectCallMemberAdapter(this, memberList, (member, isSelected) -> {
-            if (isSelected) {
-                selectedMemberList.add(member);
-                selectedCallMemberAdapter.notifyItemInserted(selectedMemberList.size() - 1);
-            } else {
-                int idx = -1;
-                for (int i = 0; i < selectedMemberList.size(); i++) {
-                    if (selectedMemberList.get(i).getUserId().equals(member.getUserId())) {
-                        idx = i;
-                        break;
+        selectCallMemberAdapter = new UserListAdapter();
+        rvMembers.setAdapter(selectCallMemberAdapter);
+        selectCallMemberAdapter.setSelectionMode(true);
+        selectCallMemberAdapter.setSelectionChangedListener(new UserListAdapter.OnSelectionChanged() {
+            @Override
+            public void onSelectionChanged(UserListAdapter.UserInfoObj member, boolean selected) {
+                if (selected) {
+                    selectedMemberList.add(member);
+                } else {
+                    int idx = -1;
+                    for (int i = 0; i < selectedMemberList.size(); i++) {
+                        if (selectedMemberList.get(i).getUserId().equals(member.getUserId())) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    if (idx >= 0) {
+                        selectedMemberList.remove(idx);
                     }
                 }
-                if (idx >= 0) {
-                    selectedMemberList.remove(idx);
-                    selectedCallMemberAdapter.notifyItemRemoved(idx);
-                }
+                updateConfirmButton();
             }
-            updateConfirmButton();
         });
-        rvMembers.setAdapter(selectCallMemberAdapter);
-
-        // Selected Member List
-        rvSelectedMembers.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        selectedCallMemberAdapter = new SelectedCallMemberAdapter(this, selectedMemberList);
-        rvSelectedMembers.setAdapter(selectedCallMemberAdapter);
     }
 
     private void setClickListeners() {
         tvCancel.setOnClickListener(v -> finish());
         btnConfirm.setOnClickListener(v -> {
             String conversationId = getIntent().getStringExtra("conversationId");
-            BaseCallActivity.startMultiCall(
-                    this,
-                    conversationId,
-                    true,
-                    JIM.getInstance().getCurrentUserId(),
-                    selectedMemberList.stream()
-                            .map(member -> member.getUserId())
-                            .collect(Collectors.toList()),
-                    "outgoing"
-            );
-            finish();
+            if (disabledMembers != null && disabledMembers.size() > 0) {
+                Intent resultIntent = new Intent();
+                resultIntent.putStringArrayListExtra(SELECTED_MEMBERS, selectedMemberList.stream()
+                        .map(member -> member.getUserId())
+                        .collect(Collectors.toCollection(ArrayList::new)));
+                setResult(Activity.RESULT_OK, resultIntent);
+                finish();
+            } else {
+                BaseCallActivity.startMultiCall(
+                        this,
+                        conversationId,
+                        getIntent().getBooleanExtra("is_video_call", false),
+                        JIM.getInstance().getCurrentUserId(),
+                        selectedMemberList.stream()
+                                .map(member -> member.getUserId())
+                                .collect(Collectors.toList()),
+                        "outgoing"
+                );
+                finish();
+            }
         });
     }
 
     private void fetchGroupMembers(String groupId) {
-        userService.getGroupInfo(groupId, new ApiCallback<GroupDetailBean>() {
+        ServiceManager.getUserService().getGroupInfo(groupId, new ApiCallback<GroupDetailBean>() {
             @Override
             public void onSuccess(GroupDetailBean data) {
                 if (data != null && data.getMembers() != null) {
-                    memberList.clear();
-                    memberList.addAll(data.getMembers());
-                    selectCallMemberAdapter.notifyDataSetChanged();
+                    List<UserListAdapter.UserInfoObj> memberList = new ArrayList<>();
+                    for (GroupMemberBean member : data.getMembers()) {
+                        boolean disabled = false;
+                        if (disabledMembers != null && disabledMembers.contains(member.getUserId())) {
+                            disabled = true;
+                        }
+                        UserListAdapter.UserInfoObj userInfoObj = new UserListAdapter.UserInfoObj(disabled);
+                        userInfoObj.setUserId(member.getUserId());
+                        userInfoObj.setName(member.getNickname());
+                        userInfoObj.setAvatar(member.getAvatar());
+                        memberList.add(userInfoObj);
+                    }
+                    selectCallMemberAdapter.setItems(memberList);
                 }
             }
 
