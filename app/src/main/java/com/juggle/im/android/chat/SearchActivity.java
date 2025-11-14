@@ -1,8 +1,11 @@
 package com.juggle.im.android.chat;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import androidx.annotation.Nullable;
@@ -18,11 +21,12 @@ import com.juggle.im.android.server.beans.GroupBean;
 import com.juggle.im.android.server.beans.GroupListData;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
-import com.juggle.im.interfaces.IMessageManager;
+import com.juggle.im.model.Conversation;
 import com.juggle.im.model.MessageQueryOptions;
 import com.juggle.im.model.SearchConversationsResult;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SearchActivity extends AppCompatActivity {
@@ -31,6 +35,11 @@ public class SearchActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private SearchAdapter adapter;
 
+    public final static String SEARCH_TYPE_CONTACT = "联系人";
+    public final static String SEARCH_TYPE_GROUP = "群聊";
+    public final static String SEARCH_TYPE_RECORD = "聊天记录";
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +47,7 @@ public class SearchActivity extends AppCompatActivity {
 
         searchInput = findViewById(R.id.search_input);
         recyclerView = findViewById(R.id.search_recycler_view);
+        findViewById(R.id.iv_back).setOnClickListener(v -> finish());
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new SearchAdapter();
@@ -66,16 +76,16 @@ public class SearchActivity extends AppCompatActivity {
         }
         adapter.clear();
         // 搜索好友
-        ServiceManager.getUserService().searchFriends(keyword, new ApiCallback<FriendsListData>() {
+        ServiceManager.getUserService().searchFriends(keyword, 0, 5, new ApiCallback<FriendsListData>() {
             @Override
             public void onSuccess(FriendsListData data) {
                 List<SearchResult> results = new ArrayList<>();
                 if (data != null && data.getItems() != null) {
                     for (FriendBean friend : data.getItems()) {
-                        results.add(new SearchResult(friend.getNickname(), friend.getAvatar(), "联系人"));
+                        results.add(new SearchResult(friend.getUser_id(), friend.getNickname(), friend.getAvatar(), SEARCH_TYPE_CONTACT, null));
                     }
                 }
-                adapter.addResults(results, "联系人");
+                adapter.addResults(results, SEARCH_TYPE_CONTACT);
             }
 
             @Override
@@ -84,16 +94,16 @@ public class SearchActivity extends AppCompatActivity {
         });
 
         // 搜索群组
-        ServiceManager.getUserService().searchMyGroups(keyword, 100, new ApiCallback<GroupListData>() {
+        ServiceManager.getUserService().searchMyGroups(keyword, 5, new ApiCallback<GroupListData>() {
             @Override
             public void onSuccess(GroupListData data) {
                 List<SearchResult> results = new ArrayList<>();
                 if (data != null) {
                     for (GroupBean group : data.getItems()) {
-                        results.add(new SearchResult(group.getGroup_name(), group.getGroup_portrait(), "群聊"));
+                        results.add(new SearchResult(group.getGroup_id(), group.getGroup_name(), group.getGroup_portrait(), SEARCH_TYPE_GROUP, null));
                     }
                 }
-                adapter.addResults(results, "群聊");
+                adapter.addResults(results, SEARCH_TYPE_GROUP);
             }
 
             @Override
@@ -105,15 +115,34 @@ public class SearchActivity extends AppCompatActivity {
         // 搜索会话
         MessageQueryOptions.Builder builder = new MessageQueryOptions.Builder();
         builder.setSearchContent(keyword);
-        JIM.getInstance().getMessageManager().searchConversationsWithMessageContent(builder.build(), new IMessageManager.ISearchConversationWithMessageContentCallback() {
-            @Override
-            public void onComplete(List<SearchConversationsResult> list) {
-                List<SearchResult> results = new ArrayList<>();
-                for (SearchConversationsResult r : list) {
-                    results.add(new SearchResult(r.getConversationInfo().getConversation().getConversationId(), "", "聊天记录", r.getMatchedCount() + "条匹配记录"));
-                }
-                adapter.addResults(results, "聊天记录");
+        builder.setConversationTypes(Arrays.asList(Conversation.ConversationType.GROUP, Conversation.ConversationType.PRIVATE));
+        JIM.getInstance().getMessageManager().searchConversationsWithMessageContent(builder.build(), list -> {
+            List<SearchResult> results = new ArrayList<>();
+            int count = 0;
+            for (SearchConversationsResult l : list) {
+                SearchResult r = new SearchResult(l.getConversationInfo().getConversation().getConversationId(),
+                        l.getConversationInfo().getConversation().getConversationId(), "",
+                        SEARCH_TYPE_RECORD,
+                        l.getMatchedCount() + "条匹配记录");
+                r.setConversation(l.getConversationInfo().getConversation());
+                results.add(r);
+                count++;
+                if (count >= 5) break;
             }
+            adapter.addResults(results, SEARCH_TYPE_RECORD);
         });
     }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        hideKeyboard();
+    }
+    private void hideKeyboard() {
+        View view = getCurrentFocus();
+        if (view != null) {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
 }

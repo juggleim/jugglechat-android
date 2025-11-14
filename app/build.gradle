@@ -19,14 +19,30 @@ android {
         }
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+    signingConfigs {
+        release {
+            storeFile file("../keystore/key.keystore")
+            storePassword "juggleim"
+            keyAlias "juggleim"
+            keyPassword "your_key_password"
+        }
 
+        debug {
+            storeFile file("../keystore/key.keystore")
+            storePassword "juggleim"
+            keyAlias "juggleim"
+            keyPassword "juggleim"
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
         debug {
             debuggable true
+            signingConfig signingConfigs.debug
         }
     }
     compileOptions {

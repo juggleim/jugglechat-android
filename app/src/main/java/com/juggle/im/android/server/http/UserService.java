@@ -32,7 +32,7 @@ public interface UserService {
      */
     void searchUsers(String keyword, ApiCallback<FriendsListData> callback);
 
-    void searchFriends(String keyword, ApiCallback<FriendsListData> callback);
+    void searchFriends(String keyword, int offset, int limit, ApiCallback<FriendsListData> callback);
 
     void searchMyGroups(String keyword, int limit, ApiCallback<GroupListData> callback);
 

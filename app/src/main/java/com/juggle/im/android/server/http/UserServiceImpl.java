@@ -92,9 +92,10 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
-    public void searchFriends(String keyword, ApiCallback<FriendsListData> callback) {
-        java.util.Map<String, String> body = new java.util.HashMap<>();
+    public void searchFriends(String keyword, int offset, int limit, ApiCallback<FriendsListData> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
         body.put("key", keyword == null ? "" : keyword);
+        body.put("limit", limit);
         enqueueJson("/jim/friends/search", (Object) body, FriendsListData.class, callback);
     }
 
