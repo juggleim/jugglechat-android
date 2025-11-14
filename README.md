@@ -14,6 +14,7 @@ JuggleIM Android Demo 是一个基于 [JuggleIM SDK](https://juggle.im) 开发�
 - 图片预览与选择
 - 朋友圈功能
 - 表情输入支持
+- 音视频通话
 
 ## 技术架构
 
