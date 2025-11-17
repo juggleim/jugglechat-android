@@ -16,6 +16,7 @@ import android.view.View;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.util.TypedValue;
 import android.widget.ArrayAdapter;
@@ -40,6 +41,9 @@ import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.model.MessageMentionInfo;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
@@ -57,7 +61,7 @@ public class ChatInputActionBar extends LinearLayout {
     private EditText editMessage;
     private FrameLayout panelContainer;
     private ViewGroup inputArea;
-    private View morePanel;
+    private View morePanel, emptyPanel, emojiPanel;
     // plugin system
     private List<MorePlugin> morePlugins = new ArrayList<>();
     private Map<Integer, MorePlugin> activityResultHandlers = new HashMap<>();
@@ -76,17 +80,14 @@ public class ChatInputActionBar extends LinearLayout {
     private Runnable keyboardShowAdjustRunnable;
 
     private Listener listener;
-    private static final int REQUEST_CAMERA = 1001;
-    private static final int REQUEST_RECORD_AUDIO = 1002;
-    private String pendingMoreAction = null;
-    private boolean pendingVoiceStart = false;
 
     // keep a reference to the new voice action view when active
     private VoiceInputAction voiceActionView;
-
-    private SharedPreferences prefs;
     private static final String PREFS_NAME = "chat_input_prefs";
-    private static final String KEY_RECENT = "emoji_recent";
+    private boolean isKeyboardShowing = false;
+    private boolean panelSwitched = false;
+
+    private int imeMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
     public interface Listener {
         void onSend(String text, String replyMsgId, MessageMentionInfo mentionInfo);
@@ -109,6 +110,8 @@ public class ChatInputActionBar extends LinearLayout {
         void onPanelVisibilityChanged(boolean visible);
 
         void onKeyboardVisibilityChanged(boolean visible);
+
+        void onKeyboardCreated(int h);
     }
 
     public void setListener(Listener l) {
@@ -124,8 +127,6 @@ public class ChatInputActionBar extends LinearLayout {
         editMessage = findViewById(R.id.edit_message);
         panelContainer = findViewById(R.id.panel_container);
         inputArea = findViewById(R.id.input_area);
-
-        prefs = getContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         setupListeners();
         initKeyboardListener();
         initDefaultPlugins();
@@ -253,21 +254,60 @@ public class ChatInputActionBar extends LinearLayout {
         if (listenView == null) listenView = getRootView();
         keyboardListenView = listenView;
 
+
+        /**
+         * 根据adjustResize计算出键盘高度后，切换为 SOFT_INPUT_ADJUST_NOTHING
+         * 保证后面的切换不出现闪屏
+         */
         globalLayoutListener = new ViewTreeObserver.OnGlobalLayoutListener() {
             private final Rect r = new Rect();
+            private final int minKeyboardHeightPx = (int) TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_DIP, 100, getResources().getDisplayMetrics());
 
             @Override
             public void onGlobalLayout() {
+                // 1. 获取当前可见窗口的区域
+                keyboardListenView.getWindowVisibleDisplayFrame(r);
+
+                // 2. 计算 DecorView 的总高度
+                int screenHeight = keyboardListenView.getRootView().getHeight();
+
+                // 3. 计算键盘弹起导致的高度差
+                int heightDifference = screenHeight - r.bottom;
+
+                Log.d("ChatInput", "Keyboard shown, height: " + keyboardHeight + "px,, " + heightDifference);
+
+                // 4. 判断键盘是否弹出 (如果高度差大于最小阈值，则认为键盘弹出了)
+                if (heightDifference > minKeyboardHeightPx) {
+                    // 键盘弹出
+                    if (!isKeyboardShowing) {
+                        isKeyboardShowing = true;
+                        keyboardHeight = heightDifference;
+                        Log.d("ChatInput", "Keyboard shown, height: " + keyboardHeight + "px");
+                        // 在这里调用你的调整布局方法
+                        adjustLayoutForKeyboard(keyboardHeight);
+                        if (listener != null) listener.onKeyboardVisibilityChanged(true);
+                    }
+                } else {
+                    // 键盘隐藏
+                    if (isKeyboardShowing) {
+                        isKeyboardShowing = false;
+                        Log.d("ChatInput", "Keyboard hidden");
+                        // 在这里调用你的调整布局方法
+                        if (listener != null) {
+                            imeMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
+                            listener.onKeyboardCreated(keyboardHeight);
+                        }
+                    }
+                }
             }
         };
+        keyboardListenView.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
+    }
 
-        // attach to the chosen view's observer
-        try {
-            keyboardListenView.getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
-        } catch (Throwable t) {
-            // fallback: attach to this view's observer
-            getViewTreeObserver().addOnGlobalLayoutListener(globalLayoutListener);
-        }
+    private void adjustLayoutForKeyboard(int height) {
+        Log.d("ChatInputActionBar", "keyboard height=" + height);
+
     }
 
     @Override
@@ -305,9 +345,15 @@ public class ChatInputActionBar extends LinearLayout {
             case TEXT:
                 // show keyboard, hide bottom panels and restore input area
                 showInputArea(true);
-                hidePanel();
+                if (keyboardHeight > 0 && imeMode == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING ) {
+                    panelContainer.setVisibility(VISIBLE);
+                    showPanel(getEmptyPanel(), InputMode.TEXT);
+                } else {
+                    hidePanel();
+                }
                 editMessage.requestFocus();
                 imm.showSoftInput(editMessage, InputMethodManager.SHOW_IMPLICIT);
+                ensurePanelHeight(true);
                 break;
             case VOICE:
                 // hide keyboard and panels, show a voice record button in input area
@@ -319,23 +365,23 @@ public class ChatInputActionBar extends LinearLayout {
             case EMOJI:
                 // show emoji panel with reserved height equal to keyboard
                 showInputArea(true);
-                ensurePanelHeight();
+                ensurePanelHeight(false);
                 showPanel(getEmojiPanel(), InputMode.EMOJI);
                 imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
                 break;
             case MORE:
                 showInputArea(true);
-                ensurePanelHeight();
+                ensurePanelHeight(false);
                 showPanel(getMorePanel(), InputMode.MORE);
                 imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
                 break;
         }
     }
 
-    private void ensurePanelHeight() {
+    private void ensurePanelHeight(boolean keyboardVisible) {
         // if we know keyboard height, use it; otherwise fallback to 250dp
         ViewGroup.LayoutParams lp = panelContainer.getLayoutParams();
-        if (keyboardHeight > 0) {
+        if (keyboardHeight > 0 && keyboardVisible) {
             lp.height = keyboardHeight;
         } else {
             lp.height = (int) (getResources().getDisplayMetrics().density * 250);
@@ -363,18 +409,31 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void showPanel(View panel, InputMode mode) {
         panelContainer.removeAllViews();
-        panelContainer.addView(panel);
-        panelContainer.setVisibility(VISIBLE);
+        if (!panelSwitched) {
+            panelContainer.postDelayed(() -> {
+                panelContainer.addView(panel);
+                panelContainer.setVisibility(VISIBLE);
+            }, 120);
+        } else {
+            panelContainer.addView(panel);
+            panelContainer.setVisibility(VISIBLE);
+        }
+
         if (listener != null) listener.onPanelVisibilityChanged(true);
         // when panel shows, ensure message list is pushed up by panel height
-        int h = panelContainer.getLayoutParams() != null ? panelContainer.getLayoutParams().height : 0;
+        int h = panelContainer.getLayoutParams() != null
+                ? (panelContainer.getLayoutParams().height < 0
+                ? getResources().getDimensionPixelSize(R.dimen.input_panel_height)
+                : panelContainer.getLayoutParams().height)
+                : 0;
         adjustMessageListBottom(h);
+        panelSwitched = true;
     }
 
     private void hidePanel() {
         panelContainer.setVisibility(GONE);
         if (listener != null) listener.onPanelVisibilityChanged(false);
-        // restore message list padding
+//         restore message list padding
         adjustMessageListBottom(0);
     }
 
@@ -460,7 +519,15 @@ public class ChatInputActionBar extends LinearLayout {
         }
     }
 
+    private View getEmptyPanel() {
+        if (emptyPanel != null) return emptyPanel;
+        View panel = LayoutInflater.from(getContext()).inflate(R.layout.panel_empty, panelContainer, false);
+        emptyPanel = panel;
+        return panel;
+    }
+
     private View getEmojiPanel() {
+        if (emojiPanel != null) return emojiPanel;
         final List<String> emojis = buildEmojiListLarge();
         // Always create a fresh panel instance to avoid stale view state after hide/show
         // cycles which can make GridView's onItemClick stop firing.
@@ -519,6 +586,7 @@ public class ChatInputActionBar extends LinearLayout {
             });
             applySelectableBackground(sendBtn, android.R.attr.selectableItemBackground);
         }
+        emojiPanel = panel;
         return panel;
     }
 
@@ -555,6 +623,7 @@ public class ChatInputActionBar extends LinearLayout {
         TextView tvContent = findViewById(R.id.message_content);
         tvContent.setText(name + ": " + msg);
         referView.setTag(msgId);
+        collapsePanel();
     }
 
     private View getMorePanel() {

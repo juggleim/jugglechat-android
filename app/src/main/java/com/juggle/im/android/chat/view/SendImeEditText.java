@@ -1,6 +1,7 @@
 package com.juggle.im.android.chat.view;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.text.InputType;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
@@ -55,5 +56,10 @@ public class SendImeEditText extends AppCompatEditText {
             }
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    protected void onFocusChanged(boolean focused, int direction, Rect previouslyFocusedRect) {
+        super.onFocusChanged(focused, direction, previouslyFocusedRect);
     }
 }

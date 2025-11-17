@@ -55,15 +55,18 @@
                         android:maxLines="4"
                         android:minHeight="28dp"
                         android:minLines="1"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true"
+                        android:cursorVisible="true"
                         android:overScrollMode="ifContentScrolls" />
 
                     <com.juggle.im.android.chat.view.VoiceInputAction
                         android:id="@+id/voice_input_container"
-                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
-                        android:minHeight="28dp" />
+                        android:minHeight="28dp"
+                        android:visibility="gone" />
                 </FrameLayout>
 
             </LinearLayout>
@@ -109,7 +112,7 @@
                 android:padding="3dp"
                 android:textColor="#666666"
                 android:textSize="12sp"
-                tools:text="sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfssdfsdfsdfsdfsdfsdf: " />
+                tools:text="sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfssdf sdfsdfsdfsdfsdf: " />
 
             <ImageView
                 android:id="@+id/button_del_ref"
@@ -127,6 +130,7 @@
     <FrameLayout
         android:id="@+id/panel_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content">
 
+    </FrameLayout>
 </LinearLayout>

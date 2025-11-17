@@ -80,7 +80,7 @@
 
         <activity
             android:name=".chat.ConversationActivity"
-            android:windowSoftInputMode="adjustResize|stateHidden" />
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".chat.MomentsActivity"
             android:windowSoftInputMode="adjustResize|stateHidden" />

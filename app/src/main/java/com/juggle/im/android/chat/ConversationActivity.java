@@ -5,14 +5,21 @@ import static android.view.View.VISIBLE;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -54,7 +61,6 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 public class ConversationActivity extends AppCompatActivity {
@@ -67,6 +73,7 @@ public class ConversationActivity extends AppCompatActivity {
     private boolean isGroup;
     private String conversationId;
     private Conversation conversation;
+    private int lastHeight = 0;
 
     public static Intent intentFor(Context ctx,
                                    String conversationId,
@@ -190,6 +197,11 @@ public class ConversationActivity extends AppCompatActivity {
                         if (frag != null) frag.scrollToBottomIfNeeded();
                     }
                 }
+
+                @Override
+                public void onKeyboardCreated(int h) {
+                    getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+                }
             });
         }
 
@@ -205,7 +217,7 @@ public class ConversationActivity extends AppCompatActivity {
                 Log.i("TAG", "getTopMessage error: " + i);
             }
         });
-
+        View rootView = findViewById(R.id.conversation_container);
         Window window = getWindow();
         window.setNavigationBarColor(getColor(R.color.input_bg_light));
     }
@@ -530,5 +542,14 @@ public class ConversationActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         EventBus.getDefault().unregister(this);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            finish();
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }
