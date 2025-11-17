@@ -6,11 +6,6 @@
     android:background="@android:color/transparent"
     android:orientation="vertical">
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="@color/divider" />
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -30,21 +25,24 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="voice"
+                android:padding="6dp"
                 android:src="@drawable/ic_input_voice" />
 
-            <FrameLayout
+            <LinearLayout
                 android:id="@+id/input_area"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="8dp"
                 android:layout_weight="1"
-                android:background="@drawable/action_input_background">
+                android:background="@drawable/action_input_background"
+                android:orientation="vertical"
+                android:padding="8dp">
 
                 <FrameLayout
-
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical">
 
                     <com.juggle.im.android.chat.view.SendImeEditText
                         android:id="@+id/edit_message"
@@ -55,25 +53,27 @@
                         android:hint="@string/input_msg"
                         android:inputType="textMultiLine"
                         android:maxLines="4"
+                        android:minHeight="28dp"
                         android:minLines="1"
-                        android:overScrollMode="ifContentScrolls"
-                        android:padding="8dp" />
+                        android:overScrollMode="ifContentScrolls" />
+
+                    <com.juggle.im.android.chat.view.VoiceInputAction
+                        android:id="@+id/voice_input_container"
+                        android:visibility="gone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:minHeight="28dp" />
                 </FrameLayout>
 
-                <com.juggle.im.android.chat.view.VoiceInputAction
-                    android:id="@+id/voice_input_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:background="@drawable/rectangle_bg"
-                    android:visibility="gone" />
-            </FrameLayout>
+            </LinearLayout>
 
             <ImageView
                 android:id="@+id/button_emoji"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:contentDescription="emoji"
+                android:padding="6dp"
                 android:src="@drawable/ic_input_emoji" />
 
             <ImageView
@@ -82,6 +82,7 @@
                 android:layout_height="40dp"
                 android:layout_marginStart="8dp"
                 android:contentDescription="more"
+                android:padding="6dp"
                 android:src="@drawable/ic_input_more" />
 
         </LinearLayout>
@@ -93,10 +94,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="50dp"
-            android:layout_marginEnd="95dp"
             android:layout_marginTop="2dp"
-            android:visibility="gone"
-            android:background="@color/app_primary_inverse">
+            android:layout_marginEnd="95dp"
+            android:background="@color/app_primary_inverse"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/message_content"
@@ -126,7 +127,6 @@
     <FrameLayout
         android:id="@+id/panel_container"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone" />
+        android:layout_height="wrap_content" />
 
 </LinearLayout>

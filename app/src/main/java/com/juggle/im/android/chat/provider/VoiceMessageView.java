@@ -67,10 +67,5 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
                 player = null;
             }
         });
-        if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
-            tvDuration.setTextColor(ColorStateList.valueOf(Color.WHITE));
-        } else {
-            tvDuration.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
-        }
     }
 }

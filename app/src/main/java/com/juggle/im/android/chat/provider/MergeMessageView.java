@@ -58,12 +58,5 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
             ((ViewGroup) this.itemView.getParent()).performLongClick();
             return false;
         });
-        if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
-            tvTitle.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.gray));
-            tvPreview.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.gray));
-        } else {
-            tvTitle.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
-            tvPreview.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
-        }
     }
 }

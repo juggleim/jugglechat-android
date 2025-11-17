@@ -105,12 +105,7 @@ public class ConversationActivity extends AppCompatActivity {
             tvTitle.setText(title);
         }
         if (ivBack != null) {
-            ivBack.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    finish();
-                }
-            });
+            ivBack.setOnClickListener(v -> finish());
         }
 
         if (ivSettings != null) {

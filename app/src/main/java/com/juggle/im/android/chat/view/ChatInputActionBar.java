@@ -56,7 +56,7 @@ public class ChatInputActionBar extends LinearLayout {
     private ImageView btnVoice, btnEmoji, btnMore;
     private EditText editMessage;
     private FrameLayout panelContainer;
-    private FrameLayout inputArea;
+    private ViewGroup inputArea;
     private View morePanel;
     // plugin system
     private List<MorePlugin> morePlugins = new ArrayList<>();

@@ -37,12 +37,5 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
                 btnDownload.setImageResource(R.drawable.ic_download);
             });
         }
-        if (tvName != null) {
-            if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
-                tvName.setTextColor(ColorStateList.valueOf(Color.WHITE));
-            } else {
-                tvName.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
-            }
-        }
     }
 }

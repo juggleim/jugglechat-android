@@ -90,6 +90,8 @@ public class AlbumActivity extends AppCompatActivity {
                 window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             }
         }
+        window.setNavigationBarColor(getColor(R.color.black));
+
     }
 
     private void initViews() {

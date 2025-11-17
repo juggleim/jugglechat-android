@@ -26,10 +26,5 @@ public class TextMessageView extends MessageView<UiMessage, TextMessage> {
     public void bindItem(UiMessage m, TextMessage t, boolean isGroup) {
         TextView tvContent = this.itemView.findViewById(R.id.text_message_content);
         tvContent.setText(t.getContent());
-        if (m.getMessage().getDirection() == Message.MessageDirection.SEND) {
-            tvContent.setTextColor(ColorStateList.valueOf(Color.WHITE));
-        } else {
-            tvContent.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
-        }
     }
 }
