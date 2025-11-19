@@ -13,19 +13,21 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.component.UserListAdapter;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.server.beans.FriendsListData;
 import com.juggle.im.android.server.beans.FriendBean;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class FriendsFragment extends Fragment {
 
     private RecyclerView recyclerView;
-    private FriendsListAdapter adapter;
-    private boolean selectionMode = false;
+    private UserListAdapter adapter;
     private SelectionListener selectionListener;
+    private String selectionMode = UserListAdapter.LIST_MODE_NORMAL;
 
     @Nullable
     @Override
@@ -37,8 +39,8 @@ public class FriendsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         recyclerView = view.findViewById(R.id.rv_friends_list);
-        adapter = new FriendsListAdapter();
-        adapter.setSelectionMode(selectionMode);
+        adapter = new UserListAdapter();
+        adapter.setMode(selectionMode);
         adapter.setSelectionChangedListener((item, selected) -> {
             if (selectionListener != null) selectionListener.onMemberSelected(item, selected);
         });
@@ -48,7 +50,7 @@ public class FriendsFragment extends Fragment {
         loadFriends();
     }
 
-    public void setSelectionMode(boolean mode) {
+    public void setSelectionMode(String mode) {
         this.selectionMode = mode;
     }
 
@@ -56,15 +58,23 @@ public class FriendsFragment extends Fragment {
 
     public void uncheckUser(String userId) { if (adapter != null) adapter.uncheckUser(userId); }
 
-    public interface SelectionListener { void onMemberSelected(FriendBean member, boolean selected); }
+    public interface SelectionListener { void onMemberSelected(UserListAdapter.UserInfoObj member, boolean selected); }
 
     private void loadFriends() {
-        // default page 1, size 50 to get a large list initially
         ServiceManager.getUserService().getFriendsList(1, 50, null, new ApiCallback<FriendsListData>() {
             @Override
             public void onSuccess(FriendsListData data) {
                 List<FriendBean> items = data != null ? data.getItems() : null;
-                adapter.setItems(items);
+                List<UserListAdapter.UserInfoObj> memberList = new ArrayList<>();
+                for (FriendBean member : items) {
+                    boolean disabled = false;
+                    UserListAdapter.UserInfoObj userInfoObj = new UserListAdapter.UserInfoObj(disabled);
+                    userInfoObj.setUserId(member.getUser_id());
+                    userInfoObj.setName(member.getNickname());
+                    userInfoObj.setAvatar(member.getAvatar());
+                    memberList.add(userInfoObj);
+                }
+                adapter.setItems(memberList);
             }
 
             @Override

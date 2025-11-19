@@ -82,7 +82,7 @@
                     android:id="@+id/loginButton"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/bg_login_button"
+                    android:background="@drawable/bg_primary_button"
                     android:text="Log In"
                     android:textColor="@color/white"
                     android:textStyle="bold" />

@@ -125,4 +125,13 @@ public class UserServiceImpl extends BaseService implements UserService {
         sb.append("=").append(groupId);
         enqueueGet(sb.toString(), GroupDetailBean.class, callback);
     }
+
+    @Override
+    public void inviteJoinGroup(String groupId, List<String> userIds, ApiCallback<Void> callback) {
+        StringBuilder sb = new StringBuilder("/jim/groups/invite");
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("member_ids", userIds);
+        enqueueJson(sb.toString(), body, Void.class, callback);
+    }
 }

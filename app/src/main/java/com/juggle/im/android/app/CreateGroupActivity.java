@@ -16,8 +16,8 @@ import android.widget.LinearLayout;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.FriendsFragment;
+import com.juggle.im.android.chat.component.UserListAdapter;
 import com.juggle.im.android.server.beans.CreateGroupResult;
-import com.juggle.im.android.server.beans.FriendBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
@@ -33,7 +33,7 @@ public class CreateGroupActivity extends AppCompatActivity implements FriendsFra
     private FriendsFragment friendsFragment;
     private Button btnCreate;
     // maintain selected by id
-    private Map<String, FriendBean> selectedMap = new HashMap<>();
+    private Map<String, UserListAdapter.UserInfoObj> selectedMap = new HashMap<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -51,18 +51,18 @@ public class CreateGroupActivity extends AppCompatActivity implements FriendsFra
 
         // add friends fragment
         friendsFragment = new FriendsFragment();
-        friendsFragment.setSelectionMode(true);
+        friendsFragment.setSelectionMode(UserListAdapter.LIST_MODE_SELECT_MEMBER);
         friendsFragment.setSelectionListener(this);
         getSupportFragmentManager().beginTransaction().replace(R.id.friends_container, friendsFragment).commitAllowingStateLoss();
         btnCreate.setOnClickListener(v -> doCreateGroup());
     }
 
     @Override
-    public void onMemberSelected(FriendBean member, boolean selected) {
+    public void onMemberSelected(UserListAdapter.UserInfoObj member, boolean selected) {
         if (selected) {
-            selectedMap.put(member.getUser_id(), member);
+            selectedMap.put(member.getUserId(), member);
         } else {
-            selectedMap.remove(member.getUser_id());
+            selectedMap.remove(member.getUserId());
         }
         if (selectedMap.isEmpty()) selectedFlow.setVisibility(View.GONE);
         else selectedFlow.setVisibility(View.VISIBLE);
@@ -84,16 +84,16 @@ public class CreateGroupActivity extends AppCompatActivity implements FriendsFra
         int usedWidth = 0;
         int spacing = dpToPx(6);
 
-        for (FriendBean m : selectedMap.values()) {
+        for (UserListAdapter.UserInfoObj m : selectedMap.values()) {
             View v = inflater.inflate(R.layout.item_selected_member, null, false);
             ImageView iv = v.findViewById(R.id.iv_avatar);
             ImageView close = v.findViewById(R.id.iv_close);
             android.widget.TextView tvName = v.findViewById(R.id.tv_name);
-            AvatarUtils.loadAvatar(iv, m.getAvatar(), m.getNickname());
-            tvName.setText(m.getNickname() != null ? m.getNickname() : m.getUser_id());
+            AvatarUtils.loadAvatar(iv, m.getAvatar(), m.getName());
+            tvName.setText(m.getName() != null ? m.getName() : m.getUserId());
             close.setOnClickListener(c -> {
-                selectedMap.remove(m.getUser_id());
-                if (friendsFragment != null) friendsFragment.uncheckUser(m.getUser_id());
+                selectedMap.remove(m.getUserId());
+                if (friendsFragment != null) friendsFragment.uncheckUser(m.getUserId());
                 refreshSelectedFlow();
             });
 
@@ -144,12 +144,12 @@ public class CreateGroupActivity extends AppCompatActivity implements FriendsFra
         // build members array
         List<Map<String, String>> members = new ArrayList<>();
         StringBuilder nameBuilder = new StringBuilder();
-        for (FriendBean m : selectedMap.values()) {
+        for (UserListAdapter.UserInfoObj m : selectedMap.values()) {
             Map<String, String> mm = new HashMap<>();
-            mm.put("user_id", m.getUser_id());
+            mm.put("user_id", m.getUserId());
             members.add(mm);
             if (nameBuilder.length() > 0) nameBuilder.append(", ");
-            nameBuilder.append(m.getNickname() != null ? m.getNickname() : m.getUser_id());
+            nameBuilder.append(m.getName() != null ? m.getName() : m.getUserId());
         }
         Map<String, Object> body = new HashMap<>();
         body.put("group_name", nameBuilder.toString());

@@ -1,5 +1,7 @@
 package com.juggle.im.android.chat;
 
+import static android.view.View.GONE;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,6 +16,8 @@ import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.call.BaseCallActivity;
 import com.juggle.im.android.chat.component.UserListAdapter;
+import com.juggle.im.android.server.beans.FriendBean;
+import com.juggle.im.android.server.beans.FriendsListData;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupMemberBean;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -23,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SelectCallMemberActivity extends AppCompatActivity {
+public class SelectMemberActivity extends AppCompatActivity {
     public final static String GROUP_ID = "GROUP_ID";
     public final static String SELECTED_MEMBERS = "SELECTED_MEMBERS";
 
@@ -36,22 +40,59 @@ public class SelectCallMemberActivity extends AppCompatActivity {
     private TextView btnConfirm;
     private TextView tvCancel;
     private List<String> disabledMembers = new ArrayList<>();
+    private String mode;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_call_select_member);
+        setContentView(R.layout.activity_select_member);
 
+        String groupId = getIntent().getStringExtra(GROUP_ID);
+        mode = getIntent().getStringExtra("mode");
+        if (mode == null) {
+            mode =  UserListAdapter.LIST_MODE_SELECT_MEMBER;
+        }
+
+        if (mode.equals(UserListAdapter.LIST_MODE_NORMAL)) {
+            findViewById(R.id.btn_confirm).setVisibility(GONE);
+        }
+        disabledMembers = getIntent().getStringArrayListExtra(DISABLE_MEMBERS);
         initViews();
         setupRecyclerViews();
         setClickListeners();
-
-        String groupId = getIntent().getStringExtra(GROUP_ID);
         if (groupId != null) {
             fetchGroupMembers(groupId);
+        } else {
+            fetchMyFriends();
         }
-        disabledMembers = getIntent().getStringArrayListExtra(DISABLE_MEMBERS);
+    }
+
+    private void fetchMyFriends() {
+        ServiceManager.getUserService().getFriendsList(1, 50, null, new ApiCallback<FriendsListData>() {
+            @Override
+            public void onSuccess(FriendsListData data) {
+                List<FriendBean> items = data != null ? data.getItems() : null;
+                List<UserListAdapter.UserInfoObj> memberList = new ArrayList<>();
+                for (FriendBean member : items) {
+                    boolean disabled = false;
+                    if (disabledMembers != null && disabledMembers.contains(member.getUser_id())) {
+                        disabled = true;
+                    }
+                    UserListAdapter.UserInfoObj userInfoObj = new UserListAdapter.UserInfoObj(disabled);
+                    userInfoObj.setUserId(member.getUser_id());
+                    userInfoObj.setName(member.getNickname());
+                    userInfoObj.setAvatar(member.getAvatar());
+                    memberList.add(userInfoObj);
+                }
+                selectCallMemberAdapter.setItems(memberList);
+            }
+
+            @Override
+            public void onError(int code, String message) {
+
+            }
+        });
     }
 
     private void initViews() {
@@ -65,7 +106,7 @@ public class SelectCallMemberActivity extends AppCompatActivity {
         rvMembers.setLayoutManager(new LinearLayoutManager(this));
         selectCallMemberAdapter = new UserListAdapter();
         rvMembers.setAdapter(selectCallMemberAdapter);
-        selectCallMemberAdapter.setSelectionMode(true);
+        selectCallMemberAdapter.setMode(mode);
         selectCallMemberAdapter.setSelectionChangedListener(new UserListAdapter.OnSelectionChanged() {
             @Override
             public void onSelectionChanged(UserListAdapter.UserInfoObj member, boolean selected) {
@@ -138,7 +179,7 @@ public class SelectCallMemberActivity extends AppCompatActivity {
 
             @Override
             public void onError(int code, String message) {
-                Toast.makeText(SelectCallMemberActivity.this, "Failed to load members: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(SelectMemberActivity.this, "Failed to load members: " + message, Toast.LENGTH_SHORT).show();
             }
         });
     }

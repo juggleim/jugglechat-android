@@ -120,7 +120,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         if (position == selectedPosition) {
             holder.itemView.setBackgroundResource(R.color.selected);
         } else if (uiConversation.isTop()) {
-            holder.itemView.setBackgroundResource(R.color.selected);
+            holder.itemView.setBackgroundResource(R.color.app_primary_inverse);
         } else {
             holder.itemView.setBackgroundResource(android.R.color.transparent);
         }

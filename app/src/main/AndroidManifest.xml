@@ -115,7 +115,7 @@
             android:screenOrientation="portrait" />
         <activity android:name=".chat.call.MultiCallActivity"
             android:screenOrientation="portrait" />
-        <activity android:name=".chat.SelectCallMemberActivity"
+        <activity android:name=".chat.SelectMemberActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".chat.SearchActivity"
             android:screenOrientation="portrait"/>

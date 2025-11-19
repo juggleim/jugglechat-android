@@ -3,7 +3,6 @@ package com.juggle.im.android.chat;
 import android.annotation.SuppressLint;
 import android.view.View;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -75,7 +74,7 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
                 if (selectionChanged != null) selectionChanged.onSelectionChanged(f, !cur);
             });
             // indicate selection state by overlaying a small check image on the right
-            View overlay = holder.itemView.findViewById(R.id.iv_check_overlay);
+            View overlay = holder.itemView.findViewById(R.id.iv_checkbox);
             if (overlay != null)
                 overlay.setVisibility(selectedMap.containsKey(f.getUser_id()) ? View.VISIBLE : View.GONE);
         } else {

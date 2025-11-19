@@ -47,4 +47,13 @@ public interface UserService {
     void createGroup(Object body, ApiCallback<com.juggle.im.android.server.beans.CreateGroupResult> callback);
 
     public void getGroupInfo(String groupId, ApiCallback<GroupDetailBean> callback);
+
+
+    /**
+     * 加群
+     * @param groupId
+     * @param userIds
+     * @param callback
+     */
+    public void inviteJoinGroup(String groupId, List<String> userIds, ApiCallback<Void> callback);
 }

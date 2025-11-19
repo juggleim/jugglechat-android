@@ -60,8 +60,12 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
         }
     }
 
+    public final static String LIST_MODE_SELECT_MEMBER = "select_mem";
+    public final static String LIST_MODE_ADD_FRIENDS = "add_friends";
+    public final static String LIST_MODE_NORMAL = "normal";
+
     private List<UserInfoObj> items = new ArrayList<>();
-    private boolean selectionMode = false;
+    private String mode = LIST_MODE_NORMAL;
     private java.util.Map<String, Boolean> selectedMap = new java.util.HashMap<>();
     private OnSelectionChanged selectionChanged;
 
@@ -72,8 +76,8 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
         notifyDataSetChanged();
     }
 
-    public void setSelectionMode(boolean mode) {
-        this.selectionMode = mode;
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
     public void setSelectionChangedListener(OnSelectionChanged l) {
@@ -100,8 +104,10 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
     public void onBindViewHolder(@NonNull VH holder, int position) {
         UserInfoObj f = items.get(position);
         holder.tv.setText(f.getName() != null ? f.getName() : f.getUserId());
+        ImageView checkbox = holder.itemView.findViewById(R.id.iv_checkbox);
         AvatarUtils.loadAvatar(holder.iv, f.getAvatar(), f.getName());
-        if (selectionMode) {
+        if (mode.equals(LIST_MODE_SELECT_MEMBER)) {
+            checkbox.setVisibility(View.VISIBLE);
             if (!f.disabled) {
                 holder.itemView.setOnClickListener(v -> {
                     boolean cur = selectedMap.containsKey(f.getUserId());
@@ -110,12 +116,20 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
                     notifyItemChanged(position);
                     if (selectionChanged != null) selectionChanged.onSelectionChanged(f, !cur);
                 });
-                // indicate selection state by overlaying a small check image on the right
-                View overlay = holder.itemView.findViewById(R.id.iv_check_overlay);
-                if (overlay != null)
-                    overlay.setVisibility(selectedMap.containsKey(f.getUserId()) ? View.VISIBLE : View.GONE);
+                if (selectedMap.containsKey(f.getUserId())) {
+                    checkbox.setImageResource(R.drawable.ic_checkbox_selected);
+                } else {
+                    checkbox.setImageResource(R.drawable.ic_checkbox_unselect);
+                }
+            } else {
+                checkbox.setImageResource(R.drawable.ic_checkbox_disabled);
             }
-        } else {
+        } else if (mode.equals(LIST_MODE_ADD_FRIENDS)) {
+            checkbox.setVisibility(View.VISIBLE);
+            checkbox.setImageResource(R.drawable.ic_add);
+        }
+        else {
+            checkbox.setVisibility(View.GONE);
             holder.itemView.setOnClickListener(v -> {
                 Conversation convo = new Conversation(Conversation.ConversationType.PRIVATE, f.getUserId());
                 JIM.getInstance().getConversationManager().clearUnreadCount(convo, null);

@@ -1,100 +1,234 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
     android:orientation="vertical">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_group_info"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:background="@color/primary_bg_light"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:padding="8dp">
+        android:layout_height="wrap_content"
+        android:background="@drawable/profile_cover"
+        tools:visibility="visible">
 
         <ImageView
             android:id="@+id/iv_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_back_white" />
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:src="@drawable/ic_back_white"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/iv_group_avatar"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/default_avatar"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.4" />
 
         <TextView
-            android:id="@+id/tv_title"
-            android:layout_width="0dp"
+            android:id="@+id/tv_group_name"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="@string/conversation_setting"
+            android:layout_marginTop="8dp"
             android:textColor="@color/white"
             android:textSize="18sp"
-            android:textStyle="bold" />
-    </LinearLayout>
+            android:textStyle="bold"
+            style="?android:attr/textAppearanceSmall"
+            app:layout_constraintEnd_toEndOf="@+id/iv_group_avatar"
+            app:layout_constraintStart_toStartOf="@+id/iv_group_avatar"
+            app:layout_constraintTop_toBottomOf="@+id/iv_group_avatar"
+            tools:text="Group Name" />
+
+        <TextView
+            android:id="@+id/tv_member_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/white"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="@id/tv_group_name"
+            app:layout_constraintStart_toStartOf="@id/tv_group_name"
+            app:layout_constraintTop_toBottomOf="@id/tv_group_name"
+            tools:text="361 members" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="@id/tv_member_count"
+            app:layout_constraintStart_toStartOf="@id/tv_member_count"
+            app:layout_constraintTop_toBottomOf="@id/tv_member_count">
+
+            <TextView
+                android:id="@+id/btn_pin"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                style="?android:attr/textAppearanceSmall"
+                android:layout_margin="5dp"
+                android:background="@drawable/rectangle_primary_bg_5"
+                android:drawableTop="@drawable/ic_pin"
+                android:drawablePadding="4dp"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="置顶"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btn_mute"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                style="?android:attr/textAppearanceSmall"
+                android:layout_margin="5dp"
+                android:background="@drawable/rectangle_primary_bg_5"
+                android:drawableTop="@drawable/ic_conv_mute"
+                android:drawablePadding="4dp"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="免打扰"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/btn_add"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_margin="5dp"
+                style="?android:attr/textAppearanceSmall"
+                android:background="@drawable/rectangle_primary_bg_5"
+                android:drawableTop="@drawable/ic_add_memb"
+                android:drawablePadding="4dp"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="添加成员"
+                android:textColor="@color/white"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
         <LinearLayout
+            android:id="@+id/group_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
             <LinearLayout
+                android:id="@+id/ll_group_members"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp">
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                tools:visibility="visible">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/msg_mute"
+                    android:text="群组成员"
                     android:textSize="16sp" />
 
-                <Switch
-                    android:id="@+id/switch_mute"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:thumbTint="@color/switch_thumb_color"
-                    android:trackTint="@color/switch_track_color"
-                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right" />
             </LinearLayout>
 
             <View
+                android:id="@+id/divider_group_members"
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="@color/divider" />
+                android:background="@color/divider"
+                tools:visibility="visible" />
 
             <LinearLayout
+                android:id="@+id/ll_group_nickname"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp">
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                tools:visibility="visible">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/msg_set_top"
+                    android:text="我在本群昵称"
                     android:textSize="16sp" />
 
-                <Switch
-                    android:id="@+id/switch_top"
+                <TextView
+                    android:id="@+id/tv_my_nickname"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:thumbTint="@color/switch_thumb_color"
-                    android:trackTint="@color/switch_track_color"
-                    tools:ignore="UseSwitchCompatOrMaterialXml" />
+                    android:layout_marginEnd="8dp"
+                    android:textColor="@color/gray"
+                    android:textSize="16sp"
+                    tools:text="gogogo" />
 
-
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right" />
             </LinearLayout>
+
+            <View
+                android:id="@+id/divider_group_nickname"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <LinearLayout
+                android:id="@+id/ll_group_qrcode"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="群组二维码"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_right" />
+            </LinearLayout>
+
+            <View
+                android:id="@+id/divider_qrcode"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="@color/divider"
+                android:visibility="gone"
+                tools:visibility="visible" />
 
             <View
                 android:layout_width="match_parent"
@@ -112,7 +246,7 @@
                     android:id="@+id/btn_clear_chat"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
-                    android:background="@drawable/bg_login_button"
+                    android:background="@drawable/bg_primary_button"
                     android:gravity="center"
                     android:text="@string/msg_clear"
                     android:textColor="@color/white" />
@@ -123,7 +257,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="20dp"
-                    android:background="@drawable/bg_login_button"
+                    android:background="@drawable/bg_red_button"
                     android:gravity="center"
                     android:text="@string/msg_quite_conversation"
                     android:textColor="@color/white" />

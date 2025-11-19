@@ -13,7 +13,7 @@
         android:layout_gravity="start|center_vertical"
         android:padding="8dp"
         android:visibility="gone"
-        android:src="@drawable/ic_checkbox_uncheck"
+        android:src="@drawable/ic_checkbox_unselect"
         android:contentDescription="select" />
 
     <ImageView

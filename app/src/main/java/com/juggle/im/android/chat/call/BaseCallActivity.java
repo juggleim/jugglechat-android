@@ -16,7 +16,6 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,7 +26,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
-import com.juggle.im.android.chat.SelectCallMemberActivity;
+import com.juggle.im.android.chat.SelectMemberActivity;
 import com.juggle.im.call.CallConst;
 import com.juggle.im.call.ICallSession;
 import com.juggle.im.model.UserInfo;
@@ -59,7 +58,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
             return;
         }
         
-        Intent it = isGroup ? new Intent(context, SelectCallMemberActivity.class) : new Intent(context, SingleCallActivity.class);
+        Intent it = isGroup ? new Intent(context, SelectMemberActivity.class) : new Intent(context, SingleCallActivity.class);
         it.putExtra("conversationId", conversationId);
         it.putExtra("is_video_call", isVideoCall);
         it.putExtra("inviter", inviter);

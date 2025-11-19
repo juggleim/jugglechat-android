@@ -3,9 +3,9 @@ package com.juggle.im.android.chat.call;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
-import static com.juggle.im.android.chat.SelectCallMemberActivity.DISABLE_MEMBERS;
-import static com.juggle.im.android.chat.SelectCallMemberActivity.GROUP_ID;
-import static com.juggle.im.android.chat.SelectCallMemberActivity.SELECTED_MEMBERS;
+import static com.juggle.im.android.chat.SelectMemberActivity.DISABLE_MEMBERS;
+import static com.juggle.im.android.chat.SelectMemberActivity.GROUP_ID;
+import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -21,7 +21,7 @@ import androidx.gridlayout.widget.GridLayout;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
-import com.juggle.im.android.chat.SelectCallMemberActivity;
+import com.juggle.im.android.chat.SelectMemberActivity;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.call.CallConst;
 import com.juggle.im.model.UserInfo;
@@ -51,7 +51,7 @@ public class MultiCallActivity extends BaseCallActivity {
         btnAccept = findViewById(R.id.btn_accept);
 
         btnInvite.setOnClickListener(v -> {
-            Intent it = new Intent(this, SelectCallMemberActivity.class);
+            Intent it = new Intent(this, SelectMemberActivity.class);
             it.putExtra("is_video_call", isVideoCall);
             it.putExtra(GROUP_ID, conversationId);
             it.putStringArrayListExtra(DISABLE_MEMBERS, targetUserIds);

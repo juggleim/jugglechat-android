@@ -33,11 +33,11 @@
             android:textColor="@android:color/black" />
 
         <ImageView
-            android:id="@+id/iv_check_overlay"
+            android:id="@+id/iv_checkbox"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:visibility="gone"
-            android:src="@drawable/ic_checkbox"
+            android:src="@drawable/ic_checkbox_unselect"
             android:layout_marginEnd="8dp" />
 
     </LinearLayout>

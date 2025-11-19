@@ -236,7 +236,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             if (selectBox != null) {
                 if (inSelectionMode) {
                     selectBox.setVisibility(VISIBLE);
-                    selectBox.setImageResource(selected ? R.drawable.ic_checkbox : R.drawable.ic_checkbox_uncheck);
+                    selectBox.setImageResource(selected ? R.drawable.ic_checkbox_selected : R.drawable.ic_checkbox_unselect);
                 } else {
                     selectBox.setVisibility(GONE);
                 }

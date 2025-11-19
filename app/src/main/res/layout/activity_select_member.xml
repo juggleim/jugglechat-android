@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white"
-    tools:context=".chat.SelectCallMemberActivity">
+    tools:context=".chat.SelectMemberActivity">
 
     <RelativeLayout
         android:id="@+id/rl_title"
@@ -22,7 +22,7 @@
             android:layout_centerVertical="true"
             android:layout_marginStart="16dp"
             android:text="取消"
-            android:textColor="@android:color/black"
+            android:textColor="@android:color/white"
             android:textSize="16sp" />
 
         <TextView
