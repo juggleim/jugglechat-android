@@ -34,7 +34,6 @@ import java.util.List;
 public class ConversationListFragment extends Fragment implements ConversationListAdapter.OnConversationClickListener {
     private RecyclerView conversationListView;
     private ConversationListAdapter conversationListAdapter;
-    private EditText edtSearch;
     private PopupWindow popupWindow;
 
     @Nullable
@@ -47,8 +46,6 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         conversationListView = view.findViewById(R.id.rv_conversation_list);
-        edtSearch = view.findViewById(R.id.edt_search);
-
         conversationListAdapter = new ConversationListAdapter();
         conversationListAdapter.setOnConversationClickListener(this);
         conversationListView.setLayoutManager(new LinearLayoutManager(requireContext()));

@@ -1,5 +1,8 @@
 package com.juggle.im.android.chat;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
@@ -7,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -19,17 +23,12 @@ import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.model.Message;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class ConversationListAdapter extends RecyclerView.Adapter<ConversationListAdapter.ViewHolder> {
     private final List<UiConversation> uiConversations = new ArrayList<>();
     private OnConversationClickListener listener;
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
-    // 添加一个变量来跟踪当前选中的项目位置
     private int selectedPosition = -1;
     private Drawable selectableItemBackground;
 
@@ -119,9 +118,9 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         
         // 设置选中状态
         if (position == selectedPosition) {
-            holder.itemView.setBackgroundColor(holder.itemView.getContext().getResources().getColor(R.color.gray));
+            holder.itemView.setBackgroundResource(R.color.selected);
         } else if (uiConversation.isTop()) {
-            holder.itemView.setBackgroundResource(R.drawable.bg_pinned);
+            holder.itemView.setBackgroundResource(R.color.selected);
         } else {
             holder.itemView.setBackgroundResource(android.R.color.transparent);
         }
@@ -164,6 +163,9 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         private ImageView muteView;
         private ImageView avatarView;
         private TextView unreadDot;
+        private ProgressBar progressBar;
+        private ImageView ivMsgStatus;
+
 
 
         ViewHolder(@NonNull View itemView) {
@@ -174,6 +176,9 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             muteView = itemView.findViewById(R.id.iv_mute);
             avatarView = itemView.findViewById(R.id.iv_avatar);
             unreadDot = itemView.findViewById(R.id.unread_dot);
+            progressBar = itemView.findViewById(R.id.msg_progress);
+            ivMsgStatus = itemView.findViewById(R.id.iv_msg_status);
+
 
             itemView.setOnClickListener(v -> {
                 int position = getAbsoluteAdapterPosition();
@@ -225,14 +230,25 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             }
 
             // 设置免打扰图标
-            muteView.setVisibility(uiConversation.isMuted() ? View.VISIBLE : View.GONE);
+            muteView.setVisibility(uiConversation.isMuted() ? VISIBLE : GONE);
 
             // 未读红点（简单样式：如果 unreadCount > 0 则显示）
             if (uiConversation.getUnreadCount() > 0) {
-                unreadDot.setVisibility(View.VISIBLE);
+                unreadDot.setVisibility(VISIBLE);
                 unreadDot.setText(String.format("%d", uiConversation.getUnreadCount()));
             } else {
-                unreadDot.setVisibility(View.GONE);
+                unreadDot.setVisibility(GONE);
+            }
+
+            if (lastMessage.getState() == Message.MessageState.FAIL) {
+                ivMsgStatus.setVisibility(VISIBLE);
+                progressBar.setVisibility(GONE);
+            } else if (lastMessage.getState() == Message.MessageState.SENT) {
+                progressBar.setVisibility(GONE);
+                ivMsgStatus.setVisibility(GONE);
+            } else {
+                progressBar.setVisibility(VISIBLE);
+                ivMsgStatus.setVisibility(GONE);
             }
         }
     }

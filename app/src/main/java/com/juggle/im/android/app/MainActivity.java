@@ -29,6 +29,7 @@ import com.juggle.im.android.chat.call.SingleCallActivity;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.ConversationUpdatedEvent;
+import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.model.UiConversation;
@@ -217,6 +218,11 @@ public class MainActivity extends AppCompatActivity {
         } else {
             v.setVisibility(GONE);
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void MessageReadUpdatedEvent(MessageReadUpdatedEvent event) {
+
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

@@ -41,6 +41,7 @@
 
             <ProgressBar
                 android:id="@+id/msg_send_status"
+                android:indeterminateDrawable="@drawable/msg_loading"
                 style="?android:attr/progressBarStyleSmallInverse"
                 android:layout_width="20dp"
                 android:layout_height="20dp"

@@ -53,7 +53,8 @@
 
         <activity
             android:name=".app.FlashActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -63,43 +64,61 @@
         <activity
             android:name=".app.MainActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustPan|stateHidden">
 
         </activity>
 
         <activity
             android:name=".app.AddFriendActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name="com.juggle.im.android.app.LoginActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
             tools:ignore="MissingClass"></activity>
 
-        <activity android:name="com.juggle.im.android.app.RegisterActivity" />
+        <activity android:name="com.juggle.im.android.app.RegisterActivity"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".chat.ConversationActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".chat.MomentsActivity"
+            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize|stateHidden" />
-        <activity android:name=".chat.ConversationSettingsActivity" />
-        <activity android:name=".app.CreateGroupActivity" />
-        <activity android:name=".chat.MergeMessageActivity" />
+        <activity android:name=".chat.ConversationSettingsActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".app.CreateGroupActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.MergeMessageActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".chat.ForwardConversationListActivity"
-            android:exported="false" />
-        <activity android:name=".chat.ImagePreviewActivity" />
-        <activity android:name=".chat.CreatePostActivity" />
-        <activity android:name=".chat.AlbumActivity" />
-        <activity android:name=".chat.EditNicknameActivity" />
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.ImagePreviewActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.CreatePostActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.AlbumActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.EditNicknameActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".chat.call.SingleCallActivity"
-            android:launchMode="singleTop" />
-        <activity android:name=".chat.call.MultiCallActivity" />
-        <activity android:name=".chat.SelectCallMemberActivity" />
-        <activity android:name=".chat.SearchActivity"/>
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.call.MultiCallActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.SelectCallMemberActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".chat.SearchActivity"
+            android:screenOrientation="portrait"/>
     </application>
 
 </manifest>
