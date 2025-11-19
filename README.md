@@ -17,11 +17,12 @@ JuggleIM Android Demo 是一个基于 [JuggleIM SDK](https://juggle.im) 开发�
 - 音视频通话
 
 ## 功能如图所示
-![输入图片说明](keystore/images_duUP0gcBA2A8mazHuUfUSE.jpg)
-![输入图片说明](keystore/images_2SQtQqfBQ9G9s9m5XFLlC3.jpg)
-![输入图片说明](keystore/image.png)
-![输入图片说明](keystore/image2.png)
-![输入图片说明](keystore/image3.png)
+## 功能如图所示
+<img src="keystore/images_duUP0gcBA2A8mazHuUfUSE.jpg" alt="输入图片说明" style="width: 100%; max-width: 800px; height: auto;">
+<img src="keystore/images_2SQtQqfBQ9G9s9m5XFLlC3.jpg" alt="输入图片说明" style="width: 100%; max-width: 800px; height: auto;">
+<img src="keystore/image.png" alt="输入图片说明" style="width: 100%; max-width: 800px; height: auto;">
+<img src="keystore/image2.png" alt="输入图片说明" style="width: 100%; max-width: 800px; height: auto;">
+<img src="keystore/image3.png" alt="输入图片说明" style="width: 100%; max-width: 800px; height: auto;">
 
 
 
