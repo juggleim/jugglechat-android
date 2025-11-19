@@ -95,7 +95,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                     ivStatus.setImageResource(R.drawable.ic_msg_read);
                 }
                 // 已发送
-                if (message.getMessage().getState().getValue() == Message.MessageState.SENT.getValue()) {
+                else if (message.getMessage().getState().getValue() == Message.MessageState.SENT.getValue()) {
                     ivStatus.setVisibility(VISIBLE);
                     ivStatus.setImageResource(R.drawable.ic_msg_sent);
                 }
