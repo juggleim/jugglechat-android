@@ -188,7 +188,7 @@ public class AddFriendActivity extends AppCompatActivity {
             ItemHolder h = (ItemHolder) holder;
             h.tvName.setText(user.getNickname());
             AvatarUtils.loadAvatar(h.ivAvatar, user.getAvatar(), user.getNickname());
-            h.itemView.setOnClickListener(v -> { if (itemClick != null) itemClick.onClick(user); });
+            h.tvFriendAdd.setOnClickListener(v -> { if (itemClick != null) itemClick.onClick(user); });
         }
 
         static class PreviewHolder extends RecyclerView.ViewHolder {
@@ -197,8 +197,12 @@ public class AddFriendActivity extends AppCompatActivity {
         }
 
         static class ItemHolder extends RecyclerView.ViewHolder {
-            ImageView ivAvatar; TextView tvName;
-            ItemHolder(@NonNull View v) { super(v); ivAvatar = v.findViewById(R.id.iv_avatar); tvName = v.findViewById(R.id.tv_name); }
+            ImageView ivAvatar; TextView tvName, tvFriendAdd;
+            ItemHolder(@NonNull View v) { super(v);
+                ivAvatar = v.findViewById(R.id.iv_avatar);
+                tvName = v.findViewById(R.id.tv_name);
+                tvFriendAdd = v.findViewById(R.id.friend_add);
+            }
         }
     }
 
