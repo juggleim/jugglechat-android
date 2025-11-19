@@ -9,6 +9,7 @@ import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
 import android.view.View;
@@ -27,6 +28,7 @@ import com.juggle.im.call.CallConst;
 import com.juggle.im.model.UserInfo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MultiCallActivity extends BaseCallActivity {
@@ -60,19 +62,28 @@ public class MultiCallActivity extends BaseCallActivity {
         btnHangup.setOnClickListener(v -> hangupCall());
         btnMicMute.setOnClickListener(v -> toggleMic());
         btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
-        updateParticipantView(targetUserIds);
-        // preview self video
-        View view = gridParticipants.findViewWithTag(JIM.getInstance().getCurrentUserId());
-        SurfaceView surfaceView = view.findViewById(R.id.surface_view);
-        callSession.startPreview(surfaceView);
 
         btnAccept.setOnClickListener(v -> {
             acceptCall();
         });
         setupView();
+
+        // 不能包含自己
+        targetUserIds.remove(JIM.getInstance().getCurrentUserId());
+        updateParticipantView(Arrays.asList(JIM.getInstance().getCurrentUserId()));
+        updateParticipantView(targetUserIds);
     }
 
-    private void updateParticipantView(ArrayList<String> users) {
+    private void startPreview() {
+        // preview self video
+        View view = gridParticipants.findViewWithTag(JIM.getInstance().getCurrentUserId());
+        if (view != null && callSession != null) {
+            SurfaceView surfaceView = view.findViewById(R.id.surface_view);
+            callSession.startPreview(surfaceView);
+        }
+    }
+
+    private void updateParticipantView(List<String> users) {
         if (users == null || users.isEmpty()) return;
         for (String userId : users) {
             UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(userId);
@@ -92,6 +103,7 @@ public class MultiCallActivity extends BaseCallActivity {
     @Override
     public void onCallConnected() {
         super.onCallConnected();
+        startPreview();
         setupTimer(tvCallTime);
         setupView();
     }
@@ -157,32 +169,36 @@ public class MultiCallActivity extends BaseCallActivity {
         tvName.setText(userInfo.getUserName());
         AvatarUtils.loadAvatar(imgAvatar, userInfo.getPortrait(), userInfo.getUserName());
 
+        int heightPx = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                200,
+                getResources().getDisplayMetrics()
+        );
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = 0; // 平分宽度
-        params.height = 0; // 平分高度
+        params.width = 0; // 让宽度依旧按权重分配
+        params.height = heightPx; // 固定高度 200dp
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
+        params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
         gridParticipants.addView(memberView, params);
     }
 
     private void addVideoParticipant(UserInfo userInfo) {
-        View videoViewLayout = LayoutInflater.from(this).inflate(R.layout.item_video_participant, gridParticipants, false);
-        videoViewLayout.setTag(userInfo.getUserId());
-        TextView tvName = videoViewLayout.findViewById(R.id.tv_name);
+        View memberView = LayoutInflater.from(this).inflate(R.layout.item_video_participant, gridParticipants, false);
+        memberView.setTag(userInfo.getUserId());
+        TextView tvName = memberView.findViewById(R.id.tv_name);
         tvName.setText(userInfo.getUserName());
 
+        int heightPx = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                200,
+                getResources().getDisplayMetrics()
+        );
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = 0; // 平分宽度
-        params.height = 0; // 平分高度
+        params.width = 0; // 让宽度依旧按权重分配
+        params.height = heightPx; // 固定高度 200dp
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-
-        gridParticipants.addView(videoViewLayout, params);
-    }
-
-    private List<String> getUserIds() {
-        List<String> userIds = new ArrayList<>();
-        return userIds;
+        params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
+        gridParticipants.addView(memberView, params);
     }
 
     private void toggleMic() {
