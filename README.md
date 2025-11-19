@@ -16,6 +16,15 @@ JuggleIM Android Demo 是一个基于 [JuggleIM SDK](https://juggle.im) 开发�
 - 表情输入支持
 - 音视频通话
 
+## 功能如图所示
+![输入图片说明](keystore/images_duUP0gcBA2A8mazHuUfUSE.jpg)
+![输入图片说明](keystore/images_2SQtQqfBQ9G9s9m5XFLlC3.jpg)
+![输入图片说明](keystore/image.png)
+![输入图片说明](keystore/image2.png)
+![输入图片说明](keystore/image3.png)
+
+
+
 ## 技术架构
 
 ### 项目结构
