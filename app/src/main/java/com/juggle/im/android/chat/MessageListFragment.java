@@ -575,9 +575,13 @@ public class MessageListFragment extends Fragment {
                     updateOptionBarState(selectedIds.size());
                 }
                 break;
-            case MessageListAdapter.Action.REPLY:
+            case MessageListAdapter.Action.EDIT:
                 ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
-                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId());
+                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(), R.id.tag_edit_msg);
+                break;
+            case MessageListAdapter.Action.REPLY:
+                input = getActivity().findViewById(R.id.input_bar);
+                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(), R.id.tag_reply_msg);
                 break;
             case MessageListAdapter.Action.DELETE:
                 List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
@@ -631,5 +635,8 @@ public class MessageListFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        ConversationActivity act = (ConversationActivity) getActivity();
+        ChatInputActionBar input = act.findViewById(R.id.input_bar);
+        input.hideKeyboard();
     }
 }

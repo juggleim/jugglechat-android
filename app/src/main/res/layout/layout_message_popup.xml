@@ -46,6 +46,17 @@
             android:text="@string/forward"
             android:textColor="@color/white"
             android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/action_top"
+            style="?android:attr/textAppearanceSmall"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:text="@string/msg_top"
+            android:textColor="@color/white"
+            android:textSize="16sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -68,13 +79,13 @@
             android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/action_top"
+            android:id="@+id/action_edit"
             style="?android:attr/textAppearanceSmall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
-            android:text="@string/msg_top"
+            android:text="@string/msg_edit"
             android:textColor="@color/white"
             android:textSize="16sp" />
 

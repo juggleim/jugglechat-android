@@ -106,7 +106,13 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             }
         }
         if (vMsgTime != null) {
-            vMsgTime.setText(MessageUtils.formatTimestamp(message.getMessage().getTimestamp()));
+            String spanTimeTxt = message.getMessage().isEdit() ? "（已修改）" : "";
+            if (message.getDirection() == Message.MessageDirection.SEND) {
+                spanTimeTxt += MessageUtils.formatTimestamp(message.getMessage().getTimestamp());
+            } else {
+                spanTimeTxt = MessageUtils.formatTimestamp(message.getMessage().getTimestamp()) + spanTimeTxt;
+            }
+            vMsgTime.setText(spanTimeTxt);
         }
         this.bindItem(message, content, isGroup);
     }

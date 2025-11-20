@@ -5,15 +5,10 @@ import static android.view.View.VISIBLE;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Rect;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import android.util.Log;
 import android.view.KeyEvent;
@@ -27,7 +22,6 @@ import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 
 import com.juggle.im.android.chat.call.BaseCallActivity;
-import com.juggle.im.android.chat.call.SingleCallActivity;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
 import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
@@ -145,15 +139,19 @@ public class ConversationActivity extends AppCompatActivity {
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
             inputBar.setListener(new ChatInputActionBar.Listener() {
-                public void onSend(String text, String replyMsgId, MessageMentionInfo mentionInfo) {
+                public void onSend(String text, String msgId, MessageMentionInfo mentionInfo, int sendType) {
                     TextMessage msg = new TextMessage(text);
                     MessageOptions options = new MessageOptions();
                     PushData pushData = new PushData();
                     pushData.setContent(text);
                     options.setPushData(pushData);
                     options.setMentionInfo(mentionInfo);
-                    options.setReferredMessageId(replyMsgId);
-                    sendTextMessage(msg, options, conversation);
+                    if (sendType == R.id.tag_edit_msg) {
+                        editTextMessage(msgId, msg, options, conversation);
+                    } else {
+                        options.setReferredMessageId(msgId);
+                        sendTextMessage(msg, options, conversation);
+                    }
                 }
 
                 @Override
@@ -217,7 +215,6 @@ public class ConversationActivity extends AppCompatActivity {
                 Log.i("TAG", "getTopMessage error: " + i);
             }
         });
-        View rootView = findViewById(R.id.conversation_container);
         Window window = getWindow();
         window.setNavigationBarColor(getColor(R.color.input_bg_light));
     }
@@ -311,7 +308,6 @@ public class ConversationActivity extends AppCompatActivity {
             return;
         }
         Message m = event.getMessage();
-        if (m == null || !MessageUtils.shownInMessageList(m)) return;
         MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
         if (frag != null) {
             frag.onNewMessage(m);
@@ -378,6 +374,22 @@ public class ConversationActivity extends AppCompatActivity {
         }
     }
 
+    private void editTextMessage(String msgId, TextMessage msg, MessageOptions options, Conversation conversation) {
+        JIM.getInstance().getMessageManager().updateMessage(msgId, msg, conversation, new IMessageManager.IMessageCallback() {
+            @Override
+            public void onSuccess(Message message) {
+                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
+                if (frag != null) {
+                    frag.onUpdateMessage(Arrays.asList(message));
+                }
+            }
+
+            @Override
+            public void onError(int i) {
+                Log.d("MessageListFragment", "update message failed: " + i);
+            }
+        });
+    }
     private void sendTextMessage(TextMessage text, MessageOptions options, Conversation conversation) {
         IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
             @Override

@@ -72,4 +72,5 @@
     <string name="txt_copy">复制</string>
     <string name="txt_reply">回复</string>
     <string name="msg_top">置顶</string>
+    <string name="msg_edit">编辑</string>
 </resources>

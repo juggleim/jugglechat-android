@@ -29,13 +29,12 @@ import com.juggle.im.android.utils.ResourceUtils;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.ImageMessage;
+import com.juggle.im.model.messages.TextMessage;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.ViewHolder> {
-    private static final int BASE_SENT = 100;
-    private static final int BASE_RECEIVED = 200;
     private final boolean isGroup;
     private final OnMessageActionListener actionListener;
     // selection mode state
@@ -304,6 +303,8 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             View vDelete = popupView.findViewById(R.id.action_delete);
             View vRecall = popupView.findViewById(R.id.action_recall);
             View vTop = popupView.findViewById(R.id.action_top);
+            View vEdit = popupView.findViewById(R.id.action_edit);
+
 
             if (ui.getMessage().getDirection() == Message.MessageDirection.SEND) {
                 if (ui.getMessage().getState() != Message.MessageState.SENT) {
@@ -311,11 +312,16 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 }
             } else {
                 vRecall.setVisibility(GONE);
+                vEdit.setVisibility(GONE);
             }
 
             vCopy.setOnClickListener(v -> {
                 pw.dismiss();
                 actionListener.onMessageAction(ui, Action.COPY);
+            });
+            vEdit.setOnClickListener(v -> {
+                pw.dismiss();
+                actionListener.onMessageAction(ui, Action.EDIT);
             });
             vTop.setOnClickListener(v -> {
                 pw.dismiss();
@@ -346,6 +352,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
     public static class Action {
         public static final String COPY = "copy";
+        public static final String EDIT = "edit";
         public static final String TOP = "top";
         public static final String RECALL = "recall";
         public static final String FORWARD = "forward";
@@ -368,9 +375,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         @Override
         public boolean areContentsTheSame(@NonNull UiMessage oldItem, @NonNull UiMessage newItem) {
-            return oldItem.getMessage().getState().getValue() == newItem.getMessage().getState().getValue()
+            boolean same = oldItem.getMessage().getState().getValue() == newItem.getMessage().getState().getValue()
                     && oldItem.getMessage().isHasRead() == newItem.getMessage().isHasRead()
                     && oldItem.getMessage().getDirection().getValue() == newItem.getMessage().getDirection().getValue();
+            if (oldItem.getMessage().getContent() instanceof TextMessage) {
+                same = same && ((TextMessage) oldItem.getMessage().getContent()).getContent()
+                        .equals(((TextMessage) newItem.getMessage().getContent()).getContent());
+            }
+            return same;
         }
     };
 }

@@ -13,7 +13,8 @@
         android:background="@color/primary_bg_light"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="8dp">
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
         <ImageView
             android:id="@+id/iv_back"
@@ -74,7 +75,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:background="@android:color/white"
+            android:background="@color/input_bg_light"
             android:gravity="center"
             android:minHeight="58dp"
             android:orientation="horizontal"

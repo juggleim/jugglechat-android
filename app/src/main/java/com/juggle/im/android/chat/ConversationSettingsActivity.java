@@ -148,7 +148,7 @@ public class ConversationSettingsActivity extends AppCompatActivity {
 
                 @Override
                 public void onError(int code, String message) {
-
+                    Log.e("getGroupInfo", code + message);
                 }
             });
         } else {
@@ -160,6 +160,8 @@ public class ConversationSettingsActivity extends AppCompatActivity {
             UserInfo data = JIM.getInstance().getUserInfoManager().getUserInfo(conversationId);
             if (data != null) {
                 AvatarUtils.loadAvatar(groupAvatar, data.getPortrait(), data.getUserName());
+                TextView tvName = findViewById(R.id.tv_group_name);
+                tvName.setText(data.getUserName());
             }
         }
     }

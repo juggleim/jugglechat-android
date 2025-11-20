@@ -12,9 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.view.Gravity;
-import android.view.WindowManager;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.graphics.drawable.ColorDrawable;
@@ -22,7 +20,6 @@ import android.graphics.Color;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
-import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.model.Conversation;
 

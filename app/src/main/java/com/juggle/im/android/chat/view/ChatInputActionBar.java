@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Rect;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -41,9 +40,6 @@ import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.model.MessageMentionInfo;
 
 import androidx.core.app.ActivityCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
@@ -58,7 +54,7 @@ import java.util.Map;
  */
 public class ChatInputActionBar extends LinearLayout {
     private ImageView btnVoice, btnEmoji, btnMore;
-    private EditText editMessage;
+    private EditText editTextInput;
     private FrameLayout panelContainer;
     private ViewGroup inputArea;
     private View morePanel, emptyPanel, emojiPanel;
@@ -90,7 +86,7 @@ public class ChatInputActionBar extends LinearLayout {
     private int imeMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
     public interface Listener {
-        void onSend(String text, String replyMsgId, MessageMentionInfo mentionInfo);
+        void onSend(String text, String msgId, MessageMentionInfo mentionInfo, int sendType);
 
         void onRequestVoice(); // legacy
 
@@ -124,7 +120,7 @@ public class ChatInputActionBar extends LinearLayout {
         btnVoice = findViewById(R.id.button_voice);
         btnEmoji = findViewById(R.id.button_emoji);
         btnMore = findViewById(R.id.button_more);
-        editMessage = findViewById(R.id.edit_message);
+        editTextInput = findViewById(R.id.edit_message);
         panelContainer = findViewById(R.id.panel_container);
         inputArea = findViewById(R.id.input_area);
         setupListeners();
@@ -166,15 +162,15 @@ public class ChatInputActionBar extends LinearLayout {
         btnEmoji.setOnClickListener(v -> switchMode(InputMode.EMOJI));
         btnMore.setOnClickListener(v -> switchMode(InputMode.MORE));
 
-        editMessage.setOnFocusChangeListener((v, hasFocus) -> {
+        editTextInput.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) switchMode(InputMode.TEXT);
         });
 
-        editMessage.setOnClickListener(l -> {
+        editTextInput.setOnClickListener(l -> {
             switchMode(InputMode.TEXT);
         });
 
-        editMessage.addTextChangedListener(new TextWatcher() {
+        editTextInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
             }
@@ -187,14 +183,14 @@ public class ChatInputActionBar extends LinearLayout {
             public void afterTextChanged(Editable s) {
             }
         });
-        editMessage.setRawInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        editMessage.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
-        editMessage.setImeActionLabel("发送", android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
-        editMessage.setOnKeyListener((v, keyCode, event) -> {
+        editTextInput.setRawInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        editTextInput.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
+        editTextInput.setImeActionLabel("发送", android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
+        editTextInput.setOnKeyListener((v, keyCode, event) -> {
             if (keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
                 // If Shift is pressed, allow newline insertion; otherwise treat as Send.
                 if (!event.isShiftPressed()) {
-                    String msg = editMessage.getText().toString().trim();
+                    String msg = editTextInput.getText().toString().trim();
                     if (!android.text.TextUtils.isEmpty(msg)) {
                         handleSendMessage(msg);
                     }
@@ -207,9 +203,9 @@ public class ChatInputActionBar extends LinearLayout {
         });
         // Some IMEs don't emit key events for Enter in multiline fields, but will invoke
         // onEditorAction with IME_ACTION_SEND. Handle both cases: Editor action and key events.
-        editMessage.setOnEditorActionListener((v, actionId, event) -> {
+        editTextInput.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
-                String msg = editMessage.getText().toString().trim();
+                String msg = editTextInput.getText().toString().trim();
                 if (!TextUtils.isEmpty(msg)) {
                     handleSendMessage(msg);
                     return true;
@@ -221,7 +217,7 @@ public class ChatInputActionBar extends LinearLayout {
             if (event != null && event.getKeyCode() == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
                 // If Shift is pressed, allow newline; otherwise treat as send
                 if (!event.isShiftPressed()) {
-                    String msg = editMessage.getText().toString().trim();
+                    String msg = editTextInput.getText().toString().trim();
                     if (!TextUtils.isEmpty(msg)) {
                         handleSendMessage(msg);
                         return true;
@@ -234,8 +230,24 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void handleSendMessage(String text) {
         View referView = findViewById(R.id.refer_msg_container);
-        listener.onSend(text, referView.getVisibility() == VISIBLE ? (String) referView.getTag() : null, null);
-        editMessage.setText("");
+        int type = 0;
+        String tag = null;
+        // 支持编辑消息和回复消息
+        if (referView.getVisibility() == VISIBLE) {
+            Object replyTag = null, editTag = null;
+            replyTag = referView.getTag(R.id.tag_reply_msg);
+            if (replyTag != null) {
+                type = R.id.tag_reply_msg;
+                tag = (String) replyTag;
+            }
+            editTag = referView.getTag(R.id.tag_edit_msg);
+            if (editTag != null) {
+                type = R.id.tag_edit_msg;
+                tag = (String) editTag;
+            }
+        }
+        listener.onSend(text, tag, null, type);
+        editTextInput.setText("");
         referView.setVisibility(GONE);
     }
 
@@ -348,19 +360,19 @@ public class ChatInputActionBar extends LinearLayout {
             case TEXT:
                 // show keyboard, hide bottom panels and restore input area
                 showInputArea(true);
-                if (keyboardHeight > 0 && imeMode == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING ) {
+                if (keyboardHeight > 0 && imeMode == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) {
                     panelContainer.setVisibility(VISIBLE);
                     showPanel(getEmptyPanel(), InputMode.TEXT);
                 } else {
                     hidePanel();
                 }
-                editMessage.requestFocus();
-                imm.showSoftInput(editMessage, InputMethodManager.SHOW_IMPLICIT);
+                editTextInput.requestFocus();
+                imm.showSoftInput(editTextInput, InputMethodManager.SHOW_IMPLICIT);
                 ensurePanelHeight(true);
                 break;
             case VOICE:
                 // hide keyboard and panels, show a voice record button in input area
-                imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
+                imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
                 hidePanel();
                 showVoiceInInputArea();
                 if (listener != null) listener.onRequestVoice();
@@ -370,13 +382,13 @@ public class ChatInputActionBar extends LinearLayout {
                 showInputArea(true);
                 ensurePanelHeight(false);
                 showPanel(getEmojiPanel(), InputMode.EMOJI);
-                imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
+                imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
                 break;
             case MORE:
                 showInputArea(true);
                 ensurePanelHeight(false);
                 showPanel(getMorePanel(), InputMode.MORE);
-                imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
+                imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
                 break;
         }
     }
@@ -385,7 +397,7 @@ public class ChatInputActionBar extends LinearLayout {
         // if we know keyboard height, use it; otherwise fallback to 250dp
         ViewGroup.LayoutParams lp = panelContainer.getLayoutParams();
         if (keyboardHeight > 0 && keyboardVisible) {
-            lp.height = keyboardHeight-difference;
+            lp.height = keyboardHeight - difference;
         } else {
             lp.height = (int) (getResources().getDisplayMetrics().density * 250);
         }
@@ -424,11 +436,16 @@ public class ChatInputActionBar extends LinearLayout {
 
         if (listener != null) listener.onPanelVisibilityChanged(true);
         // when panel shows, ensure message list is pushed up by panel height
-        int h = panelContainer.getLayoutParams() != null
-                ? (panelContainer.getLayoutParams().height < 0
-                ? getResources().getDimensionPixelSize(R.dimen.input_panel_height)
-                : panelContainer.getLayoutParams().height)
-                : 0;
+        int h = mode.equals(InputMode.TEXT)
+                ?
+                (keyboardHeight - difference)
+                :
+                (panelContainer.getLayoutParams() != null
+                        ? (panelContainer.getLayoutParams().height < 0
+                        ? getResources().getDimensionPixelSize(R.dimen.input_panel_height)
+                        : panelContainer.getLayoutParams().height)
+                        : 0
+                );
         adjustMessageListBottom(h);
         panelSwitched = true;
     }
@@ -442,52 +459,48 @@ public class ChatInputActionBar extends LinearLayout {
 
     // public helpers so external controllers (e.g. fragment/activity) can query/collapse panels
     public boolean isPanelVisible() {
-        return panelContainer != null && (panelContainer.getVisibility() == VISIBLE || editMessage.getVisibility() == VISIBLE);
+        return panelContainer != null && (panelContainer.getVisibility() == VISIBLE || editTextInput.getVisibility() == VISIBLE);
     }
 
     public void collapsePanel() {
         if (isPanelVisible()) {
             InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
+            imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
             hidePanel();
         }
     }
 
     public void hideKeyboard() {
-        editMessage.clearFocus();
+        editTextInput.clearFocus();
         InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
     }
 
     // Find the message RecyclerView in the activity/fragment and adjust its bottom padding so
     // the messages are not obscured by keyboard or bottom panel. This is resilient: it will
     // search common ids and tolerate absence.
     private void adjustMessageListBottom(int bottomPx) {
-        try {
-            Activity act = (Activity) getContext();
-            View root = act.findViewById(android.R.id.content);
-            if (root == null) return;
-            // look for recycler with id recycler_view_messages
-            View rv = root.findViewById(R.id.recycler_view_messages);
-            if (rv instanceof androidx.recyclerview.widget.RecyclerView) {
-                androidx.recyclerview.widget.RecyclerView r = (androidx.recyclerview.widget.RecyclerView) rv;
-                // set padding bottom and preserve existing left/top/right
-                int l = r.getPaddingLeft();
-                int t = r.getPaddingTop();
-                int rgt = r.getPaddingRight();
-                r.setPadding(l, t, rgt, bottomPx + getResources().getDimensionPixelSize(R.dimen.chat_input_height));
-                // ensure the recycler can scroll into the padded area
-                r.setClipToPadding(false);
-            }
-        } catch (Exception e) {
-            // ignore; best-effort only
+        Activity act = (Activity) getContext();
+        View root = act.findViewById(android.R.id.content);
+        if (root == null) return;
+        // look for recycler with id recycler_view_messages
+        View rv = root.findViewById(R.id.recycler_view_messages);
+        if (rv instanceof androidx.recyclerview.widget.RecyclerView) {
+            androidx.recyclerview.widget.RecyclerView r = (androidx.recyclerview.widget.RecyclerView) rv;
+            // set padding bottom and preserve existing left/top/right
+            int l = r.getPaddingLeft();
+            int t = r.getPaddingTop();
+            int rgt = r.getPaddingRight();
+            r.setPadding(l, t, rgt, bottomPx + getResources().getDimensionPixelSize(R.dimen.chat_input_height));
+            // ensure the recycler can scroll into the padded area
+            r.setClipToPadding(true);
         }
     }
 
     private void showInputArea(boolean showEdit) {
         // restore input area: ensure edit visible and remove voice view if present
         btnVoice.setImageResource(R.drawable.ic_input_voice);
-        editMessage.setVisibility(VISIBLE);
+        editTextInput.setVisibility(VISIBLE);
         if (voiceActionView != null) voiceActionView.hide();
         if (showEdit && listener != null) listener.onKeyboardVisibilityChanged(true);
     }
@@ -495,7 +508,7 @@ public class ChatInputActionBar extends LinearLayout {
     @SuppressLint("ClickableViewAccessibility")
     private void showVoiceInInputArea() {
         // replace edit with the new VoiceInputAction view
-        editMessage.setVisibility(GONE);
+        editTextInput.setVisibility(GONE);
         btnVoice.setImageResource(R.drawable.ic_input_keyboard);
         if (voiceActionView == null) {
             voiceActionView = findViewById(R.id.voice_input_container);
@@ -574,8 +587,8 @@ public class ChatInputActionBar extends LinearLayout {
             Object item = parent.getItemAtPosition(pos);
             if (item instanceof String) {
                 String e = (String) item;
-                int start = Math.max(editMessage.getSelectionStart(), 0);
-                editMessage.getText().insert(start, e);
+                int start = Math.max(editTextInput.getSelectionStart(), 0);
+                editTextInput.getText().insert(start, e);
             }
         });
 
@@ -588,7 +601,7 @@ public class ChatInputActionBar extends LinearLayout {
         }
         if (sendBtn != null) {
             sendBtn.setOnClickListener(v -> {
-                String msg = editMessage.getText().toString().trim();
+                String msg = editTextInput.getText().toString().trim();
                 if (!TextUtils.isEmpty(msg) && listener != null) {
                     handleSendMessage(msg);
                 }
@@ -608,9 +621,9 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     private void safeDeletePreviousCodePoint() {
-        int sel = Math.max(editMessage.getSelectionStart(), 0);
+        int sel = Math.max(editTextInput.getSelectionStart(), 0);
         if (sel == 0) return;
-        CharSequence text = editMessage.getText();
+        CharSequence text = editTextInput.getText();
         if (text == null || text.length() == 0) return;
         int deleteFrom = sel - 1;
         // handle surrogate pairs
@@ -620,18 +633,28 @@ public class ChatInputActionBar extends LinearLayout {
                 deleteFrom = deleteFrom - 1;
             }
         }
-        editMessage.getText().delete(deleteFrom, sel);
+        editTextInput.getText().delete(deleteFrom, sel);
     }
 
-    public void showReferMsgPanel(String name, String msg, String msgId) {
+    /**
+     *
+     * @param name
+     * @param msg
+     * @param msgId
+     * @param type 1 - reply, 2-edit message
+     */
+    public void showReferMsgPanel(String name, String msg, String msgId, int type) {
         View referView = findViewById(R.id.refer_msg_container);
         referView.setVisibility(VISIBLE);
         findViewById(R.id.button_del_ref).setOnClickListener((v) -> {
             referView.setVisibility(GONE);
         });
+        // clear old tag
+        referView.setTag(R.id.tag_edit_msg, null);
+        referView.setTag(R.id.tag_reply_msg, null);
         TextView tvContent = findViewById(R.id.message_content);
         tvContent.setText(name + ": " + msg);
-        referView.setTag(msgId);
+        referView.setTag(type, msgId);
         collapsePanel();
     }
 
