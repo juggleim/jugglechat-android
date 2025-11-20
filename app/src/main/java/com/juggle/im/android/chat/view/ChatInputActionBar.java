@@ -70,7 +70,7 @@ public class ChatInputActionBar extends LinearLayout {
 
     private InputMode currentMode = InputMode.TEXT;
 
-    private int keyboardHeight = 0;
+    private int keyboardHeight = 0, difference = 0;
     private boolean keyboardVisible = false;
     // Keep a reference to the global layout listener so we can unregister it on detach
     private ViewTreeObserver.OnGlobalLayoutListener globalLayoutListener;
@@ -276,6 +276,9 @@ public class ChatInputActionBar extends LinearLayout {
                 int heightDifference = screenHeight - r.bottom;
 
                 Log.d("ChatInput", "Keyboard shown, height: " + keyboardHeight + "px,, " + heightDifference);
+                if (difference == 0 && heightDifference != 0 && heightDifference != keyboardHeight && keyboardHeight > 0) {
+                    difference = heightDifference;
+                }
 
                 // 4. 判断键盘是否弹出 (如果高度差大于最小阈值，则认为键盘弹出了)
                 if (heightDifference > minKeyboardHeightPx) {
@@ -382,7 +385,7 @@ public class ChatInputActionBar extends LinearLayout {
         // if we know keyboard height, use it; otherwise fallback to 250dp
         ViewGroup.LayoutParams lp = panelContainer.getLayoutParams();
         if (keyboardHeight > 0 && keyboardVisible) {
-            lp.height = keyboardHeight;
+            lp.height = keyboardHeight-difference;
         } else {
             lp.height = (int) (getResources().getDisplayMetrics().density * 250);
         }
@@ -448,6 +451,12 @@ public class ChatInputActionBar extends LinearLayout {
             imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
             hidePanel();
         }
+    }
+
+    public void hideKeyboard() {
+        editMessage.clearFocus();
+        InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(editMessage.getWindowToken(), 0);
     }
 
     // Find the message RecyclerView in the activity/fragment and adjust its bottom padding so
