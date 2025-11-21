@@ -8,7 +8,7 @@ import com.juggle.im.android.R;
 
 public class LocationPlugin extends MorePlugin {
     public static final String ID = "location";
-    public static final int REQ = 2003;
+    public static final int REQ = 12003;
 
     public LocationPlugin(Callback callback) {
         super(callback);

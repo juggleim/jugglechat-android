@@ -35,7 +35,8 @@ public class ConversationListFragment extends Fragment implements ConversationLi
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_conversation_list, container, false);
     }
 
@@ -55,13 +56,17 @@ public class ConversationListFragment extends Fragment implements ConversationLi
 
     @Override
     public void onConversationClick(UiConversation uiConversation) {
-        JIM.getInstance().getConversationManager().clearUnreadCount(uiConversation.getConversationInfo().getConversation(), null);
+        int unreadCount = uiConversation.getConversationInfo().getUnreadCount();
+        JIM.getInstance().getConversationManager()
+                .clearUnreadCount(uiConversation.getConversationInfo().getConversation(), null);
         Intent intent = ConversationActivity.intentFor(this.getActivity(),
                 uiConversation.getConversationInfo().getConversation().getConversationId(),
                 uiConversation.getName(),
-                uiConversation.getConversationInfo().getConversation().getConversationType().equals(Conversation.ConversationType.GROUP),
+                uiConversation.getConversationInfo().getConversation().getConversationType()
+                        .equals(Conversation.ConversationType.GROUP),
                 uiConversation.isTop(),
                 uiConversation.isMuted());
+        intent.putExtra(ConversationActivity.EXTRA_UNREAD_COUNT, unreadCount);
         startActivity(intent);
     }
 
@@ -75,11 +80,12 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         View menuView = LayoutInflater.from(requireContext()).inflate(R.layout.layout_conversation_popup_menu, null);
 
         // Create the popup window
-        popupWindow = new PopupWindow(menuView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popupWindow = new PopupWindow(menuView, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, true);
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         popupWindow.setOutsideTouchable(true);
         popupWindow.setElevation(10);
-        
+
         // 设置PopupWindow消失监听器，用于清除选中状态
         popupWindow.setOnDismissListener(() -> {
             conversationListAdapter.clearSelectedPosition();
@@ -111,8 +117,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         });
 
         RecyclerView.ViewHolder viewHolder = conversationListView.findViewHolderForAdapterPosition(
-                conversationListAdapter.getPosition(uiConversation)
-        );
+                conversationListAdapter.getPosition(uiConversation));
         if (viewHolder != null) {
             View anchorView = viewHolder.itemView;
 
@@ -132,8 +137,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
             // 获取 PopupWindow 的宽高（需提前测量）
             popupWindow.getContentView().measure(
                     View.MeasureSpec.UNSPECIFIED,
-                    View.MeasureSpec.UNSPECIFIED
-            );
+                    View.MeasureSpec.UNSPECIFIED);
             int popupWidth = popupWindow.getContentView().getMeasuredWidth();
             int popupHeight = popupWindow.getContentView().getMeasuredHeight();
 

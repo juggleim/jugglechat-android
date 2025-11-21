@@ -12,7 +12,7 @@ import com.juggle.im.android.R;
 
 public class VoiceCallPlugin extends MorePlugin {
     public static final String ID = "call_voice";
-    public static final int REQ = 2003;
+    public static final int REQ = 12006;
 
     public VoiceCallPlugin(Callback callback) {
         super(callback);

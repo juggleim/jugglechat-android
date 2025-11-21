@@ -8,7 +8,7 @@ import com.juggle.im.android.R;
 
 public class FilePlugin extends MorePlugin {
     public static final String ID = "file";
-    public static final int REQ = 2002;
+    public static final int REQ = 12002;
 
     private Activity host;
 

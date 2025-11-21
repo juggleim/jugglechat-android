@@ -45,9 +45,11 @@ import java.util.Set;
 public class MessageListFragment extends Fragment {
     private static final String ARG_CONV_ID = "arg_conv_id";
     private static final String ARG_IS_GROUP = "arg_is_group";
+    private static final String ARG_UNREAD_COUNT = "arg_unread_count";
 
     private String conversationId;
     private boolean isGroup;
+    private int unreadCount;
     // UI state
     private final List<UiMessage> uiMessages = new ArrayList<>();
     private androidx.recyclerview.widget.LinearLayoutManager layoutManager;
@@ -68,18 +70,20 @@ public class MessageListFragment extends Fragment {
     private ImageView btnDeleteSelected;
     private FrameLayout overlayForwardContainer;
 
-    public static MessageListFragment newInstance(String convId, boolean isGroup) {
+    public static MessageListFragment newInstance(String convId, boolean isGroup, int unreadCount) {
         MessageListFragment f = new MessageListFragment();
         Bundle b = new Bundle();
         b.putString(ARG_CONV_ID, convId);
         b.putBoolean(ARG_IS_GROUP, isGroup);
+        b.putInt(ARG_UNREAD_COUNT, unreadCount);
         f.setArguments(b);
         return f;
     }
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_message_list, container, false);
     }
 
@@ -89,13 +93,15 @@ public class MessageListFragment extends Fragment {
         if (getArguments() != null) {
             conversationId = getArguments().getString(ARG_CONV_ID);
             isGroup = getArguments().getBoolean(ARG_IS_GROUP, false);
+            unreadCount = getArguments().getInt(ARG_UNREAD_COUNT, 0);
         }
 
         recyclerView = view.findViewById(R.id.recycler_view_messages);
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
         adapter = new MessageListAdapter(isGroup, (message, action) -> {
-            // handle message actions here on UI thread (position is adapter/display position)
+            // handle message actions here on UI thread (position is adapter/display
+            // position)
             requireActivity().runOnUiThread(() -> onMessageAction(message, action));
         });
         adapter.setSelectionChangeListener(new MessageListAdapter.OnSelectionChangeListener() {
@@ -111,7 +117,25 @@ public class MessageListFragment extends Fragment {
         });
         recyclerView.setAdapter(adapter);
 
-        // Ensure RecyclerView preserves space for the input bar by default so messages are not hidden
+        if (unreadCount >= 6) {
+            View bubble = view.findViewById(R.id.layout_unread_bubble);
+            TextView tvUnread = view.findViewById(R.id.tv_unread_count);
+            if (bubble != null && tvUnread != null) {
+                bubble.setVisibility(VISIBLE);
+                tvUnread.setText(String.valueOf(unreadCount) + "条未读消息");
+                bubble.animate().translationX(0).setDuration(500).start();
+                bubble.setOnClickListener(v -> {
+                    bubble.setVisibility(GONE);
+                    int target = adapter.getItemCount() - unreadCount;
+                    if (target < 0)
+                        target = 0;
+                    recyclerView.smoothScrollToPosition(target);
+                });
+            }
+        }
+
+        // Ensure RecyclerView preserves space for the input bar by default so messages
+        // are not hidden
         int left = recyclerView.getPaddingLeft();
         int top = recyclerView.getPaddingTop();
         int right = recyclerView.getPaddingRight();
@@ -119,7 +143,8 @@ public class MessageListFragment extends Fragment {
         recyclerView.setPadding(left, top, right, bottom);
         recyclerView.setClipToPadding(false);
 
-        // track scroll position to know if we're at bottom; also collapse input panels when user scrolls
+        // track scroll position to know if we're at bottom; also collapse input panels
+        // when user scrolls
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
@@ -241,31 +266,37 @@ public class MessageListFragment extends Fragment {
     }
 
     private void showSelectionUi() {
-        if (selectionOptionBar != null) selectionOptionBar.setVisibility(VISIBLE);
+        if (selectionOptionBar != null)
+            selectionOptionBar.setVisibility(VISIBLE);
         // hide input bar
         ConversationActivity act = (ConversationActivity) getActivity();
         if (act != null) {
             ChatInputActionBar input = act.findViewById(R.id.input_bar);
-            if (input != null) input.setVisibility(GONE);
+            if (input != null)
+                input.setVisibility(GONE);
         }
     }
 
     private void hideSelectionUi() {
-        if (selectionOptionBar != null) selectionOptionBar.setVisibility(GONE);
+        if (selectionOptionBar != null)
+            selectionOptionBar.setVisibility(GONE);
         // show input bar
         ConversationActivity act = (ConversationActivity) getActivity();
         if (act != null) {
             ChatInputActionBar input = act.findViewById(R.id.input_bar);
-            if (input != null) input.setVisibility(VISIBLE);
+            if (input != null)
+                input.setVisibility(VISIBLE);
         }
         // reset title/back
         updateOptionBarState(0);
     }
 
     private void enterSelectionMode(UiMessage initial) {
-        if (initial == null) return;
+        if (initial == null)
+            return;
         selectedIds.clear();
-        if (initial.getMessageId() != null) selectedIds.add(initial.getMessageId());
+        if (initial.getMessageId() != null)
+            selectedIds.add(initial.getMessageId());
         adapter.enterSelectionMode(initial);
         showSelectionUi();
         updateOptionBarState(selectedIds.size());
@@ -279,13 +310,15 @@ public class MessageListFragment extends Fragment {
         if (getActivity() != null) {
             TextView tv = getActivity().findViewById(R.id.tv_title);
             String title = getActivity().getIntent().getStringExtra(EXTRA_TITLE);
-            if (tv != null && title != null) tv.setText(title);
+            if (tv != null && title != null)
+                tv.setText(title);
             getActivity().findViewById(R.id.iv_settings).setVisibility(VISIBLE);
         }
     }
 
     private void showForwardMenu() {
-        if (overlayForwardContainer == null) return;
+        if (overlayForwardContainer == null)
+            return;
         overlayForwardContainer.setVisibility(VISIBLE);
         overlayForwardContainer.setOnClickListener(v -> {
             overlayForwardContainer.removeAllViews();
@@ -294,7 +327,8 @@ public class MessageListFragment extends Fragment {
         });
         // create a small menu view at bottom
         View menu = LayoutInflater.from(requireContext()).inflate(R.layout.layout_forward_menu, null);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.gravity = android.view.Gravity.BOTTOM;
         overlayForwardContainer.removeAllViews();
         menu.setClickable(true);
@@ -331,10 +365,12 @@ public class MessageListFragment extends Fragment {
     }
 
     /**
-     * Return currently selected messages (used by ConversationActivity when handling forward result).
+     * Return currently selected messages (used by ConversationActivity when
+     * handling forward result).
      */
     public List<UiMessage> getSelectedMessagesForForward() {
-        if (adapter == null) return new ArrayList<>();
+        if (adapter == null)
+            return new ArrayList<>();
         return adapter.getSelectedMessages();
     }
 
@@ -343,13 +379,15 @@ public class MessageListFragment extends Fragment {
      */
     public void clearSelectionAfterForward() {
         selectedIds.clear();
-        if (adapter != null) adapter.exitSelectionMode();
+        if (adapter != null)
+            adapter.exitSelectionMode();
         hideSelectionUi();
     }
 
     public void insertMention(ArrayList<String> userIds, ArrayList<String> userNames) {
         ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
-        if (input == null) return;
+        if (input == null)
+            return;
         input.insertMention(userIds, userNames);
     }
 
@@ -361,7 +399,8 @@ public class MessageListFragment extends Fragment {
     }
 
     private void loadMoreMessages() {
-        if (isLoadingMore) return;
+        if (isLoadingMore)
+            return;
         isLoadingMore = true;
         long cursor = 0L;
         if (!uiMessages.isEmpty()) {
@@ -370,79 +409,88 @@ public class MessageListFragment extends Fragment {
             cursor = oldest.getTimestamp();
         }
 
-        JIMChatCore.getInstance().getMessages(conversationId, isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, 20, cursor, new IMessageManager.IGetMessagesCallbackV3() {
-            @Override
-            public void onGetMessages(List<Message> list, long timestamp, boolean hasMore, int code) {
-                if (list == null || list.isEmpty()) {
-                    isLoadingMore = false;
-                    return;
-                }
-                List<UiMessage> incoming = new ArrayList<>();
-                for (Message m : list) {
-                    UiMessage um = UiMessage.fromMessage(m);
-                    if (um != null) incoming.add(um);
-                }
-                incoming.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
-                setMessageRead(incoming);
-                requireActivity().runOnUiThread(() -> {
-                    boolean changed = false;
-                    for (UiMessage um : incoming) {
-                        final String id = um.getMessageId();
-                        boolean exists = false;
-                        for (UiMessage ex : uiMessages) {
-                            if (ex.getMessageId() != null && ex.getMessageId().equals(id)) {
-                                exists = true;
-                                break;
+        JIMChatCore.getInstance().getMessages(conversationId,
+                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, 20, cursor,
+                new IMessageManager.IGetMessagesCallbackV3() {
+                    @Override
+                    public void onGetMessages(List<Message> list, long timestamp, boolean hasMore, int code) {
+                        if (list == null || list.isEmpty()) {
+                            isLoadingMore = false;
+                            return;
+                        }
+                        List<UiMessage> incoming = new ArrayList<>();
+                        for (Message m : list) {
+                            UiMessage um = UiMessage.fromMessage(m);
+                            if (um != null)
+                                incoming.add(um);
+                        }
+                        incoming.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+                        setMessageRead(incoming);
+                        requireActivity().runOnUiThread(() -> {
+                            boolean changed = false;
+                            for (UiMessage um : incoming) {
+                                final String id = um.getMessageId();
+                                boolean exists = false;
+                                for (UiMessage ex : uiMessages) {
+                                    if (ex.getMessageId() != null && ex.getMessageId().equals(id)) {
+                                        exists = true;
+                                        break;
+                                    }
+                                }
+                                if (!exists) {
+                                    uiMessages.add(um);
+                                    changed = true;
+                                }
                             }
-                        }
-                        if (!exists) {
-                            uiMessages.add(um);
-                            changed = true;
-                        }
-                    }
-                    if (changed) {
-                        // Build display list (oldest-first) and insert time status messages according to rules
-                        List<UiMessage> merged = new ArrayList<>(uiMessages);
-                        // merged currently is newest-first (we appended newest to end of uiMessages),
-                        // convert to oldest-first for display
-                        List<UiMessage> oldestFirst = new ArrayList<>(merged);
-                        Collections.reverse(oldestFirst);
+                            if (changed) {
+                                // Build display list (oldest-first) and insert time status messages according
+                                // to rules
+                                List<UiMessage> merged = new ArrayList<>(uiMessages);
+                                // merged currently is newest-first (we appended newest to end of uiMessages),
+                                // convert to oldest-first for display
+                                List<UiMessage> oldestFirst = new ArrayList<>(merged);
+                                Collections.reverse(oldestFirst);
 
-                        List<UiMessage> displayWithTimes = new ArrayList<>();
-                        UiMessage prev = null;
-                        for (UiMessage cur : oldestFirst) {
-                            if (MessageUtils.shouldInsertTimeBefore(prev, cur)) {
-                                UiMessage timeMsg = MessageUtils.createInsertTimeUiMessage(cur.getTimestamp());
-                                if (timeMsg != null) displayWithTimes.add(timeMsg);
-                            }
-                            displayWithTimes.add(cur);
-                            prev = cur;
-                        }
+                                List<UiMessage> displayWithTimes = new ArrayList<>();
+                                UiMessage prev = null;
+                                for (UiMessage cur : oldestFirst) {
+                                    if (MessageUtils.shouldInsertTimeBefore(prev, cur)) {
+                                        UiMessage timeMsg = MessageUtils.createInsertTimeUiMessage(cur.getTimestamp());
+                                        if (timeMsg != null)
+                                            displayWithTimes.add(timeMsg);
+                                    }
+                                    displayWithTimes.add(cur);
+                                    prev = cur;
+                                }
 
-                        int oldFirst = layoutManager.findFirstVisibleItemPosition();
-                        adapter.submitList(displayWithTimes, () -> {
-                            // restore to roughly the same content position after prepend.
-                            // Note: because we added time messages, offset by number of inserted entries before oldFirst
-                            // Simpler approach: scroll to keep roughly same message at top by finding the id at oldFirst
-                            if (oldFirst >= 0 && oldFirst < displayWithTimes.size()) {
-                                layoutManager.scrollToPositionWithOffset(oldFirst + incoming.size(), 0);
-                            } else if (oldFirst < 0) {
-                                scrollToBottomIfNeeded();
+                                int oldFirst = layoutManager.findFirstVisibleItemPosition();
+                                adapter.submitList(displayWithTimes, () -> {
+                                    // restore to roughly the same content position after prepend.
+                                    // Note: because we added time messages, offset by number of inserted entries
+                                    // before oldFirst
+                                    // Simpler approach: scroll to keep roughly same message at top by finding the
+                                    // id at oldFirst
+                                    if (oldFirst >= 0 && oldFirst < displayWithTimes.size()) {
+                                        layoutManager.scrollToPositionWithOffset(oldFirst + incoming.size(), 0);
+                                    } else if (oldFirst < 0) {
+                                        scrollToBottomIfNeeded();
+                                    }
+                                });
                             }
+                            isLoadingMore = false;
                         });
                     }
-                    isLoadingMore = false;
                 });
-            }
-        });
     }
 
     /**
-     * Called when an input panel is shown. If the list is not at bottom, scroll to bottom so
+     * Called when an input panel is shown. If the list is not at bottom, scroll to
+     * bottom so
      * the newest messages remain visible above the panel.
      */
     public void scrollToBottomIfNeeded() {
-        if (recyclerView == null || layoutManager == null) return;
+        if (recyclerView == null || layoutManager == null)
+            return;
         // if we're already at bottom, nothing to do
         int total = layoutManager.getItemCount();
         recyclerView.postDelayed(() -> {
@@ -452,11 +500,14 @@ public class MessageListFragment extends Fragment {
 
     public void onNewMessage(Message message) {
         UiMessage um = UiMessage.fromMessage(message);
-        if (um == null) return;
-        if (!message.getConversation().getConversationId().equals(conversationId)) return;
+        if (um == null)
+            return;
+        if (!message.getConversation().getConversationId().equals(conversationId))
+            return;
 
         // Ensure we update UI on main thread and avoid concurrent submitList races.
-        if (getActivity() == null) return;
+        if (getActivity() == null)
+            return;
         requireActivity().runOnUiThread(() -> {
             // make sure adapter and recyclerView references are available
             if (adapter == null || recyclerView == null) {
@@ -467,7 +518,8 @@ public class MessageListFragment extends Fragment {
                 }
             }
 
-            // if adapter still not ready, enqueue and return; processPendingMessages will run later
+            // if adapter still not ready, enqueue and return; processPendingMessages will
+            // run later
             pendingMessages.add(um);
             processPendingMessages();
         });
@@ -475,13 +527,17 @@ public class MessageListFragment extends Fragment {
 
     /**
      * Process queued incoming messages sequentially.
-     * This makes sure we don't call submitList while a previous Diff is still in progress.
+     * This makes sure we don't call submitList while a previous Diff is still in
+     * progress.
      */
     private void processPendingMessages() {
         // must be on UI thread
-        if (submitInProgress) return;
-        if (pendingMessages.isEmpty()) return;
-        if (adapter == null || recyclerView == null) return;
+        if (submitInProgress)
+            return;
+        if (pendingMessages.isEmpty())
+            return;
+        if (adapter == null || recyclerView == null)
+            return;
 
         submitInProgress = true;
         // build new list from current adapter list + queued messages
@@ -502,12 +558,15 @@ public class MessageListFragment extends Fragment {
     private void setMessageRead(List<UiMessage> uiMessages) {
         List<String> msgIds = new ArrayList<>();
         for (UiMessage um : uiMessages) {
-            if (!um.getMessage().isHasRead() && um.getMessage().getDirection().getValue() == Message.MessageDirection.RECEIVE.getValue()) {
+            if (!um.getMessage().isHasRead()
+                    && um.getMessage().getDirection().getValue() == Message.MessageDirection.RECEIVE.getValue()) {
                 msgIds.add(um.getMessageId());
             }
         }
-        if (msgIds.isEmpty()) return;
-        Conversation conversation = new Conversation(isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, conversationId);
+        if (msgIds.isEmpty())
+            return;
+        Conversation conversation = new Conversation(
+                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, conversationId);
         JIM.getInstance().getMessageManager().sendReadReceipt(conversation, msgIds, null);
     }
 
@@ -515,21 +574,26 @@ public class MessageListFragment extends Fragment {
         List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
         for (Message message : messages) {
             UiMessage um = UiMessage.fromMessage(message);
-            if (um == null) return;
-            if (!message.getConversation().getConversationId().equals(conversationId)) return;
+            if (um == null)
+                return;
+            if (!message.getConversation().getConversationId().equals(conversationId))
+                return;
             int idx = adapter.getIndexByMessageNo(um.getMessage().getClientMsgNo());
-            if (idx < 0) continue;
+            if (idx < 0)
+                continue;
             current.set(idx, um);
         }
         adapter.submitList(current);
     }
 
     private void onMessageAction(UiMessage message, String action) {
-        if (message == null || action == null) return;
+        if (message == null || action == null)
+            return;
         switch (action) {
             case MessageListAdapter.Action.COPY:
                 // copy text content to clipboard if text
-                android.content.ClipboardManager cm = (android.content.ClipboardManager) requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE);
+                android.content.ClipboardManager cm = (android.content.ClipboardManager) requireContext()
+                        .getSystemService(android.content.Context.CLIPBOARD_SERVICE);
                 MessageContent content = message.getMessage().getContent();
                 String text = "";
                 if (content instanceof TextMessage) {
@@ -539,23 +603,25 @@ public class MessageListFragment extends Fragment {
                 }
                 if (text != null) {
                     android.content.ClipData clip = android.content.ClipData.newPlainText("message", text);
-                    if (cm != null) cm.setPrimaryClip(clip);
+                    if (cm != null)
+                        cm.setPrimaryClip(clip);
                 }
                 android.widget.Toast.makeText(requireContext(), "Copied", android.widget.Toast.LENGTH_SHORT).show();
                 break;
             case MessageListAdapter.Action.TOP:
                 Conversation conversation = message.getMessage().getConversation();
-                JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, true, new IMessageManager.ISimpleCallback() {
-                    @Override
-                    public void onSuccess() {
-                        Log.d("MessageListFragment", "set top success");
-                    }
+                JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, true,
+                        new IMessageManager.ISimpleCallback() {
+                            @Override
+                            public void onSuccess() {
+                                Log.d("MessageListFragment", "set top success");
+                            }
 
-                    @Override
-                    public void onError(int i) {
-                        Log.d("MessageListFragment", "set top failed: " + i);
-                    }
-                });
+                            @Override
+                            public void onError(int i) {
+                                Log.d("MessageListFragment", "set top failed: " + i);
+                            }
+                        });
                 break;
             case MessageListAdapter.Action.RECALL:
                 this.recallMessage(message);
@@ -571,7 +637,8 @@ public class MessageListFragment extends Fragment {
                         // sync fragment selectedIds from adapter
                         selectedIds.clear();
                         for (UiMessage um : adapter.getSelectedMessages()) {
-                            if (um.getMessageId() != null) selectedIds.add(um.getMessageId());
+                            if (um.getMessageId() != null)
+                                selectedIds.add(um.getMessageId());
                         }
                         updateOptionBarState(selectedIds.size());
                     }
@@ -583,18 +650,23 @@ public class MessageListFragment extends Fragment {
                     adapter.toggleSelect(message);
                     selectedIds.clear();
                     for (UiMessage um : adapter.getSelectedMessages()) {
-                        if (um.getMessageId() != null) selectedIds.add(um.getMessageId());
+                        if (um.getMessageId() != null)
+                            selectedIds.add(um.getMessageId());
                     }
                     updateOptionBarState(selectedIds.size());
                 }
                 break;
             case MessageListAdapter.Action.EDIT:
                 ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
-                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(), R.id.tag_edit_msg);
+                input.showReferMsgPanel(message.getSenderName(),
+                        MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(),
+                        R.id.tag_edit_msg);
                 break;
             case MessageListAdapter.Action.REPLY:
                 input = getActivity().findViewById(R.id.input_bar);
-                input.showReferMsgPanel(message.getSenderName(), MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(), R.id.tag_reply_msg);
+                input.showReferMsgPanel(message.getSenderName(),
+                        MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(),
+                        R.id.tag_reply_msg);
                 break;
             case MessageListAdapter.Action.DELETE:
                 List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
@@ -610,20 +682,21 @@ public class MessageListFragment extends Fragment {
     }
 
     private void recallMessage(UiMessage message) {
-        JIM.getInstance().getMessageManager().recallMessage(message.getMessageId(), null, new IMessageManager.IRecallMessageCallback() {
-            @Override
-            public void onSuccess(Message recalledMsg) {
-                List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
-                final int idx = adapter.getIndexByMessageNo(message.getMessage().getClientMsgNo());
-                current.set(idx, UiMessage.fromMessage(recalledMsg));
-                adapter.submitList(current);
-            }
+        JIM.getInstance().getMessageManager().recallMessage(message.getMessageId(), null,
+                new IMessageManager.IRecallMessageCallback() {
+                    @Override
+                    public void onSuccess(Message recalledMsg) {
+                        List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
+                        final int idx = adapter.getIndexByMessageNo(message.getMessage().getClientMsgNo());
+                        current.set(idx, UiMessage.fromMessage(recalledMsg));
+                        adapter.submitList(current);
+                    }
 
-            @Override
-            public void onError(int i) {
-                Toast.makeText(getActivity(), "Recall failed: " + i, Toast.LENGTH_SHORT).show();
-            }
-        });
+                    @Override
+                    public void onError(int i) {
+                        Toast.makeText(getActivity(), "Recall failed: " + i, Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void deleteMessages(List<UiMessage> messages, List<UiMessage> newDataSet) {
@@ -632,16 +705,17 @@ public class MessageListFragment extends Fragment {
         for (UiMessage message : messages) {
             msgNos.add(message.getMessage().getClientMsgNo());
         }
-        JIM.getInstance().getMessageManager().deleteMessagesByClientMsgNoList(conversation, msgNos, new IMessageManager.ISimpleCallback() {
-            @Override
-            public void onSuccess() {
-                adapter.submitList(newDataSet);
-            }
+        JIM.getInstance().getMessageManager().deleteMessagesByClientMsgNoList(conversation, msgNos,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        adapter.submitList(newDataSet);
+                    }
 
-            @Override
-            public void onError(int i) {
-                Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show();
-            }
-        });
+                    @Override
+                    public void onError(int i) {
+                        Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 }

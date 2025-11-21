@@ -14,7 +14,7 @@ import java.util.ArrayList;
 
 public class ImagePlugin extends MorePlugin {
     public static final String ID = "photo";
-    public static final int REQ = 2001;
+    public static final int REQ = 12001;
 
 
     public ImagePlugin(Callback callback) {

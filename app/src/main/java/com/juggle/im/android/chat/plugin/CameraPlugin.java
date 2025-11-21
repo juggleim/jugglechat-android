@@ -18,7 +18,7 @@ import com.juggle.im.android.chat.utils.FileUtils;
 
 public class CameraPlugin extends MorePlugin {
     public static final String ID = "camera";
-    public static final int REQ = 2005;
+    public static final int REQ = 12005;
 
     public CameraPlugin(Callback callback) {
         super(callback);

@@ -8,7 +8,7 @@ import com.juggle.im.android.R;
 
 public class ContactPlugin extends MorePlugin {
     public static final String ID = "contact";
-    public static final int REQ = 2004;
+    public static final int REQ = 12004;
 
     private Activity host;
 

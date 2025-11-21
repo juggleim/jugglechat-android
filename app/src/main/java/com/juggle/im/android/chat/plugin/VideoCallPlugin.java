@@ -12,7 +12,7 @@ import com.juggle.im.android.R;
 
 public class VideoCallPlugin extends MorePlugin {
     public static final String ID = "call_video";
-    public static final int REQ = 2003;
+    public static final int REQ = 12007;
 
     public VideoCallPlugin(Callback callback) {
         super(callback);
