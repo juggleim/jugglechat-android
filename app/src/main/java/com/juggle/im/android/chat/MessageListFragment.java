@@ -347,6 +347,12 @@ public class MessageListFragment extends Fragment {
         hideSelectionUi();
     }
 
+    public void insertMention(ArrayList<String> userIds, ArrayList<String> userNames) {
+        ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
+        if (input == null) return;
+        input.insertMention(userIds, userNames);
+    }
+
     private void loadMoreMessages() {
         if (isLoadingMore) return;
         isLoadingMore = true;

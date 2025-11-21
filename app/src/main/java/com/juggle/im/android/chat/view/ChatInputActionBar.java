@@ -31,6 +31,10 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.mention.MentionCallback;
+import com.juggle.im.android.chat.mention.MentionConfig;
+import com.juggle.im.android.chat.mention.MentionManager;
+import com.juggle.im.android.chat.mention.MentionModel;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
 import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
@@ -82,11 +86,12 @@ public class ChatInputActionBar extends LinearLayout {
     private static final String PREFS_NAME = "chat_input_prefs";
     private boolean isKeyboardShowing = false;
     private boolean panelSwitched = false;
+    private MentionManager mentionManager;
 
     private int imeMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
     public interface Listener {
-        void onSend(String text, String msgId, MessageMentionInfo mentionInfo, int sendType);
+        void onSend(String text, String msgId, List<MentionModel> mentionModelList, int sendType);
 
         void onRequestVoice(); // legacy
 
@@ -108,6 +113,13 @@ public class ChatInputActionBar extends LinearLayout {
         void onKeyboardVisibilityChanged(boolean visible);
 
         void onKeyboardCreated(int h);
+
+        /**
+         * at 触发
+         *
+         * @param mentionManager MentionManager
+         */
+        void onMentionTrigger(MentionManager mentionManager);
     }
 
     public void setListener(Listener l) {
@@ -163,26 +175,27 @@ public class ChatInputActionBar extends LinearLayout {
         btnMore.setOnClickListener(v -> switchMode(InputMode.MORE));
 
         editTextInput.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) switchMode(InputMode.TEXT);
+            if (hasFocus) {
+                editTextInput.setCursorVisible(true);
+                switchMode(InputMode.TEXT);
+            }
         });
 
         editTextInput.setOnClickListener(l -> {
             switchMode(InputMode.TEXT);
         });
-
-        editTextInput.addTextChangedListener(new TextWatcher() {
+        mentionManager = new MentionManager();
+        mentionManager.init(editTextInput, new MentionCallback() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            public void onMentionTrigger(EditText editText) {
+                listener.onMentionTrigger(mentionManager);
             }
 
             @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            public void onMentionInvalidated(String mentionId) {
+                Log.d("AT", "Mention removed = " + mentionId);
             }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-            }
-        });
+        }, new MentionConfig());
         editTextInput.setRawInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         editTextInput.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
         editTextInput.setImeActionLabel("发送", android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
@@ -246,7 +259,8 @@ public class ChatInputActionBar extends LinearLayout {
                 tag = (String) editTag;
             }
         }
-        listener.onSend(text, tag, null, type);
+        List<MentionModel> mentionModelList = mentionManager.collectMentions();
+        listener.onSend(text, tag, mentionModelList, type);
         editTextInput.setText("");
         referView.setVisibility(GONE);
     }
@@ -325,6 +339,14 @@ public class ChatInputActionBar extends LinearLayout {
 
     }
 
+    public void insertMention(ArrayList<String> userIds, ArrayList<String> userNames) {
+        mentionManager.insertMention(userIds, userNames);
+        editTextInput.postDelayed(() -> {
+            InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            showKeyboard(imm);
+        }, 100);
+    }
+
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
@@ -353,22 +375,27 @@ public class ChatInputActionBar extends LinearLayout {
         }
     }
 
+    private void showKeyboard(InputMethodManager imm) {
+        showInputArea(true);
+        if (keyboardHeight > 0 && imeMode == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) {
+            panelContainer.setVisibility(VISIBLE);
+            showPanel(getEmptyPanel(), InputMode.TEXT);
+        } else {
+            hidePanel();
+        }
+        editTextInput.requestFocus();
+        imm.showSoftInput(editTextInput, InputMethodManager.SHOW_IMPLICIT);
+        ensurePanelHeight(true);
+    }
+
+
     private void switchMode(InputMode mode) {
         currentMode = mode;
         InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         switch (mode) {
             case TEXT:
                 // show keyboard, hide bottom panels and restore input area
-                showInputArea(true);
-                if (keyboardHeight > 0 && imeMode == WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING) {
-                    panelContainer.setVisibility(VISIBLE);
-                    showPanel(getEmptyPanel(), InputMode.TEXT);
-                } else {
-                    hidePanel();
-                }
-                editTextInput.requestFocus();
-                imm.showSoftInput(editTextInput, InputMethodManager.SHOW_IMPLICIT);
-                ensurePanelHeight(true);
+                showKeyboard(imm);
                 break;
             case VOICE:
                 // hide keyboard and panels, show a voice record button in input area
@@ -382,12 +409,14 @@ public class ChatInputActionBar extends LinearLayout {
                 showInputArea(true);
                 ensurePanelHeight(false);
                 showPanel(getEmojiPanel(), InputMode.EMOJI);
+                panelSwitched = true;
                 imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
                 break;
             case MORE:
                 showInputArea(true);
                 ensurePanelHeight(false);
                 showPanel(getMorePanel(), InputMode.MORE);
+                panelSwitched = true;
                 imm.hideSoftInputFromWindow(editTextInput.getWindowToken(), 0);
                 break;
         }
@@ -447,7 +476,6 @@ public class ChatInputActionBar extends LinearLayout {
                         : 0
                 );
         adjustMessageListBottom(h);
-        panelSwitched = true;
     }
 
     private void hidePanel() {
@@ -637,11 +665,10 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     /**
-     *
      * @param name
      * @param msg
      * @param msgId
-     * @param type 1 - reply, 2-edit message
+     * @param type  1 - reply, 2-edit message
      */
     public void showReferMsgPanel(String name, String msg, String msgId, int type) {
         View referView = findViewById(R.id.refer_msg_container);

@@ -56,8 +56,10 @@
                         android:minHeight="28dp"
                         android:minLines="1"
                         android:focusable="true"
+                        android:textSize="14sp"
                         android:focusableInTouchMode="true"
                         android:cursorVisible="true"
+                        android:textCursorDrawable="@drawable/cursor_edittext"
                         android:overScrollMode="ifContentScrolls" />
 
                     <com.juggle.im.android.chat.view.VoiceInputAction

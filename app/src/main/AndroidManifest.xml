@@ -77,8 +77,7 @@
         <activity
             android:name="com.juggle.im.android.app.LoginActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
-            tools:ignore="MissingClass"></activity>
+            android:screenOrientation="portrait"/>
 
         <activity android:name="com.juggle.im.android.app.RegisterActivity"
             android:screenOrientation="portrait" />

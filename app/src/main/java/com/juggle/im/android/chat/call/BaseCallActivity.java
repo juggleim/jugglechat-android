@@ -58,7 +58,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
             return;
         }
         
-        Intent it = isGroup ? new Intent(context, SelectMemberActivity.class) : new Intent(context, SingleCallActivity.class);
+        Intent it = new Intent(context, SingleCallActivity.class);
         it.putExtra("conversationId", conversationId);
         it.putExtra("is_video_call", isVideoCall);
         it.putExtra("inviter", inviter);

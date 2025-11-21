@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 public class SelectMemberActivity extends AppCompatActivity {
     public final static String GROUP_ID = "GROUP_ID";
     public final static String SELECTED_MEMBERS = "SELECTED_MEMBERS";
+    public final static String SELECTED_MEMBERS_NAME = "SELECTED_MEMBERS_NAME";
 
     public final static String DISABLE_MEMBERS = "DISABLE_MEMBERS";
-
 
     private RecyclerView rvMembers;
     private UserListAdapter selectCallMemberAdapter;
@@ -51,7 +51,7 @@ public class SelectMemberActivity extends AppCompatActivity {
         String groupId = getIntent().getStringExtra(GROUP_ID);
         mode = getIntent().getStringExtra("mode");
         if (mode == null) {
-            mode =  UserListAdapter.LIST_MODE_SELECT_MEMBER;
+            mode = UserListAdapter.LIST_MODE_SELECT_MEMBER;
         }
 
         if (mode.equals(UserListAdapter.LIST_MODE_NORMAL)) {
@@ -132,27 +132,15 @@ public class SelectMemberActivity extends AppCompatActivity {
     private void setClickListeners() {
         tvCancel.setOnClickListener(v -> finish());
         btnConfirm.setOnClickListener(v -> {
-            String conversationId = getIntent().getStringExtra("conversationId");
-            if (disabledMembers != null && disabledMembers.size() > 0) {
-                Intent resultIntent = new Intent();
-                resultIntent.putStringArrayListExtra(SELECTED_MEMBERS, selectedMemberList.stream()
-                        .map(member -> member.getUserId())
-                        .collect(Collectors.toCollection(ArrayList::new)));
-                setResult(Activity.RESULT_OK, resultIntent);
-                finish();
-            } else {
-                BaseCallActivity.startMultiCall(
-                        this,
-                        conversationId,
-                        getIntent().getBooleanExtra("is_video_call", false),
-                        JIM.getInstance().getCurrentUserId(),
-                        selectedMemberList.stream()
-                                .map(member -> member.getUserId())
-                                .collect(Collectors.toList()),
-                        "outgoing"
-                );
-                finish();
-            }
+            Intent resultIntent = new Intent();
+            resultIntent.putStringArrayListExtra(SELECTED_MEMBERS, selectedMemberList.stream()
+                    .map(member -> member.getUserId())
+                    .collect(Collectors.toCollection(ArrayList::new)));
+            resultIntent.putStringArrayListExtra(SELECTED_MEMBERS_NAME, selectedMemberList.stream()
+                    .map(member -> member.getName())
+                    .collect(Collectors.toCollection(ArrayList::new)));
+            setResult(Activity.RESULT_OK, resultIntent);
+            finish();
         });
     }
 

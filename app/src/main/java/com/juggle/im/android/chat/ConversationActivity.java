@@ -3,10 +3,16 @@ package com.juggle.im.android.chat;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import static com.juggle.im.android.chat.SelectMemberActivity.DISABLE_MEMBERS;
+import static com.juggle.im.android.chat.SelectMemberActivity.GROUP_ID;
+import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
+import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS_NAME;
+
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -15,6 +21,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,6 +29,8 @@ import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 
 import com.juggle.im.android.chat.call.BaseCallActivity;
+import com.juggle.im.android.chat.mention.MentionManager;
+import com.juggle.im.android.chat.mention.MentionModel;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
 import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
@@ -56,6 +65,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ConversationActivity extends AppCompatActivity {
     public static final String EXTRA_CONVERSATION_ID = "extra_conversation_id";
@@ -64,6 +74,9 @@ public class ConversationActivity extends AppCompatActivity {
     public static final String EXTRA_IS_TOP = "extra_is_top";
     public static final String EXTRA_IS_MUTE = "extra_is_mute";
     public static final int REQ_FORWARD = 2001;
+    public static final int REQ_MENTION = 2002;
+    public static final int REQ_MULTI_CALL_VOICE = 2003;
+    public static final int REQ_MULTI_CALL_VIDEO = 2004;
     private boolean isGroup;
     private String conversationId;
     private Conversation conversation;
@@ -139,19 +152,29 @@ public class ConversationActivity extends AppCompatActivity {
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
             inputBar.setListener(new ChatInputActionBar.Listener() {
-                public void onSend(String text, String msgId, MessageMentionInfo mentionInfo, int sendType) {
+                public void onSend(String text, String msgId, List<MentionModel> mentionModelList, int sendType) {
                     TextMessage msg = new TextMessage(text);
                     MessageOptions options = new MessageOptions();
                     PushData pushData = new PushData();
                     pushData.setContent(text);
                     options.setPushData(pushData);
-                    options.setMentionInfo(mentionInfo);
+                    if (mentionModelList != null && !mentionModelList.isEmpty()) {
+                        MessageMentionInfo mentionInfo = getMessageMentionInfo(mentionModelList);
+                        options.setMentionInfo(mentionInfo);
+                    }
                     if (sendType == R.id.tag_edit_msg) {
                         editTextMessage(msgId, msg, options, conversation);
                     } else {
                         options.setReferredMessageId(msgId);
                         sendTextMessage(msg, options, conversation);
                     }
+                }
+
+                @Override
+                public void onMentionTrigger(MentionManager mentionManager) {
+                    Intent it = new Intent(ConversationActivity.this, SelectMemberActivity.class);
+                    it.putExtra(GROUP_ID, conversationId);
+                    startActivityForResult(it, REQ_MENTION);
                 }
 
                 @Override
@@ -219,6 +242,21 @@ public class ConversationActivity extends AppCompatActivity {
         window.setNavigationBarColor(getColor(R.color.input_bg_light));
     }
 
+    @NonNull
+    private static MessageMentionInfo getMessageMentionInfo(List<MentionModel> mentionModelList) {
+        MessageMentionInfo mentionInfo = new MessageMentionInfo();
+        List<UserInfo> messageMentionInfoList = new ArrayList<>();
+        for (MentionModel mentionModel : mentionModelList) {
+            UserInfo userInfo = new UserInfo();
+            userInfo.setUserId(mentionModel.getUserId());
+            userInfo.setUserName(mentionModel.getDisplayName());
+            messageMentionInfoList.add(userInfo);
+        }
+        mentionInfo.setType(MessageMentionInfo.MentionType.SOMEONE);
+        mentionInfo.setTargetUsers(messageMentionInfoList);
+        return mentionInfo;
+    }
+
     private void handleTopMessage(Message message, UserInfo userInfo) {
         View vPin = findViewById(R.id.layout_pin_message);
         TextView tvContent = vPin.findViewById(R.id.pin_message_content);
@@ -274,6 +312,18 @@ public class ConversationActivity extends AppCompatActivity {
                 // clear selection state in fragment after forwarding
                 frag.clearSelectionAfterForward();
             }
+        } else if (requestCode == REQ_MENTION && resultCode == RESULT_OK && data != null) {
+            ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
+            ArrayList<String> newNames = data.getStringArrayListExtra(SELECTED_MEMBERS_NAME);
+            MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
+            frag.insertMention(newIds, newNames);
+        } else if ((requestCode == REQ_MULTI_CALL_VOICE || requestCode == REQ_MULTI_CALL_VIDEO) && resultCode == RESULT_OK) {
+            ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
+            BaseCallActivity.startMultiCall(this, conversationId,
+                    requestCode == REQ_MULTI_CALL_VIDEO,
+                    JIM.getInstance().getCurrentUserId(),
+                    newIds,
+                    "outgoing");
         }
     }
 
@@ -363,14 +413,20 @@ public class ConversationActivity extends AppCompatActivity {
             fileMessage.setSize(size);
             sendFileMessage(fileMessage, conversation);
         } else if (pluginId.equals(VoiceCallPlugin.ID) || pluginId.equals(VideoCallPlugin.ID)) {
-            ArrayList<String> ids = new ArrayList<>();
-            ids.add(conversationId);
-            BaseCallActivity.startSingleCall(this,
-                    conversationId,
-                    isGroup,
-                    pluginId.equals(VideoCallPlugin.ID),
-                    JIM.getInstance().getCurrentUserId(),
-                    ids, "outgoing");
+            if (isGroup) {
+                Intent it = new Intent(this, SelectMemberActivity.class);
+                it.putExtra("GROUP_ID", conversationId);
+                startActivityForResult(it, pluginId.equals(VideoCallPlugin.ID) ? REQ_MULTI_CALL_VIDEO : REQ_MULTI_CALL_VOICE);
+            } else {
+                ArrayList<String> ids = new ArrayList<>();
+                ids.add(conversationId);
+                BaseCallActivity.startSingleCall(this,
+                        conversationId,
+                        isGroup,
+                        pluginId.equals(VideoCallPlugin.ID),
+                        JIM.getInstance().getCurrentUserId(),
+                        ids, "outgoing");
+            }
         }
     }
 
@@ -390,6 +446,7 @@ public class ConversationActivity extends AppCompatActivity {
             }
         });
     }
+
     private void sendTextMessage(TextMessage text, MessageOptions options, Conversation conversation) {
         IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
             @Override

@@ -375,14 +375,10 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         @Override
         public boolean areContentsTheSame(@NonNull UiMessage oldItem, @NonNull UiMessage newItem) {
-            boolean same = oldItem.getMessage().getState().getValue() == newItem.getMessage().getState().getValue()
+            return oldItem.getMessage().getState().getValue() == newItem.getMessage().getState().getValue()
                     && oldItem.getMessage().isHasRead() == newItem.getMessage().isHasRead()
-                    && oldItem.getMessage().getDirection().getValue() == newItem.getMessage().getDirection().getValue();
-            if (oldItem.getMessage().getContent() instanceof TextMessage) {
-                same = same && ((TextMessage) oldItem.getMessage().getContent()).getContent()
-                        .equals(((TextMessage) newItem.getMessage().getContent()).getContent());
-            }
-            return same;
+                    && oldItem.getMessage().getDirection().getValue() == newItem.getMessage().getDirection().getValue()
+                    && oldItem.getMessage().isEdit() == newItem.getMessage().isEdit();
         }
     };
 }
