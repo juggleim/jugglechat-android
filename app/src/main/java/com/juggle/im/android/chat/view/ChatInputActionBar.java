@@ -341,11 +341,16 @@ public class ChatInputActionBar extends LinearLayout {
 
     public void insertMention(ArrayList<String> userIds, ArrayList<String> userNames) {
         mentionManager.insertMention(userIds, userNames);
+        showKeyboardIfNeed();
+    }
+
+    public void showKeyboardIfNeed() {
         editTextInput.postDelayed(() -> {
             InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
             showKeyboard(imm);
         }, 100);
     }
+
 
     @Override
     protected void onDetachedFromWindow() {

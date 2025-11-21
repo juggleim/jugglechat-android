@@ -65,7 +65,7 @@ public class MentionManager {
         // 设置 span
         int start = cursor - (needAt ? 0 : 1);
         int end = start + label.length();
-        Log.d("MentionManager", "span start: " + start + ", end: " + end + ", insert " + label + ", editable=" + editable.toString());
+        Log.d("Mention", "span start: " + start + ", end: " + end + ", insert " + label + ", editable=" + editable.toString());
 
         editable.setSpan(
                 new MentionSpan(userId, displayName),

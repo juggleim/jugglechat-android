@@ -3,6 +3,7 @@ package com.juggle.im.android.chat.mention;
 import android.text.Editable;
 import android.text.SpannableStringBuilder;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.widget.EditText;
 
 public class MentionWatcher implements TextWatcher {
@@ -10,6 +11,7 @@ public class MentionWatcher implements TextWatcher {
     private final EditText editText;
     private final MentionConfig config;
     private final MentionCallback callback;
+    private boolean internalChange = false;
 
     private int deleteStart = -1;
     private int deleteCount = 0;
@@ -22,8 +24,10 @@ public class MentionWatcher implements TextWatcher {
 
     @Override
     public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+        if (internalChange) return;
         deleteStart = start;
         deleteCount = count;
+        Log.d("Mention beforeTextChanged", deleteStart + ", " + deleteCount + ",str=" + s.toString());
     }
 
     @Override
@@ -40,34 +44,45 @@ public class MentionWatcher implements TextWatcher {
     @Override
     public void afterTextChanged(Editable s) {
         if (s == null) return;
+        int cursor = editText.getSelectionStart();
 
         // 1. 如果用户执行了删除
         if (deleteCount > 0) {
-            handleDeleteSpan(s);
+            // 使用 beforeTextChanged 中记录的删除起始位置和数量
+            handleDeleteSpan(s, deleteStart, deleteCount);
         }
 
         // 3. 检查内文破坏 span
         validateSpans(s);
     }
 
-    private void handleDeleteSpan(Editable s) {
+    private void handleDeleteSpan(Editable s, int deletePosition, int deleteCount) {
+        if (internalChange) return;
+
         MentionSpan[] spans = s.getSpans(0, s.length(), MentionSpan.class);
 
+        // 查找是否有span在删除范围内
         for (MentionSpan span : spans) {
             int start = s.getSpanStart(span);
             int end = s.getSpanEnd(span);
+            
+            // 如果删除操作涉及到span（包括部分覆盖或完全包含）
+            if (deletePosition < end && (deletePosition + deleteCount) > start) {
+                internalChange = true;
 
-            // 情况：光标在 span 尾部删除
-            if (deleteStart == end) {
-                // 整体删除
+                // 删除整个 span 块
                 s.delete(start, end);
                 s.removeSpan(span);
 
+                internalChange = false;
+
                 callback.onMentionInvalidated(span.userId);
+                // 一次删除操作只处理一个span
                 return;
             }
         }
     }
+
 
     private void validateSpans(Editable s) {
         MentionSpan[] spans = s.getSpans(0, s.length(), MentionSpan.class);

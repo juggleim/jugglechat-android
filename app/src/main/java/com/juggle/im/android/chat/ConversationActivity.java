@@ -21,6 +21,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -312,11 +313,15 @@ public class ConversationActivity extends AppCompatActivity {
                 // clear selection state in fragment after forwarding
                 frag.clearSelectionAfterForward();
             }
-        } else if (requestCode == REQ_MENTION && resultCode == RESULT_OK && data != null) {
-            ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
-            ArrayList<String> newNames = data.getStringArrayListExtra(SELECTED_MEMBERS_NAME);
+        } else if (requestCode == REQ_MENTION) {
             MessageListFragment frag = (MessageListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
-            frag.insertMention(newIds, newNames);
+            if (resultCode == RESULT_OK && data != null) {
+                ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
+                ArrayList<String> newNames = data.getStringArrayListExtra(SELECTED_MEMBERS_NAME);
+                frag.insertMention(newIds, newNames);
+            } else {
+                frag.showKeyboardIfNeed();
+            }
         } else if ((requestCode == REQ_MULTI_CALL_VOICE || requestCode == REQ_MULTI_CALL_VIDEO) && resultCode == RESULT_OK) {
             ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
             BaseCallActivity.startMultiCall(this, conversationId,
@@ -610,6 +615,11 @@ public class ConversationActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Hide keyboard properly by accessing the ChatInputActionBar component
+        ChatInputActionBar inputBar = findViewById(R.id.input_bar);
+        if (inputBar != null) {
+            inputBar.hideKeyboard();
+        }
         EventBus.getDefault().unregister(this);
     }
 
@@ -620,5 +630,15 @@ public class ConversationActivity extends AppCompatActivity {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public void finish() {
+        // Hide the keyboard before finishing the activity
+        ChatInputActionBar inputBar = findViewById(R.id.input_bar);
+        if (inputBar != null) {
+            inputBar.hideKeyboard();
+        }
+        super.finish();
     }
 }

@@ -353,6 +353,13 @@ public class MessageListFragment extends Fragment {
         input.insertMention(userIds, userNames);
     }
 
+    public void showKeyboardIfNeed() {
+        ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
+        if (input != null) {
+            input.showKeyboardIfNeed();
+        }
+    }
+
     private void loadMoreMessages() {
         if (isLoadingMore) return;
         isLoadingMore = true;
@@ -636,13 +643,5 @@ public class MessageListFragment extends Fragment {
                 Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        ConversationActivity act = (ConversationActivity) getActivity();
-        ChatInputActionBar input = act.findViewById(R.id.input_bar);
-        input.hideKeyboard();
     }
 }
