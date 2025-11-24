@@ -69,6 +69,10 @@ public class MessageListFragment extends Fragment {
     private ImageView btnForwardSelected;
     private ImageView btnDeleteSelected;
     private FrameLayout overlayForwardContainer;
+    // New Message Bubble
+    private View layoutNewMessageBubble;
+    private TextView tvNewMessageCount;
+    private int newMessageCount = 0;
 
     public static MessageListFragment newInstance(String convId, boolean isGroup, int unreadCount) {
         MessageListFragment f = new MessageListFragment();
@@ -122,7 +126,7 @@ public class MessageListFragment extends Fragment {
             TextView tvUnread = view.findViewById(R.id.tv_unread_count);
             if (bubble != null && tvUnread != null) {
                 bubble.setVisibility(VISIBLE);
-                tvUnread.setText(String.valueOf(unreadCount) + "条未读消息");
+                tvUnread.setText((unreadCount >= 99 ? "99+" : unreadCount) + "条新消息");
                 bubble.animate().translationX(0).setDuration(500).start();
                 bubble.setOnClickListener(v -> {
                     bubble.setVisibility(GONE);
@@ -132,6 +136,17 @@ public class MessageListFragment extends Fragment {
                     recyclerView.smoothScrollToPosition(target);
                 });
             }
+        }
+
+        // New Message Bubble Initialization
+        layoutNewMessageBubble = view.findViewById(R.id.layout_new_message_bubble);
+        tvNewMessageCount = view.findViewById(R.id.tv_new_message_count);
+        if (layoutNewMessageBubble != null) {
+            layoutNewMessageBubble.setOnClickListener(v -> {
+                layoutNewMessageBubble.setVisibility(GONE);
+                newMessageCount = 0;
+                scrollToBottomIfNeeded();
+            });
         }
 
         // Ensure RecyclerView preserves space for the input bar by default so messages
@@ -153,6 +168,12 @@ public class MessageListFragment extends Fragment {
                 int lastVisible = layoutManager.findLastVisibleItemPosition();
                 boolean nowAtBottom = (total == 0) || (lastVisible >= total - 1);
                 atBottom = nowAtBottom;
+                if (atBottom) {
+                    if (layoutNewMessageBubble != null && layoutNewMessageBubble.getVisibility() == VISIBLE) {
+                        layoutNewMessageBubble.setVisibility(GONE);
+                        newMessageCount = 0;
+                    }
+                }
                 int first = layoutManager.findFirstVisibleItemPosition();
                 if (first == 0 && dy < 0 && !isLoadingMore) {
                     loadMoreMessages();
@@ -522,6 +543,17 @@ public class MessageListFragment extends Fragment {
             // run later
             pendingMessages.add(um);
             processPendingMessages();
+
+            if (!atBottom) {
+                newMessageCount++;
+                if (layoutNewMessageBubble != null && tvNewMessageCount != null) {
+                    if (layoutNewMessageBubble.getVisibility() != VISIBLE) {
+                        layoutNewMessageBubble.setVisibility(VISIBLE);
+                        layoutNewMessageBubble.animate().translationX(0).setDuration(500).start();
+                    }
+                    tvNewMessageCount.setText((newMessageCount >= 99 ? "99+" : newMessageCount) + "条新消息");
+                }
+            }
         });
     }
 
@@ -548,7 +580,9 @@ public class MessageListFragment extends Fragment {
 
         adapter.submitList(current, () -> {
             // after commit, scroll to bottom and handle next batch
-            recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+            if (atBottom) {
+                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+            }
             submitInProgress = false;
             // continue processing any messages that arrived during the diff
             processPendingMessages();

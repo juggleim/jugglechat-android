@@ -17,7 +17,7 @@
         android:layout_width="wrap_content"
         android:layout_height="25dp"
         android:layout_gravity="end|top"
-        android:layout_marginTop="100dp"
+        android:layout_marginTop="80dp"
         android:background="@drawable/bg_unread_bubble"
         android:gravity="center"
         android:padding="2dp"
@@ -30,10 +30,42 @@
             android:layout_height="10dp"
             android:src="@drawable/ic_arrow_up"
             android:layout_marginStart="5dp"
+            android:paddingTop="2dp"
             android:scaleType="fitCenter" />
 
         <TextView
             android:id="@+id/tv_unread_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_new_message_bubble"
+        android:layout_width="wrap_content"
+        android:layout_height="25dp"
+        android:layout_gravity="end|bottom"
+        android:layout_marginBottom="80dp"
+        android:background="@drawable/bg_unread_bubble"
+        android:gravity="center"
+        android:padding="2dp"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:translationX="50dp">
+
+        <ImageView
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:src="@drawable/ic_arrow_down"
+            android:layout_marginStart="5dp"
+            android:paddingTop="2dp"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/tv_new_message_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="2dp"
