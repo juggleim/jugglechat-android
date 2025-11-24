@@ -24,7 +24,7 @@ android {
             storeFile file("../keystore/key.keystore")
             storePassword "juggleim"
             keyAlias "juggleim"
-            keyPassword "your_key_password"
+            keyPassword "juggleim"
         }
 
         debug {
