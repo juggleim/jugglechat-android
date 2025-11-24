@@ -23,6 +23,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.JIM;
+import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
@@ -46,6 +47,9 @@ public class MessageListFragment extends Fragment {
     private static final String ARG_CONV_ID = "arg_conv_id";
     private static final String ARG_IS_GROUP = "arg_is_group";
     private static final String ARG_UNREAD_COUNT = "arg_unread_count";
+    public static final String ARG_MENTION = "arg_mention";
+
+    private static final int msgPageCount = 20;
 
     private String conversationId;
     private boolean isGroup;
@@ -72,14 +76,16 @@ public class MessageListFragment extends Fragment {
     // New Message Bubble
     private View layoutNewMessageBubble;
     private TextView tvNewMessageCount;
+    private TextView tvMention;
     private int newMessageCount = 0;
 
-    public static MessageListFragment newInstance(String convId, boolean isGroup, int unreadCount) {
+    public static MessageListFragment newInstance(String convId, boolean isGroup, int unreadCount, boolean mentioned) {
         MessageListFragment f = new MessageListFragment();
         Bundle b = new Bundle();
         b.putString(ARG_CONV_ID, convId);
         b.putBoolean(ARG_IS_GROUP, isGroup);
         b.putInt(ARG_UNREAD_COUNT, unreadCount);
+        b.putBoolean(ARG_MENTION, mentioned);
         f.setArguments(b);
         return f;
     }
@@ -130,14 +136,39 @@ public class MessageListFragment extends Fragment {
                 bubble.animate().translationX(0).setDuration(500).start();
                 bubble.setOnClickListener(v -> {
                     bubble.setVisibility(GONE);
-                    int target = adapter.getItemCount() - unreadCount;
-                    if (target < 0)
-                        target = 0;
-                    recyclerView.smoothScrollToPosition(target);
+                    loadMoreMessages(unreadCount - adapter.getItemCount(), true);
                 });
             }
         }
 
+        if (getArguments().getBoolean(ARG_MENTION, false)) {
+            Conversation conversation = new Conversation(
+                    isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, conversationId);
+            JIM.getInstance().getMessageManager().getMentionMessageList(conversation, 5, 0, JIMConst.PullDirection.OLDER, new IMessageManager.IGetMessagesWithFinishCallback() {
+                @Override
+                public void onSuccess(List<Message> list, boolean b) {
+                    View bubble = view.findViewById(R.id.layout_mention_bubble);
+                    TextView tvMention = view.findViewById(R.id.tv_mention);
+                    if (bubble != null && tvMention != null) {
+                        bubble.setVisibility(VISIBLE);
+                        tvMention.setText("有人@我");
+                        bubble.animate().translationX(0).setDuration(500).start();
+                        bubble.setOnClickListener(v -> {
+                            bubble.setVisibility(GONE);
+                            int target = adapter.getItemCount() - unreadCount;
+                            if (target < 0)
+                                target = 0;
+                            recyclerView.smoothScrollToPosition(target);
+                        });
+                    }
+                }
+
+                @Override
+                public void onError(int i) {
+
+                }
+            });
+        }
         // New Message Bubble Initialization
         layoutNewMessageBubble = view.findViewById(R.id.layout_new_message_bubble);
         tvNewMessageCount = view.findViewById(R.id.tv_new_message_count);
@@ -176,7 +207,7 @@ public class MessageListFragment extends Fragment {
                 }
                 int first = layoutManager.findFirstVisibleItemPosition();
                 if (first == 0 && dy < 0 && !isLoadingMore) {
-                    loadMoreMessages();
+                    loadMoreMessages(msgPageCount, false);
                 }
             }
 
@@ -242,12 +273,12 @@ public class MessageListFragment extends Fragment {
                 int first = layoutManager.findFirstVisibleItemPosition();
                 if (first == 0 && dy < 0 && !isLoadingMore) {
                     // load older messages
-                    loadMoreMessages();
+                    loadMoreMessages(msgPageCount, false);
                 }
             }
         });
         // initial load: msgTime = 0 -> SDK should return latest page
-        loadMoreMessages();
+        loadMoreMessages(msgPageCount, false);
     }
 
     private void updateOptionBarState(int selectedCount) {
@@ -419,7 +450,7 @@ public class MessageListFragment extends Fragment {
         }
     }
 
-    private void loadMoreMessages() {
+    private void loadMoreMessages(int c, boolean scrollTop) {
         if (isLoadingMore)
             return;
         isLoadingMore = true;
@@ -431,7 +462,7 @@ public class MessageListFragment extends Fragment {
         }
 
         JIMChatCore.getInstance().getMessages(conversationId,
-                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, 20, cursor,
+                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, c, cursor,
                 new IMessageManager.IGetMessagesCallbackV3() {
                     @Override
                     public void onGetMessages(List<Message> list, long timestamp, boolean hasMore, int code) {
@@ -492,7 +523,7 @@ public class MessageListFragment extends Fragment {
                                     // Simpler approach: scroll to keep roughly same message at top by finding the
                                     // id at oldFirst
                                     if (oldFirst >= 0 && oldFirst < displayWithTimes.size()) {
-                                        layoutManager.scrollToPositionWithOffset(oldFirst + incoming.size(), 0);
+                                        layoutManager.scrollToPositionWithOffset(scrollTop ? 0 : oldFirst + incoming.size(), 0);
                                     } else if (oldFirst < 0) {
                                         scrollToBottomIfNeeded();
                                     }

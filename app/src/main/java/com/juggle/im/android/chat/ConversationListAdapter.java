@@ -5,7 +5,11 @@ import static android.view.View.VISIBLE;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -226,7 +230,17 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             Message lastMessage = uiConversation.getLastMessage();
             if (lastMessage != null) {
                 String senderName = lastMessage.getSenderUserId().equals(JIM.getInstance().getCurrentUserId()) ? "你" : uiConversation.getLastMessageUserName();
-                lastMessageView.setText(MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
+                if (uiConversation.getConversationInfo().getMentionInfo() != null) {
+                    SpannableString spannable = new SpannableString("[有人@我]" + MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
+                    spannable.setSpan(
+                            new ForegroundColorSpan(Color.RED),
+                            0,
+                            6,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    lastMessageView.setText(spannable);
+                } else {
+                    lastMessageView.setText(MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
+                }
             }
 
             // 设置免打扰图标

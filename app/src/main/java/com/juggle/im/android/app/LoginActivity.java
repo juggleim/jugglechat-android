@@ -116,7 +116,7 @@ public class LoginActivity extends AppCompatActivity {
             loginButton.setEnabled(false);
             loginProgress.setVisibility(View.VISIBLE);
         } else {
-            loginButton.setText("Log In");
+            loginButton.setText("登录");
             loginButton.setEnabled(true);
             loginProgress.setVisibility(View.GONE);
         }

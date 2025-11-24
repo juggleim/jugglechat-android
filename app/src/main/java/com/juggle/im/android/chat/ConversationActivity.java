@@ -3,6 +3,7 @@ package com.juggle.im.android.chat;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import static com.juggle.im.android.chat.MessageListFragment.ARG_MENTION;
 import static com.juggle.im.android.chat.SelectMemberActivity.DISABLE_MEMBERS;
 import static com.juggle.im.android.chat.SelectMemberActivity.GROUP_ID;
 import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
@@ -141,11 +142,12 @@ public class ConversationActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             conversationId = getIntent().getStringExtra(EXTRA_CONVERSATION_ID);
             isGroup = getIntent().getBooleanExtra(EXTRA_IS_GROUP, false);
+            boolean isMention = getIntent().getBooleanExtra(ARG_MENTION, false);
             int unreadCount = getIntent().getIntExtra(EXTRA_UNREAD_COUNT, 0);
             conversation = new Conversation(
                     isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
                     conversationId);
-            MessageListFragment frag = MessageListFragment.newInstance(conversationId, isGroup, unreadCount);
+            MessageListFragment frag = MessageListFragment.newInstance(conversationId, isGroup, unreadCount, isMention);
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_messages_container, frag)

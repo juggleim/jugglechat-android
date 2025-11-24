@@ -185,6 +185,7 @@ public class MyProfileFragment extends Fragment {
         SharedPreferences.Editor editor = prefs.edit();
         editor.clear();
         editor.apply();
+        JIM.getInstance().getConnectionManager().disconnect(false);
 
         // 跳转到登录页面
         Intent intent = new Intent(getActivity(), LoginActivity.class);

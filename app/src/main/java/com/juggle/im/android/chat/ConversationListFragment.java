@@ -1,5 +1,7 @@
 package com.juggle.im.android.chat;
 
+import static com.juggle.im.android.chat.MessageListFragment.ARG_MENTION;
+
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -67,6 +69,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
                 uiConversation.isTop(),
                 uiConversation.isMuted());
         intent.putExtra(ConversationActivity.EXTRA_UNREAD_COUNT, unreadCount);
+        intent.putExtra(ARG_MENTION, uiConversation.getConversationInfo().getMentionInfo() != null);
         startActivity(intent);
     }
 
