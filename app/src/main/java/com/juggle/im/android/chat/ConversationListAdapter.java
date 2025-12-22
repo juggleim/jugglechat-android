@@ -254,15 +254,17 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 unreadDot.setVisibility(GONE);
             }
 
-            if (lastMessage.getState() == Message.MessageState.FAIL) {
-                ivMsgStatus.setVisibility(VISIBLE);
-                progressBar.setVisibility(GONE);
-            } else if (lastMessage.getState() == Message.MessageState.SENT) {
-                progressBar.setVisibility(GONE);
-                ivMsgStatus.setVisibility(GONE);
-            } else {
-                progressBar.setVisibility(VISIBLE);
-                ivMsgStatus.setVisibility(GONE);
+            if (lastMessage != null) {
+                if (lastMessage.getState() == Message.MessageState.FAIL) {
+                    ivMsgStatus.setVisibility(VISIBLE);
+                    progressBar.setVisibility(GONE);
+                } else if (lastMessage.getState() == Message.MessageState.SENT) {
+                    progressBar.setVisibility(GONE);
+                    ivMsgStatus.setVisibility(GONE);
+                } else {
+                    progressBar.setVisibility(VISIBLE);
+                    ivMsgStatus.setVisibility(GONE);
+                }
             }
         }
     }
