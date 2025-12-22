@@ -5,8 +5,10 @@ import com.juggle.im.android.server.beans.*;
 import java.util.List;
 
 /**
- * Plain interface for user-related API operations. Implementations should perform
- * network requests and invoke the provided {@link ApiCallback} on the UI thread.
+ * Plain interface for user-related API operations. Implementations should
+ * perform
+ * network requests and invoke the provided {@link ApiCallback} on the UI
+ * thread.
  */
 public interface UserService {
     void getSmsVerificationCode(CodeRequest phone, ApiCallback<Void> callback);
@@ -20,7 +22,7 @@ public interface UserService {
     void getUserInfo(String userId, ApiCallback<UserInfoBean> callback);
 
     void getQRCode(ApiCallback<QRCodeBean> callback);
-    
+
     /**
      * Get friends list with optional pagination and order tag (pinyin initial).
      * page starts from 1, size default 20, max 50.
@@ -37,7 +39,8 @@ public interface UserService {
     void searchMyGroups(String keyword, int limit, ApiCallback<GroupListData> callback);
 
     /**
-     * Apply (send friend request) to a user. POST /jim/friends/apply {friend_id: "..."}
+     * Apply (send friend request) to a user. POST /jim/friends/apply {friend_id:
+     * "..."}
      */
     void applyFriend(String friendId, ApiCallback<com.juggle.im.android.server.beans.FriendApplicationBean> callback);
 
@@ -48,12 +51,20 @@ public interface UserService {
 
     public void getGroupInfo(String groupId, ApiCallback<GroupDetailBean> callback);
 
-
     /**
      * 加群
+     * 
      * @param groupId
      * @param userIds
      * @param callback
      */
     public void inviteJoinGroup(String groupId, List<String> userIds, ApiCallback<Void> callback);
+
+    /**
+     * Get friend applications list. GET /jim/friends/applications
+     * 
+     * @param start Starting index for pagination
+     * @param count Number of items to fetch (default 50)
+     */
+    void getFriendApplications(int start, int count, ApiCallback<FriendApplicationsData> callback);
 }

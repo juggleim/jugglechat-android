@@ -30,13 +30,15 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
- * OkHttp-based implementation of UserService. Calls run network requests synchronously
+ * OkHttp-based implementation of UserService. Calls run network requests
+ * synchronously
  * on a background thread and dispatch callbacks on the main (UI) thread.
  */
 public class UserServiceImpl extends BaseService implements UserService {
     public UserServiceImpl(OkHttpClient client, String baseUrl) {
         super(client, baseUrl);
     }
+
     @Override
     public void getSmsVerificationCode(CodeRequest request, ApiCallback<Void> callback) {
         enqueueJson("/jim/sms/send", request, Void.class, callback);
@@ -74,7 +76,8 @@ public class UserServiceImpl extends BaseService implements UserService {
         // apply defaults and bounds according to API spec
         int p = (page == null || page < 1) ? 1 : page;
         int s = (size == null || size < 1) ? 20 : size;
-        if (s > 50) s = 50;
+        if (s > 50)
+            s = 50;
         StringBuilder sb = new StringBuilder("/jim/friends/list?");
         sb.append("page=").append(p).append("&size=").append(s);
         if (orderTag != null && !orderTag.isEmpty()) {
@@ -108,10 +111,12 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
-    public void applyFriend(String friendId, ApiCallback<com.juggle.im.android.server.beans.FriendApplicationBean> callback) {
+    public void applyFriend(String friendId,
+            ApiCallback<com.juggle.im.android.server.beans.FriendApplicationBean> callback) {
         java.util.Map<String, String> body = new java.util.HashMap<>();
         body.put("friend_id", friendId == null ? "" : friendId);
-        enqueueJson("/jim/friends/apply", body, com.juggle.im.android.server.beans.FriendApplicationBean.class, callback);
+        enqueueJson("/jim/friends/apply", body, com.juggle.im.android.server.beans.FriendApplicationBean.class,
+                callback);
     }
 
     @Override
@@ -133,5 +138,13 @@ public class UserServiceImpl extends BaseService implements UserService {
         body.put("group_id", groupId);
         body.put("member_ids", userIds);
         enqueueJson(sb.toString(), body, Void.class, callback);
+    }
+
+    @Override
+    public void getFriendApplications(int start, int count,
+            ApiCallback<com.juggle.im.android.server.beans.FriendApplicationsData> callback) {
+        StringBuilder sb = new StringBuilder("/jim/friends/applications?");
+        sb.append("start=").append(start).append("&count=").append(count);
+        enqueueGet(sb.toString(), com.juggle.im.android.server.beans.FriendApplicationsData.class, callback);
     }
 }

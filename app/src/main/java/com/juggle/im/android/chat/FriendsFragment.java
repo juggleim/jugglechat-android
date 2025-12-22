@@ -48,7 +48,8 @@ public class FriendsFragment extends Fragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+            @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_friends_list, container, false);
     }
 
@@ -59,10 +60,29 @@ public class FriendsFragment extends Fragment {
         adapter = new UserListAdapter();
         adapter.setMode(selectionMode);
         adapter.setSelectionChangedListener((item, selected) -> {
-            if (selectionListener != null) selectionListener.onMemberSelected(item, selected);
+            if (selectionListener != null)
+                selectionListener.onMemberSelected(item, selected);
         });
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerView.setAdapter(adapter);
+
+        // Set up click listeners for header items
+        View searchFriendsItem = view.findViewById(R.id.search_friends_item);
+        View newFriendsItem = view.findViewById(R.id.new_friends_item);
+
+        searchFriendsItem.setOnClickListener(v -> {
+            // Navigate to AddFriendActivity
+            android.content.Intent intent = new android.content.Intent(requireContext(),
+                    com.juggle.im.android.app.AddFriendActivity.class);
+            startActivity(intent);
+        });
+
+        newFriendsItem.setOnClickListener(v -> {
+            // Navigate to FriendApplicationsActivity
+            android.content.Intent intent = new android.content.Intent(requireContext(),
+                    com.juggle.im.android.app.FriendApplicationsActivity.class);
+            startActivity(intent);
+        });
 
         loadFriends();
         checkNewFriend(view);
@@ -72,11 +92,18 @@ public class FriendsFragment extends Fragment {
         this.selectionMode = mode;
     }
 
-    public void setSelectionListener(SelectionListener l) { this.selectionListener = l; }
+    public void setSelectionListener(SelectionListener l) {
+        this.selectionListener = l;
+    }
 
-    public void uncheckUser(String userId) { if (adapter != null) adapter.uncheckUser(userId); }
+    public void uncheckUser(String userId) {
+        if (adapter != null)
+            adapter.uncheckUser(userId);
+    }
 
-    public interface SelectionListener { void onMemberSelected(UserListAdapter.UserInfoObj member, boolean selected); }
+    public interface SelectionListener {
+        void onMemberSelected(UserListAdapter.UserInfoObj member, boolean selected);
+    }
 
     private void loadFriends() {
         ServiceManager.getUserService().getFriendsList(1, 50, null, new ApiCallback<FriendsListData>() {
@@ -98,7 +125,8 @@ public class FriendsFragment extends Fragment {
             @Override
             public void onError(int code, String message) {
                 if (getActivity() != null) {
-                    getActivity().runOnUiThread(() -> Toast.makeText(getActivity(), "加载好友失败: " + message, Toast.LENGTH_SHORT).show());
+                    getActivity().runOnUiThread(
+                            () -> Toast.makeText(getActivity(), "加载好友失败: " + message, Toast.LENGTH_SHORT).show());
                 }
             }
         });

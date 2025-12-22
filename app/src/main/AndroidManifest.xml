@@ -75,6 +75,11 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name=".app.FriendApplicationsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name="com.juggle.im.android.app.LoginActivity"
             android:exported="true"
             android:screenOrientation="portrait"/>
