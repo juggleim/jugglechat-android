@@ -155,6 +155,8 @@ public class MainActivity extends AppCompatActivity {
                 tx.show(conversationListFragment);
                 tvTitle.setText("聊天");
                 btnMore.setVisibility(VISIBLE);
+                btnSearch.setVisibility(VISIBLE);
+
                 break;
             case 2:
                 // friend tab now shows DiscoverFragment (发现)
@@ -169,6 +171,8 @@ public class MainActivity extends AppCompatActivity {
                 tx.show(discoverFragment);
                 tvTitle.setText("发现");
                 btnMore.setVisibility(GONE);
+                btnSearch.setVisibility(GONE);
+
                 break;
             case 1:
                 if (friendsFragment == null) {
@@ -180,6 +184,8 @@ public class MainActivity extends AppCompatActivity {
                 if (myProfileFragment != null) tx.hide(myProfileFragment);
                 tx.show(friendsFragment);
                 tvTitle.setText("联系人");
+                btnMore.setVisibility(GONE);
+                btnSearch.setVisibility(GONE);
                 break;
             case 3:
                 if (myProfileFragment == null) {
@@ -192,6 +198,8 @@ public class MainActivity extends AppCompatActivity {
                 tx.show(myProfileFragment);
                 tvTitle.setText("我");
                 btnMore.setVisibility(GONE);
+                btnSearch.setVisibility(GONE);
+
                 break;
             default:
                 // other tabs not implemented yet
