@@ -12,6 +12,7 @@ import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
+import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.interfaces.IConnectionManager;
 import com.juggle.im.interfaces.IConversationManager;
 import com.juggle.im.interfaces.IMessageManager;
@@ -72,7 +73,7 @@ public class JIMChatCore {
         /**
          * 需要申请对应自己音视频 ID，这个仅仅用来测试
          */
-        JIM.getInstance().getCallManager().initZegoEngine(1881186044, context);
+        JIM.getInstance().getCallManager().initZegoEngine(ConfigUtils.zegoId, context);
         JIM.getInstance().setServerUrls(serverList);
         JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();
         JLogConfig.Builder logBuilder = new JLogConfig.Builder(context);

@@ -55,7 +55,7 @@
                 android:id="@+id/phoneInput"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:hint="Account"
+                android:hint="Phone"
                 android:padding="16dp"
                 android:background="@drawable/input_background"
                 android:textColor="@color/black"

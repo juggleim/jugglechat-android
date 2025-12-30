@@ -1,20 +1,22 @@
 package com.juggle.im.android.server.beans;
 
 public class LoginRequest {
-    private String account;
+    private String phone;
     private String password;
 
-    public LoginRequest(String account, String password) {
-        this.account = account;
+    private String code;
+
+    public LoginRequest(String phone, String password) {
+        this.phone = phone;
         this.password = password;
     }
 
-    public String getAccount() {
-        return account;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setAccount(String account) {
-        this.account = account;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 
     public String getPassword() {
@@ -23,5 +25,9 @@ public class LoginRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 }

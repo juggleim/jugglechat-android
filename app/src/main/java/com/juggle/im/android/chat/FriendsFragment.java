@@ -135,7 +135,7 @@ public class FriendsFragment extends Fragment {
     private void checkNewFriend(View view) {
         Conversation conversation = new Conversation(Conversation.ConversationType.SYSTEM, FRIEND_APPLY);
         ConversationInfo info = JIM.getInstance().getConversationManager().getConversationInfo(conversation);
-        if (info.getUnreadCount() > 0) {
+        if (info != null && info.getUnreadCount() > 0) {
             view.findViewById(R.id.new_friend_tip).setVisibility(VISIBLE);
         } else {
             view.findViewById(R.id.new_friend_tip).setVisibility(View.GONE);

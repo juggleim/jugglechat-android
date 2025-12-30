@@ -46,9 +46,10 @@ public class UserServiceImpl extends BaseService implements UserService {
 
     @Override
     public void login(LoginRequest request, ApiCallback<LoginResult> callback) {
-        String pwd = MD5.encrypt(request.getPassword().getBytes());
-        request.setPassword(pwd);
-        enqueueJson("/jim/login", request, LoginResult.class, callback);
+//        String pwd = MD5.encrypt(request.getPhone().getBytes());
+        request.setCode(request.getPassword());
+        request.setPassword(null);
+        enqueueJson("/jim/sms/login", request, LoginResult.class, callback);
     }
 
     @Override

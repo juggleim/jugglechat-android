@@ -1,11 +1,18 @@
 package com.juggle.im.android.model;
 
 public class ConfigUtils {
-    public static String appKey = "nwm6fxqt2aeebhb7";
-    public static String appServerUrl = "https://ws.snailchat.im";
+    /**
+     * 申请新的key进行替换
+     */
+    public static String appKey = "nsw3sue72begyv7y";
+    public static String appServerUrl = "https://ws.juggleim.com";
+    public static String imServer = "wss://ws.juggleim.com";
 
-    public static String imServer = "wss://ws.snailchat.im";
-
+    /**
+     * 音视频ID
+     * 需要申请即构音视频 ID，这个仅仅用来测试
+     */
+    public static Integer zegoId = 1881186044;
 
     // app token
     public static String appToken = null;
