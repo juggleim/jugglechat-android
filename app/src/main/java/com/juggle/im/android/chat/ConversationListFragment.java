@@ -34,6 +34,9 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     private RecyclerView conversationListView;
     private ConversationListAdapter conversationListAdapter;
     private PopupWindow popupWindow;
+    private boolean isLoadingMore = false;
+    private boolean hasMore = true;
+    private static final int PAGE_SIZE = 20;
 
     @Nullable
     @Override
@@ -48,8 +51,97 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         conversationListView = view.findViewById(R.id.rv_conversation_list);
         conversationListAdapter = new ConversationListAdapter();
         conversationListAdapter.setOnConversationClickListener(this);
-        conversationListView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        // 设置新会话监听器，当新会话插入顶部时，如果用户在顶部附近则自动滚动
+        conversationListAdapter.setOnNewConversationListener(() -> {
+            if (isNearTop()) {
+                smoothScrollToTop();
+            }
+        });
+        LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
+        conversationListView.setLayoutManager(layoutManager);
         conversationListView.setAdapter(conversationListAdapter);
+
+        // 禁用默认动画，避免会话移动时出现白屏闪烁（和微信一样）
+        conversationListView.setItemAnimator(null);
+
+        // Add scroll listener for pagination
+        conversationListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+
+                // Only load more when scrolling down and not already loading
+                if (dy > 0 && !isLoadingMore && hasMore) {
+                    int visibleItemCount = layoutManager.getChildCount();
+                    int totalItemCount = layoutManager.getItemCount();
+                    int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
+
+                    // Load more when approaching the end (5 items before)
+                    if ((visibleItemCount + firstVisibleItemPosition + 5) >= totalItemCount) {
+                        loadMoreConversations();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * 检查用户是否在顶部附近（前3个位置）
+     * 如果是，新会话插入顶部时可以自动滚动
+     */
+    private boolean isNearTop() {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) conversationListView.getLayoutManager();
+        if (layoutManager == null) return false;
+        int firstVisiblePosition = layoutManager.findFirstVisibleItemPosition();
+        return firstVisiblePosition <= 2; // 前3个位置认为是"在顶部"
+    }
+
+    /**
+     * 平滑滚动到顶部
+     */
+    private void smoothScrollToTop() {
+        LinearLayoutManager layoutManager = (LinearLayoutManager) conversationListView.getLayoutManager();
+        if (layoutManager != null) {
+            // 使用 smoothScroll 看起来更自然
+            RecyclerView.SmoothScroller smoothScroller = new androidx.recyclerview.widget.LinearSmoothScroller(requireContext()) {
+                @Override
+                protected int getVerticalSnapPreference() {
+                    return SNAP_TO_START;
+                }
+            };
+            smoothScroller.setTargetPosition(0);
+            layoutManager.startSmoothScroll(smoothScroller);
+        }
+    }
+
+    /**
+     * Load more conversations when scrolling to bottom
+     */
+    private void loadMoreConversations() {
+        if (isLoadingMore || !hasMore) {
+            return;
+        }
+
+        isLoadingMore = true;
+
+        // Get the cursor (sortTime of the last item)
+        long cursor = conversationListAdapter.getLastSortTime();
+
+        // Load more conversations in background thread
+        new Thread(() -> {
+            int loadedCount = com.juggle.im.android.core.JIMChatCore.getInstance()
+                    .loadMoreConversations(cursor, PAGE_SIZE);
+
+            // Update UI on main thread
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    isLoadingMore = false;
+                    if (loadedCount < PAGE_SIZE) {
+                        hasMore = false;
+                    }
+                });
+            }
+        }).start();
     }
 
     public void upsertConversations(List<UiConversation> dataSet) {

@@ -111,6 +111,7 @@ public class BottomNavView extends LinearLayout {
     public void updateUnreadCount(int c) {
         if (c > 0) unReadView.setVisibility(VISIBLE);
         else unReadView.setVisibility(GONE);
-        unReadView.setText(c + "");
+        // Show 99+ when count exceeds 99
+        unReadView.setText(c > 99 ? "99+" : String.valueOf(c));
     }
 }

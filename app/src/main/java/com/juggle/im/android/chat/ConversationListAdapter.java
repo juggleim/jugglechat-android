@@ -33,6 +33,7 @@ import java.util.List;
 public class ConversationListAdapter extends RecyclerView.Adapter<ConversationListAdapter.ViewHolder> {
     private final List<UiConversation> uiConversations = new ArrayList<>();
     private OnConversationClickListener listener;
+    private OnNewConversationListener newConversationListener;
     private int selectedPosition = -1;
     private Drawable selectableItemBackground;
 
@@ -42,59 +43,144 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         void onConversationLongClick(UiConversation uiConversation);
     }
 
+    /**
+     * 新会话插入监听器，当新会话插入到顶部时回调
+     */
+    public interface OnNewConversationListener {
+        void onNewConversationAtTop();
+    }
+
+    public void setOnNewConversationListener(OnNewConversationListener listener) {
+        this.newConversationListener = listener;
+    }
+
     public void setOnConversationClickListener(OnConversationClickListener listener) {
         this.listener = listener;
     }
 
     /**
      * Incrementally upsert a list of conversations into the adapter.
-     * New conversations will be inserted at the top (index 0).
-     * Existing conversations (matched by id) will be updated in place.
+     * Uses batched updates to minimize animations and prevent flickering.
+     * New conversations will be inserted at the correct position based on sortTime.
+     * Existing conversations (matched by id) will be updated in place or moved if position changed.
      */
     public void upsertConversations(List<UiConversation> newConversations) {
         if (newConversations == null || newConversations.isEmpty()) return;
+
+        // Use a temporary map to track all updates first
+        java.util.Map<String, UiConversation> updateMap = new java.util.LinkedHashMap<>();
+        java.util.Map<String, Integer> existingPositions = new java.util.LinkedHashMap<>();
+
+        // First pass: collect all existing positions and build update map
+        for (int i = 0; i < uiConversations.size(); i++) {
+            String id = uiConversations.get(i).getId();
+            existingPositions.put(id, i);
+        }
+
+        // Second pass: categorize new items as updates or inserts
+        for (UiConversation newUi : newConversations) {
+            if (newUi == null) continue;
+            updateMap.put(newUi.getId(), newUi);
+        }
+
+        // Process in order: handle updates first, then inserts
+        List<String> insertedIds = new ArrayList<>();
+        List<String> movedIds = new ArrayList<>();
+
         for (UiConversation newUi : newConversations) {
             if (newUi == null) continue;
 
-            // determine target position by sortTime (descending: newer first)
-            long newSortTime = newUi.getSortTime();
+            String id = newUi.getId();
+            Integer existingIndex = existingPositions.get(id);
 
-            // find existing by id
-            int existingIndex = -1;
-            for (int i = 0; i < uiConversations.size(); i++) {
-                UiConversation exist = uiConversations.get(i);
-                if (exist.getId() != null && exist.getId().equals(newUi.getId())) {
-                    existingIndex = i;
-                    break;
-                }
-            }
-
-            if (existingIndex >= 0) {
-                // update data at existing index
+            if (existingIndex != null) {
+                // Existing item: update data in place
                 uiConversations.set(existingIndex, newUi);
 
-                // compute new insertion index in the list after removal
-                UiConversation removed = uiConversations.remove(existingIndex);
-
-                int insertIndex = findInsertIndex(newUi.isTop(), newSortTime, uiConversations);
-
-                uiConversations.add(insertIndex, removed);
-
-                if (existingIndex != insertIndex) {
-                    // notify move and then update content at new position
-                    notifyItemMoved(existingIndex, insertIndex);
-                    notifyItemChanged(insertIndex);
-                } else {
-                    // same position, just notify changed
-                    notifyItemChanged(insertIndex);
+                // Check if position should change
+                int targetIndex = findInsertIndexExcluding(id, newUi.isTop(), newUi.getSortTime());
+                if (targetIndex != existingIndex) {
+                    movedIds.add(id);
                 }
             } else {
-                // new item: insert according to sortTime
-                int insertIndex = findInsertIndex(newUi.isTop(), newSortTime, uiConversations);
-                uiConversations.add(insertIndex, newUi);
-                notifyItemInserted(insertIndex);
+                // New item: mark for insertion
+                insertedIds.add(id);
             }
         }
+
+        // Apply moves (from bottom to top to maintain indices)
+        movedIds.sort((a, b) -> {
+            int posA = uiConversations.indexOf(getConversationById(a));
+            int posB = uiConversations.indexOf(getConversationById(b));
+            return Integer.compare(posB, posA); // Descending order
+        });
+
+        for (String id : movedIds) {
+            int currentPos = uiConversations.indexOf(getConversationById(id));
+            if (currentPos >= 0) {
+                UiConversation item = uiConversations.remove(currentPos);
+                int targetPos = findInsertIndex(item.isTop(), item.getSortTime(), uiConversations);
+                uiConversations.add(targetPos, item);
+                notifyItemMoved(currentPos, targetPos);
+            }
+        }
+
+        // Apply inserts
+        for (String id : insertedIds) {
+            UiConversation newUi = updateMap.get(id);
+            int insertIndex = findInsertIndex(newUi.isTop(), newUi.getSortTime(), uiConversations);
+            uiConversations.add(insertIndex, newUi);
+            notifyItemInserted(insertIndex);
+
+            // 如果新会话插入到顶部，通知监听器
+            if (insertIndex == 0 && newConversationListener != null) {
+                newConversationListener.onNewConversationAtTop();
+            }
+        }
+
+        // Notify changed for all updated items (including moved ones)
+        for (String id : updateMap.keySet()) {
+            Integer pos = existingPositions.get(id);
+            if (pos != null) {
+                // Check if this item was moved - if so, use the new position
+                int newPos = uiConversations.indexOf(getConversationById(id));
+                notifyItemChanged(newPos);
+            }
+        }
+    }
+
+    /**
+     * Find insert index excluding a specific ID (used to avoid self-comparison)
+     */
+    private int findInsertIndexExcluding(String excludeId, boolean isTop, long sortTime) {
+        for (int i = 0; i < uiConversations.size(); i++) {
+            UiConversation exist = uiConversations.get(i);
+            if (exist.getId().equals(excludeId)) continue;
+
+            boolean existTop = exist.isTop();
+            long existSort = exist.getSortTime();
+
+            if (isTop && !existTop) {
+                return i;
+            } else if (!isTop && existTop) {
+                continue;
+            } else {
+                if (sortTime > existSort) return i;
+            }
+        }
+        return uiConversations.size();
+    }
+
+    /**
+     * Helper to get conversation by ID
+     */
+    private UiConversation getConversationById(String id) {
+        for (UiConversation ui : uiConversations) {
+            if (ui.getId().equals(id)) {
+                return ui;
+            }
+        }
+        return null;
     }
 
     @NonNull
@@ -325,5 +411,16 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             }
         }
         return list.size();
+    }
+
+    /**
+     * 获取列表中最后一个会话的sortTime，用于分页加载
+     * @return 最后一个会话的sortTime，如果列表为空返回-1
+     */
+    public long getLastSortTime() {
+        if (uiConversations.isEmpty()) {
+            return -1;
+        }
+        return uiConversations.get(uiConversations.size() - 1).getSortTime();
     }
 }

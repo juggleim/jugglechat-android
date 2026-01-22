@@ -143,6 +143,27 @@ public class JIMChatCore {
         EventBus.getDefault().post(new UnreadMessageCountEvent(c));
     }
 
+    /**
+     * 加载更多会话（分页）
+     * @param cursor 上次加载的最后一条会话的sortTime，第一次传-1
+     * @param pageSize 每页数量
+     * @return 加载的会话数量
+     */
+    public int loadMoreConversations(long cursor, int pageSize) {
+        List<ConversationInfo> conversationInfoList = JIM.getInstance().getConversationManager()
+                .getConversationInfoList(pageSize, cursor, JIMConst.PullDirection.OLDER);
+        if (conversationInfoList == null || conversationInfoList.isEmpty()) {
+            Log.i(tag, "no more conversations to load");
+            return 0;
+        }
+        Log.d(tag, "load more conversations size: " + conversationInfoList.size());
+
+        // Post conversation update event for this page
+        EventBus.getDefault().post(new ConversationUpdatedEvent(conversationInfoList));
+
+        return conversationInfoList.size();
+    }
+
     private void initListener() {
 
         JIM.getInstance().getConversationManager().addListener("conversationList", new IConversationManager.IConversationListener() {
