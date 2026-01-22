@@ -195,9 +195,9 @@ public class MessageListFragment extends Fragment {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 super.onScrolled(rv, dx, dy);
-                int total = layoutManager.getItemCount();
-                int lastVisible = layoutManager.findLastVisibleItemPosition();
-                boolean nowAtBottom = (total == 0) || (lastVisible >= total - 1);
+                // 使用 canScrollVertically 更准确地判断是否在底部
+                // false 表示无法向下滚动，即已经到底了
+                boolean nowAtBottom = !recyclerView.canScrollVertically(1);
                 atBottom = nowAtBottom;
                 if (atBottom) {
                     if (layoutNewMessageBubble != null && layoutNewMessageBubble.getVisibility() == VISIBLE) {
@@ -612,7 +612,9 @@ public class MessageListFragment extends Fragment {
         adapter.submitList(current, () -> {
             // after commit, scroll to bottom and handle next batch
             if (atBottom) {
-                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1);
+                // 使用 scrollToPosition 而非 smoothScrollToPosition，确保新消息立即显示
+                // 平滑滚动需要时间，如果新消息来得快可能还没滚动完
+                recyclerView.scrollToPosition(adapter.getItemCount() - 1);
             }
             submitInProgress = false;
             // continue processing any messages that arrived during the diff
