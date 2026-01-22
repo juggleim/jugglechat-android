@@ -24,25 +24,42 @@ public final class AvatarUtils {
     private AvatarUtils() {
     }
 
+    // 使用一个不会与其他资源冲突的 ID 作为 tag key
+    private static final int TAG_URL = 0x7F0A0001;
+
     public static void loadAvatar(ImageView iv, String url, String name) {
         if (iv == null) return;
         Context ctx = iv.getContext();
+
+        // 检查 URL 是否与当前已加载的相同，避免重复加载导致闪烁
+        String currentUrl = (String) iv.getTag(TAG_URL);
         if (!TextUtils.isEmpty(url)) {
+            if (url.equals(currentUrl)) {
+                return; // URL 相同，跳过加载
+            }
+            iv.setTag(TAG_URL, url);
+
             Glide.with(iv)
                     .load(url)
                     .centerCrop()
-                    .placeholder(R.drawable.ic_avatar_placeholder)
                     .transform(new CircleCrop())
-                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .dontAnimate()
                     .into(iv);
             return;
         }
 
-        // generate placeholder bitmap with initial
+        // 处理没有 URL 的情况（生成首字母头像）
+        // 使用 name + 特殊前缀作为 tag，区分不同的生成的头像
+        String generatedTag = "generated:" + name;
+        if (generatedTag.equals(currentUrl)) {
+            return; // 相同的生成头像，跳过
+        }
+        iv.setTag(TAG_URL, generatedTag);
+
         String initial = extractInitial(name);
-        int sizePx = dpToPx(ctx, 40); // reasonable default avatar size
+        int sizePx = dpToPx(ctx, 40);
         Bitmap bmp = createInitialsBitmap(sizePx, initial);
-        Glide.with(iv).load(bmp).circleCrop().placeholder(R.drawable.ic_avatar_placeholder).into(iv);
+        Glide.with(iv).load(bmp).circleCrop().dontAnimate().into(iv);
     }
 
     public static void loadImage(ImageView iv, String url) {
@@ -50,7 +67,7 @@ public final class AvatarUtils {
                 .load(url)
                 .centerCrop()
                 .placeholder(R.drawable.default_image)
-                .transition(DrawableTransitionOptions.withCrossFade())
+                .dontAnimate() // 禁用动画，避免图片更新时闪烁
                 .into(iv);
     }
 
