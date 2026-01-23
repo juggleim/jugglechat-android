@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,12 +32,17 @@ import java.util.List;
  * Conversation list as a Fragment so it can be hosted inside MainActivity.
  */
 public class ConversationListFragment extends Fragment implements ConversationListAdapter.OnConversationClickListener {
+    private static final String TAG = "ConvListFragment";
     private RecyclerView conversationListView;
     private ConversationListAdapter conversationListAdapter;
     private PopupWindow popupWindow;
     private boolean isLoadingMore = false;
     private boolean hasMore = true;
     private static final int PAGE_SIZE = 20;
+    // 追踪用户是否主动滚动离开顶部,用于决定是否自动滚动到新消息
+    private boolean userScrolledAway = false;
+    // 记录在新item插入前是否在顶部,用于插入后的滚动决策
+    private boolean wasAtTopBeforeInsert = false;
 
     @Nullable
     @Override
@@ -51,11 +57,21 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         conversationListView = view.findViewById(R.id.rv_conversation_list);
         conversationListAdapter = new ConversationListAdapter();
         conversationListAdapter.setOnConversationClickListener(this);
-        // 设置新会话监听器，当新会话插入顶部时，如果用户在顶部附近则自动滚动
+        
+        // 设置RecyclerView引用到Adapter,让Adapter可以直接控制滚动
+        conversationListAdapter.setRecyclerView(conversationListView);
+
+        // 设置自动滚动检查器,只有当用户在顶部且未主动滚动离开时才自动滚动
+        conversationListAdapter.setShouldAutoScrollChecker(() -> {
+            boolean atTop = isAtTop();
+            boolean shouldScroll = atTop && !userScrolledAway;
+            Log.d(TAG, "[检查器] isAtTop=" + atTop + ", userScrolledAway=" + userScrolledAway + ", shouldScroll=" + shouldScroll);
+            return shouldScroll;
+        });
+
+        // 设置新会话监听器,这里只打印日志,滚动逻辑由Adapter内部直接处理
         conversationListAdapter.setOnNewConversationListener(() -> {
-            if (isNearTop()) {
-                smoothScrollToTop();
-            }
+            Log.d(TAG, "[监听器] 新会话插入到顶部");
         });
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
         conversationListView.setLayoutManager(layoutManager);
@@ -64,11 +80,32 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         // 禁用默认动画，避免会话移动时出现白屏闪烁（和微信一样）
         conversationListView.setItemAnimator(null);
 
-        // Add scroll listener for pagination
+        // Add scroll listener for pagination and user scroll tracking
         conversationListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
+
+                // 追踪用户滚动状态:如果用户向下滚动离开顶部,标记为已滚动离开
+                // 如果用户滚动回到顶部,恢复自动滚动模式
+                if (dy != 0) { // 有滚动发生
+                    boolean wasAtTop = isAtTop();
+                    Log.d(TAG, "[滚动监听] dy=" + dy + ", isAtTop=" + wasAtTop + ", userScrolledAway=" + userScrolledAway);
+                    
+                    if (wasAtTop) {
+                        // 用户滚动回到顶部,恢复自动滚动模式
+                        if (userScrolledAway) {
+                            Log.i(TAG, "[滚动监听] 用户滚动回到顶部,恢复自动滚动模式");
+                        }
+                        userScrolledAway = false;
+                    } else if (dy > 0) {
+                        // 用户向下滚动离开顶部,标记为已滚动离开
+                        if (!userScrolledAway) {
+                            Log.i(TAG, "[滚动监听] 用户向下滚动离开顶部");
+                        }
+                        userScrolledAway = true;
+                    }
+                }
 
                 // Only load more when scrolling down and not already loading
                 if (dy > 0 && !isLoadingMore && hasMore) {
@@ -86,31 +123,50 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     }
 
     /**
-     * 检查用户是否在顶部附近（前3个位置）
-     * 如果是，新会话插入顶部时可以自动滚动
+     * 检查用户是否在顶部（第一个item完全可见）
+     * 参考微信设计:只有在顶部时才自动滚动到新消息
      */
-    private boolean isNearTop() {
+    private boolean isAtTop() {
         LinearLayoutManager layoutManager = (LinearLayoutManager) conversationListView.getLayoutManager();
         if (layoutManager == null) return false;
+        
         int firstVisiblePosition = layoutManager.findFirstVisibleItemPosition();
-        return firstVisiblePosition <= 2; // 前3个位置认为是"在顶部"
+        if (firstVisiblePosition != 0) {
+            return false; // 第一个item不是位置0,肯定不在顶部
+        }
+        
+        // 检查第一个item的偏移量,只有完全可见(偏移量为0)时才认为在顶部
+        View firstView = layoutManager.findViewByPosition(0);
+        if (firstView == null) {
+            return false;
+        }
+        
+        // 第一个item的top应该近似等于RecyclerView的paddingTop(允许极小误差)
+        // 某些情况下可能有1像素的偏移
+        int offset = Math.abs(firstView.getTop() - conversationListView.getPaddingTop());
+        boolean atTop = offset <= 1;
+        Log.v(TAG, "[isAtTop] firstPos=" + firstVisiblePosition + ", firstTop=" + firstView.getTop() + ", rvTop=" + conversationListView.getPaddingTop() + ", result=" + atTop);
+        return atTop;
     }
 
     /**
-     * 平滑滚动到顶部
+     * 检查是否应该自动滚动到顶部
+     * 只有当用户在顶部且未主动滚动离开时,才自动滚动
      */
-    private void smoothScrollToTop() {
+    private boolean shouldAutoScrollToTop() {
+        return isAtTop() && !userScrolledAway;
+    }
+
+    /**
+     * 滚动到顶部
+     * 参考微信设计:使用瞬时滚动,确保新消息立即可见
+     */
+    private void scrollToTop() {
         LinearLayoutManager layoutManager = (LinearLayoutManager) conversationListView.getLayoutManager();
         if (layoutManager != null) {
-            // 使用 smoothScroll 看起来更自然
-            RecyclerView.SmoothScroller smoothScroller = new androidx.recyclerview.widget.LinearSmoothScroller(requireContext()) {
-                @Override
-                protected int getVerticalSnapPreference() {
-                    return SNAP_TO_START;
-                }
-            };
-            smoothScroller.setTargetPosition(0);
-            layoutManager.startSmoothScroll(smoothScroller);
+            // 使用scrollToPositionWithOffset确保第一个item完全对齐到顶部
+            // 参数0表示滚动到位置0,参数0表示偏移量为0(完全对齐)
+            layoutManager.scrollToPositionWithOffset(0, 0);
         }
     }
 

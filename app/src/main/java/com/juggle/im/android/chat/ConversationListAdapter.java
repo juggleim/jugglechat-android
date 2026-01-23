@@ -18,6 +18,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.JIM;
@@ -31,9 +32,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ConversationListAdapter extends RecyclerView.Adapter<ConversationListAdapter.ViewHolder> {
+    private static final String TAG = "ConvListAdapter";
     private final List<UiConversation> uiConversations = new ArrayList<>();
     private OnConversationClickListener listener;
     private OnNewConversationListener newConversationListener;
+    private RecyclerView recyclerView; // 持有RecyclerView引用,用于直接控制滚动
     private int selectedPosition = -1;
     private Drawable selectableItemBackground;
 
@@ -50,8 +53,31 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         void onNewConversationAtTop();
     }
 
+    /**
+     * 检查是否应该自动滚动的接口
+     */
+    public interface ShouldAutoScrollChecker {
+        boolean shouldAutoScroll();
+    }
+
+    private ShouldAutoScrollChecker shouldAutoScrollChecker;
+
     public void setOnNewConversationListener(OnNewConversationListener listener) {
         this.newConversationListener = listener;
+    }
+
+    /**
+     * 设置RecyclerView引用,用于直接控制滚动
+     */
+    public void setRecyclerView(RecyclerView recyclerView) {
+        this.recyclerView = recyclerView;
+    }
+
+    /**
+     * 设置自动滚动检查器
+     */
+    public void setShouldAutoScrollChecker(ShouldAutoScrollChecker checker) {
+        this.shouldAutoScrollChecker = checker;
     }
 
     public void setOnConversationClickListener(OnConversationClickListener listener) {
@@ -122,6 +148,23 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 int targetPos = findInsertIndex(item.isTop(), item.getSortTime(), uiConversations);
                 uiConversations.add(targetPos, item);
                 notifyItemMoved(currentPos, targetPos);
+                
+                // 检查是否移动到了顶部,如果是且满足条件,则自动滚动
+                boolean isMovingToTop = (targetPos == 0);
+                if (isMovingToTop && recyclerView != null) {
+                    // 检查是否应该自动滚动(用户是否在顶部且未主动滚动离开)
+                    boolean shouldScroll = (shouldAutoScrollChecker == null) || shouldAutoScrollChecker.shouldAutoScroll();
+                    android.util.Log.i(TAG, "[移动] 会话移动到顶部, shouldScroll=" + shouldScroll);
+                    
+                    if (shouldScroll) {
+                        // 直接滚动,不等待RecyclerView的自动调整
+                        LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                        if (layoutManager != null) {
+                            layoutManager.scrollToPositionWithOffset(0, 0);
+                            android.util.Log.d(TAG, "[移动] 滚动完成");
+                        }
+                    }
+                }
             }
         }
 
@@ -129,11 +172,34 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         for (String id : insertedIds) {
             UiConversation newUi = updateMap.get(id);
             int insertIndex = findInsertIndex(newUi.isTop(), newUi.getSortTime(), uiConversations);
+            
+            // 在插入之前先通知监听器(此时可以准确判断是否在顶部)
+            boolean isInsertingAtTop = (insertIndex == 0);
+            
             uiConversations.add(insertIndex, newUi);
             notifyItemInserted(insertIndex);
 
-            // 如果新会话插入到顶部，通知监听器
-            if (insertIndex == 0 && newConversationListener != null) {
+            // 如果新会话插入到顶部,检查是否应该自动滚动
+            // 关键:在notifyItemInserted之后立即滚动,不使用post延迟
+            if (isInsertingAtTop && recyclerView != null) {
+                // 检查是否应该自动滚动(用户是否在顶部且未主动滚动离开)
+                boolean shouldScroll = (shouldAutoScrollChecker == null) || shouldAutoScrollChecker.shouldAutoScroll();
+                android.util.Log.i(TAG, "[插入] 新会话插入到顶部, shouldScroll=" + shouldScroll);
+                
+                if (shouldScroll) {
+                    // 直接滚动,不等待RecyclerView的自动调整
+                    LinearLayoutManager layoutManager = (LinearLayoutManager) recyclerView.getLayoutManager();
+                    if (layoutManager != null) {
+                        layoutManager.scrollToPositionWithOffset(0, 0);
+                        android.util.Log.d(TAG, "[插入] 滚动完成");
+                    }
+                } else {
+                    android.util.Log.d(TAG, "[插入] 用户不在顶部或已滚动离开,不自动滚动");
+                }
+            }
+            
+            // 仍然通知监听器(用于其他逻辑,如用户滚动状态追踪)
+            if (isInsertingAtTop && newConversationListener != null) {
                 newConversationListener.onNewConversationAtTop();
             }
         }
