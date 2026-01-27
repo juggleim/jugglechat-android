@@ -28,6 +28,11 @@
         android:name="android.permission.READ_MEDIA_IMAGES"
         tools:ignore="PhotoAndVideoPolicy" />
 
+    <!-- 前台服务权限 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Android 14+ 数据同步前台服务类型 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
     <application
         android:name="com.juggle.im.android.Application"
 
@@ -123,6 +128,12 @@
             android:screenOrientation="portrait" />
         <activity android:name=".chat.SearchActivity"
             android:screenOrientation="portrait"/>
+
+        <!-- IM前台服务：保持长连接，防止文件选择时被系统回收 -->
+        <service
+            android:name=".service.ImForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
     </application>
 
 </manifest>

@@ -195,9 +195,20 @@ public class MessageListFragment extends Fragment {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 super.onScrolled(rv, dx, dy);
-                // 使用 canScrollVertically 更准确地判断是否在底部
-                // false 表示无法向下滚动，即已经到底了
-                boolean nowAtBottom = !recyclerView.canScrollVertically(1);
+                // 使用 findLastVisibleItemPosition 判断是否在底部，比 canScrollVertically 更宽松
+                // 只要最后一个item可见，就认为在底部
+                int lastVisiblePos = layoutManager.findLastVisibleItemPosition();
+                int itemCount = layoutManager.getItemCount();
+                
+                // 如果最后一个可见item是列表的最后一个(或倒数第二个，容错)，认为在底部
+                boolean nowAtBottom = (lastVisiblePos >= itemCount - 1) || !recyclerView.canScrollVertically(1);
+                
+                // Add logging to debug scroll behavior
+                if (atBottom != nowAtBottom) {
+                    Log.d("MessageListFragment", "atBottom changed: " + atBottom + " -> " + nowAtBottom + 
+                          " (lastVis=" + lastVisiblePos + ", count=" + itemCount + ")");
+                }
+                
                 atBottom = nowAtBottom;
                 if (atBottom) {
                     if (layoutNewMessageBubble != null && layoutNewMessageBubble.getVisibility() == VISIBLE) {

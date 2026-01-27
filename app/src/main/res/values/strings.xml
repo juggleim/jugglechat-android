@@ -73,4 +73,10 @@
     <string name="txt_reply">回复</string>
     <string name="msg_top">置顶</string>
     <string name="msg_edit">编辑</string>
+
+    <!-- IM前台服务通知相关 -->
+    <string name="im_service_title">聊天服务运行中</string>
+    <string name="im_service_content">正在保持连接，确保消息及时送达</string>
+    <string name="im_service_channel_name">IM前台服务</string>
+    <string name="im_service_channel_description">保持IM长连接，防止消息丢失</string>
 </resources>
