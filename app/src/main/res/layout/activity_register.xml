@@ -1,173 +1,253 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/bg_light">
+    android:background="@color/white">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/forward_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="4dp"
-        android:paddingBottom="2dp"
-        android:background="@color/primary_bg_light"
+    <ImageView
+        android:id="@+id/registerHeaderBackground"
+        android:layout_width="0dp"
+        android:layout_height="210dp"
+        android:contentDescription="@string/auth_cd_header"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_page_header_light"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/registerTopBar"
+        android:layout_width="0dp"
+        android:layout_height="44dp"
+        android:layout_marginTop="25dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <TextView
+        <LinearLayout
+            android:id="@+id/backContainer"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/txt_register"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-    </androidx.appcompat.widget.Toolbar>
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-    <!-- 应用图标 -->
-    <ImageView
-        android:id="@+id/app_icon"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:layout_marginTop="30dp"
-        android:src="@mipmap/ic_launcher"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/forward_toolbar" />
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@string/auth_cd_back"
+                android:src="@drawable/ic_back" />
 
-    <!-- 注册表单容器 -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/register_form_container"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text="@string/auth_back_text"
+                android:textColor="@color/auth_text_primary"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <ScrollView
+        android:id="@+id/registerScroll"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="24dp"
-        android:layout_marginTop="20dp"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp"
-        app:cardBackgroundColor="@color/white"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        app:layout_constraintBottom_toTopOf="@id/registerPrivacyText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/app_icon">
+        app:layout_constraintTop_toBottomOf="@id/registerTopBar">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:paddingStart="40dp"
+            android:paddingEnd="40dp">
+
+            <ImageView
+                android:id="@+id/registerLogo"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:contentDescription="@string/auth_cd_logo"
+                android:src="@drawable/ic_brand_logo" />
 
             <TextView
+                android:id="@+id/registerTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="注册方式"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:layout_marginBottom="12dp" />
-
-            <RadioGroup
-                android:id="@+id/registerTypeGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-
-                <RadioButton
-                    android:id="@+id/accountRadio"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="账号注册"
-                    android:textColor="@color/black"
-                    android:buttonTint="@color/primary_bg_light" />
-
-                <RadioButton
-                    android:id="@+id/phoneRadio"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="手机注册"
-                    android:textColor="@color/black"
-                    android:buttonTint="@color/primary_bg_light" />
-
-                <RadioButton
-                    android:id="@+id/emailRadio"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="邮箱注册"
-                    android:textColor="@color/black"
-                    android:buttonTint="@color/primary_bg_light" />
-            </RadioGroup>
-
-            <EditText
-                android:id="@+id/inputField"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/input_background"
-                android:hint="请输入账号"
-                android:padding="16dp"
-                android:textColor="@color/black"
-                android:textColorHint="@color/hint_bg"
-                android:layout_marginBottom="16dp" />
-
-            <EditText
-                android:id="@+id/verificationCode"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/input_background"
-                android:hint="验证码"
-                android:inputType="number"
-                android:padding="16dp"
-                android:textColor="@color/black"
-                android:textColorHint="@color/hint_bg"
-                android:layout_marginBottom="16dp"
-                android:visibility="gone" />
-
-            <RelativeLayout
-                android:id="@+id/getCodeButtonContainer"
-                android:layout_width="match_parent"
-                android:visibility="gone"
-                android:layout_height="56dp"
-                android:layout_marginBottom="16dp">
-
-                <Button
-                    android:id="@+id/getCodeButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:background="@drawable/bg_primary_button"
-                    android:text="获取验证码"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
-
-            </RelativeLayout>
-
-            <EditText
-                android:id="@+id/passwordInput"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:background="@drawable/input_background"
-                android:hint="密码"
-                android:inputType="textPassword"
-                android:padding="16dp"
-                android:textColor="@color/black"
-                android:textColorHint="@color/hint_bg"
-                android:layout_marginBottom="24dp" />
-
-            <Button
-                android:id="@+id/registerButton"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:background="@drawable/bg_primary_button"
-                android:text="注册"
-                android:textColor="@color/white"
+                android:layout_marginTop="24dp"
+                android:text="@string/auth_register_title"
+                android:textColor="@color/auth_text_primary"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
-        </LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="30dp"
+                android:orientation="vertical">
 
-    </androidx.cardview.widget.CardView>
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="@string/auth_cd_account"
+                        android:src="@drawable/ic_field_account" />
+
+                    <TextView
+                        style="@style/TextAppearance.Auth.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/auth_label_account" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/registerAccountInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_auth_input"
+                    android:gravity="center_vertical"
+                    android:hint="@string/auth_hint_account"
+                    android:imeOptions="actionNext"
+                    android:inputType="text"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:textColor="@color/auth_text_primary"
+                    android:textColorHint="@color/auth_text_secondary"
+                    android:textSize="15sp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="@string/auth_cd_password"
+                        android:src="@drawable/ic_field_password" />
+
+                    <TextView
+                        style="@style/TextAppearance.Auth.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/auth_label_password" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/registerPasswordInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_auth_input"
+                    android:gravity="center_vertical"
+                    android:hint="@string/auth_hint_password"
+                    android:imeOptions="actionNext"
+                    android:inputType="textPassword"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:textColor="@color/auth_text_primary"
+                    android:textColorHint="@color/auth_text_secondary"
+                    android:textSize="15sp" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="@string/auth_cd_password"
+                        android:src="@drawable/ic_field_password" />
+
+                    <TextView
+                        style="@style/TextAppearance.Auth.Label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/auth_label_confirm_password" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/registerConfirmPasswordInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_auth_input"
+                    android:gravity="center_vertical"
+                    android:hint="@string/auth_hint_confirm_password"
+                    android:imeOptions="actionDone"
+                    android:inputType="textPassword"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:textColor="@color/auth_text_primary"
+                    android:textColorHint="@color/auth_text_secondary"
+                    android:textSize="15sp" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="50dp">
+
+                <Button
+                    android:id="@+id/registerButton"
+                    style="@style/TextAppearance.Auth.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_auth_button_disabled"
+                    android:enabled="false"
+                    android:text="@string/auth_button_register"
+                    android:textAllCaps="false"
+                    android:textColor="@color/auth_button_disabled_text" />
+
+                <ProgressBar
+                    android:id="@+id/registerProgress"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center"
+                    android:indeterminateTint="@color/white"
+                    android:visibility="gone" />
+            </FrameLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="24dp" />
+        </LinearLayout>
+    </ScrollView>
+
+    <TextView
+        android:id="@+id/registerPrivacyText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="14dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="80dp"
+        android:gravity="center"
+        android:text="@string/auth_privacy_prefix"
+        android:textColor="@color/auth_text_secondary"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -11,7 +11,7 @@ import java.util.List;
  * thread.
  */
 public interface UserService {
-    void getSmsVerificationCode(CodeRequest phone, ApiCallback<Void> callback);
+    void getVerificationCode(CodeRequest phone, ApiCallback<Void> callback);
 
     void login(LoginRequest phone, ApiCallback<LoginResult> callback);
 

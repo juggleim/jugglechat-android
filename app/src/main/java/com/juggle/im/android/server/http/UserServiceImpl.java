@@ -5,29 +5,20 @@ import android.os.Looper;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
-import com.juggle.im.android.server.beans.GroupBean;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupListData;
-import com.juggle.im.android.server.beans.HttpResult;
 import com.juggle.im.android.server.beans.LoginRequest;
 import com.juggle.im.android.server.beans.LoginResult;
 import com.juggle.im.android.server.beans.CodeRequest;
 import com.juggle.im.android.server.beans.RegisterRequest;
-import com.juggle.im.android.server.beans.SearchUserBean;
 import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.beans.UserInfoRequest;
 import com.juggle.im.android.server.beans.QRCodeBean;
 import com.juggle.im.android.server.beans.FriendsListData;
 import com.qiniu.android.utils.MD5;
 
-import java.io.IOException;
 import java.util.List;
-
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 /**
  * OkHttp-based implementation of UserService. Calls run network requests
@@ -40,16 +31,21 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
-    public void getSmsVerificationCode(CodeRequest request, ApiCallback<Void> callback) {
+    public void getVerificationCode(CodeRequest request, ApiCallback<Void> callback) {
+        if (request != null && request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            java.util.Map<String, String> body = new java.util.HashMap<>();
+            body.put("email", request.getEmail().trim());
+            enqueueJson("/jim/email/send", body, Void.class, callback);
+            return;
+        }
         enqueueJson("/jim/sms/send", request, Void.class, callback);
     }
 
     @Override
     public void login(LoginRequest request, ApiCallback<LoginResult> callback) {
-//        String pwd = MD5.encrypt(request.getPhone().getBytes());
-        request.setCode(request.getPassword());
-        request.setPassword(null);
-        enqueueJson("/jim/sms/login", request, LoginResult.class, callback);
+        request.setPhone(request.getPhone());
+        request.setPassword(request.getPassword());
+        enqueueJson("/jim/login", request, LoginResult.class, callback);
     }
 
     @Override

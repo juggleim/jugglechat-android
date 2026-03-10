@@ -1,160 +1,236 @@
 package com.juggle.im.android.app;
 
-import static android.view.View.GONE;
-import static android.view.View.VISIBLE;
-
+import android.content.Intent;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.text.Editable;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextPaint;
+import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioGroup;
-import android.widget.Toast;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.android.R;
-import com.juggle.im.android.server.beans.CodeRequest;
+import com.juggle.im.android.auth.AuthInputValidator;
+import com.juggle.im.android.auth.AuthRequestFactory;
 import com.juggle.im.android.server.beans.LoginResult;
-import com.juggle.im.android.server.beans.RegisterRequest;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
-
-// retrofit no longer used in RegisterActivity after switching UserService implementation
+import com.juggle.im.android.utils.ToastUtils;
 
 public class RegisterActivity extends AppCompatActivity {
-    private RadioGroup registerTypeGroup;
-    private EditText inputField;
-    private EditText verificationCode;
-    private Button getCodeButton;
-    private EditText passwordInput;
+    private static final String USER_AGREEMENT_URL = "https://secretchat.im/user/user.html";
+    private static final String PRIVACY_POLICY_URL = "https://secretchat.im/user/privacy.html";
+
+    private EditText registerAccountInput;
+    private EditText registerPasswordInput;
+    private EditText registerConfirmPasswordInput;
+
     private Button registerButton;
-    private CardView registerFormContainer;
+    private ProgressBar registerProgress;
+
+    private TextView registerPrivacyText;
+
+    private boolean isRegistering = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupSystemBars();
         setContentView(R.layout.activity_register);
 
         initViews();
         setupListeners();
-        // 默认选中账号注册
-        registerTypeGroup.check(R.id.accountRadio);
+        setupAgreementLinks();
+        updateRegisterButtonState();
+    }
+
+    private void setupSystemBars() {
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        getWindow().setStatusBarColor(Color.TRANSPARENT);
+        WindowInsetsControllerCompat controller =
+                new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+        controller.setAppearanceLightStatusBars(true);
     }
 
     private void initViews() {
-        registerTypeGroup = findViewById(R.id.registerTypeGroup);
-        inputField = findViewById(R.id.inputField);
-        verificationCode = findViewById(R.id.verificationCode);
-        getCodeButton = findViewById(R.id.getCodeButton);
-        passwordInput = findViewById(R.id.passwordInput);
+        registerAccountInput = findViewById(R.id.registerAccountInput);
+        registerPasswordInput = findViewById(R.id.registerPasswordInput);
+        registerConfirmPasswordInput = findViewById(R.id.registerConfirmPasswordInput);
         registerButton = findViewById(R.id.registerButton);
-        registerFormContainer = findViewById(R.id.register_form_container);
+        registerProgress = findViewById(R.id.registerProgress);
+        registerPrivacyText = findViewById(R.id.registerPrivacyText);
     }
 
     private void setupListeners() {
-        registerTypeGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.accountRadio) {
-                inputField.setHint("请输入账号 (5-20个字符)");
-                inputField.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
-                getCodeButton.setVisibility(GONE);
-                findViewById(R.id.getCodeButtonContainer).setVisibility(GONE);
-                verificationCode.setVisibility(GONE);
-            } else if (checkedId == R.id.phoneRadio) {
-                inputField.setHint("请输入手机号");
-                inputField.setInputType(android.text.InputType.TYPE_CLASS_PHONE);
-                getCodeButton.setVisibility(VISIBLE);
-                findViewById(R.id.getCodeButtonContainer).setVisibility(VISIBLE);
-                verificationCode.setVisibility(VISIBLE);
-            } else if (checkedId == R.id.emailRadio) {
-                inputField.setHint("请输入邮箱地址");
-                inputField.setInputType(android.text.InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
-                getCodeButton.setVisibility(VISIBLE);
-                findViewById(R.id.getCodeButtonContainer).setVisibility(VISIBLE);
-                verificationCode.setVisibility(VISIBLE);
-            }
-        });
+        View backContainer = findViewById(R.id.backContainer);
+        backContainer.setOnClickListener(v -> finish());
 
-        getCodeButton.setOnClickListener(v -> getVerificationCode());
         registerButton.setOnClickListener(v -> handleRegister());
+
+        TextWatcher watcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateRegisterButtonState();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+        };
+
+        registerAccountInput.addTextChangedListener(watcher);
+        registerPasswordInput.addTextChangedListener(watcher);
+        registerConfirmPasswordInput.addTextChangedListener(watcher);
     }
 
-    private void getVerificationCode() {
-        String input = inputField.getText().toString().trim();
-        if (TextUtils.isEmpty(input)) {
-            Toast.makeText(this, "请输入手机号或邮箱", Toast.LENGTH_SHORT).show();
-            return;
+    private void setupAgreementLinks() {
+        String agreementText = getString(R.string.auth_user_agreement);
+        String privacyPolicyText = getString(R.string.auth_privacy_policy);
+        String raw = getString(
+                R.string.auth_privacy_text_full,
+                getString(R.string.auth_privacy_prefix),
+                agreementText,
+                getString(R.string.auth_privacy_and),
+                privacyPolicyText);
+
+        SpannableString spannable = new SpannableString(raw);
+        int agreementStart = raw.indexOf(agreementText);
+        int agreementEnd = agreementStart + agreementText.length();
+        int privacyStart = raw.indexOf(privacyPolicyText);
+        int privacyEnd = privacyStart + privacyPolicyText.length();
+
+        if (agreementStart >= 0) {
+            spannable.setSpan(new LinkSpan(USER_AGREEMENT_URL), agreementStart, agreementEnd,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        }
+        if (privacyStart >= 0) {
+            spannable.setSpan(new LinkSpan(PRIVACY_POLICY_URL), privacyStart, privacyEnd,
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
-        CodeRequest request = new CodeRequest();
-        if (registerTypeGroup.getCheckedRadioButtonId() == R.id.phoneRadio) {
-            request.setPhone(input);
-        } else if (registerTypeGroup.getCheckedRadioButtonId() == R.id.emailRadio) {
-            request.setEmail(input);
-        }
-
-        ServiceManager.getUserService().getSmsVerificationCode(request, new ApiCallback<Void>() {
-            @Override
-            public void onSuccess(Void data) {
-                Toast.makeText(RegisterActivity.this, "验证码已发送", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onError(int code, String message) {
-                Toast.makeText(RegisterActivity.this, "验证码发送失败: " + message, Toast.LENGTH_SHORT).show();
-            }
-        });
+        registerPrivacyText.setText(spannable);
+        registerPrivacyText.setMovementMethod(LinkMovementMethod.getInstance());
+        registerPrivacyText.setHighlightColor(Color.TRANSPARENT);
     }
 
     private void handleRegister() {
-        String input = inputField.getText().toString().trim();
-        String code = verificationCode.getText().toString().trim();
-        String password = passwordInput.getText().toString().trim();
-
-        if (TextUtils.isEmpty(input) || TextUtils.isEmpty(password)) {
-            Toast.makeText(this, "请填写所有必填项", Toast.LENGTH_SHORT).show();
+        if (isRegistering) {
             return;
         }
 
-        RegisterRequest request = new RegisterRequest();
-        int checkedId = registerTypeGroup.getCheckedRadioButtonId();
+        String account = safeTrim(registerAccountInput.getText().toString());
+        String password = safeTrim(registerPasswordInput.getText().toString());
+        String confirmPassword = safeTrim(registerConfirmPasswordInput.getText().toString());
 
-        if (checkedId == R.id.accountRadio) {
-            if (input.length() < 5 || input.length() > 20) {
-                Toast.makeText(this, "账号长度应为5-20个字符", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            request.setAccount(input);
-        } else if (checkedId == R.id.phoneRadio) {
-            if (TextUtils.isEmpty(code)) {
-                Toast.makeText(this, "请输入验证码", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            request.setPhone(input);
-            request.setCode(code);
-        } else if (checkedId == R.id.emailRadio) {
-            if (TextUtils.isEmpty(code)) {
-                Toast.makeText(this, "请输入验证码", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            request.setEmail(input);
-            request.setCode(code);
+        int errorResId = AuthInputValidator.validateRegisterErrorResId(account, password, confirmPassword);
+        if (errorResId != 0) {
+            ToastUtils.show(this, errorResId);
+            return;
         }
 
-        request.setPassword(password);
+        setRegistering(true);
+        ServiceManager.getUserService().register(
+                AuthRequestFactory.buildRegisterRequest(account, password),
+                new ApiCallback<LoginResult>() {
+                    @Override
+                    public void onSuccess(LoginResult data) {
+                        setRegistering(false);
+                        ToastUtils.show(RegisterActivity.this, R.string.auth_toast_register_success);
+                        finish();
+                    }
 
-        ServiceManager.getUserService().register(request, new ApiCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult data) {
-                Toast.makeText(RegisterActivity.this, "注册成功", Toast.LENGTH_SHORT).show();
-                finish();
-            }
+                    @Override
+                    public void onError(int code, String message) {
+                        setRegistering(false);
+                        ToastUtils.show(RegisterActivity.this,
+                                getString(R.string.auth_error_register_failed, normalizeErrorMessage(message)));
+                    }
+                });
+    }
 
-            @Override
-            public void onError(int code, String message) {
-                Toast.makeText(RegisterActivity.this, "注册失败: " + message, Toast.LENGTH_SHORT).show();
-            }
-        });
+    private void setRegistering(boolean registering) {
+        isRegistering = registering;
+        updateRegisterButtonState();
+    }
+
+    private void updateRegisterButtonState() {
+        int errorResId = AuthInputValidator.validateRegisterErrorResId(
+                registerAccountInput.getText().toString(),
+                registerPasswordInput.getText().toString(),
+                registerConfirmPasswordInput.getText().toString());
+        boolean canSubmit = errorResId == 0;
+
+        if (isRegistering) {
+            registerButton.setEnabled(false);
+            registerButton.setText(R.string.auth_button_register_loading);
+            registerButton.setBackgroundResource(R.drawable.bg_auth_button_loading);
+            registerButton.setTextColor(ContextCompat.getColor(this, R.color.white));
+            registerProgress.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        registerProgress.setVisibility(View.GONE);
+        registerButton.setText(R.string.auth_button_register);
+        if (canSubmit) {
+            registerButton.setEnabled(true);
+            registerButton.setBackgroundResource(R.drawable.bg_auth_button_enabled);
+            registerButton.setTextColor(ContextCompat.getColor(this, R.color.white));
+        } else {
+            registerButton.setEnabled(false);
+            registerButton.setBackgroundResource(R.drawable.bg_auth_button_disabled);
+            registerButton.setTextColor(ContextCompat.getColor(this, R.color.auth_button_disabled_text));
+        }
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeErrorMessage(String message) {
+        String trimmed = safeTrim(message);
+        return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
+    }
+
+    private void openWebPage(String url) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+        startActivity(intent);
+    }
+
+    private final class LinkSpan extends ClickableSpan {
+        private final String url;
+
+        private LinkSpan(String url) {
+            this.url = url;
+        }
+
+        @Override
+        public void onClick(@NonNull View widget) {
+            openWebPage(url);
+        }
+
+        @Override
+        public void updateDrawState(@NonNull TextPaint ds) {
+            super.updateDrawState(ds);
+            ds.setUnderlineText(false);
+            ds.setColor(ContextCompat.getColor(RegisterActivity.this, R.color.auth_primary));
+        }
     }
 }

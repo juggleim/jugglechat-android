@@ -1,5 +1,5 @@
 <resources>
-    <color name="app_primary">#64B5F6</color>
+    <color name="app_primary">#2465FF</color>
     <color name="app_primary_inverse">#F5F5F5</color>
     <color name="voice_input">#E6E6E6F6</color>
     <color name="hint_bg">#BBDEFB</color>
@@ -8,14 +8,14 @@
     <color name="notification_red">#EF4444</color>
     <color name="btn_gray">#E6E6E6</color>
     <color name="gray">#BFBEBE</color>
-    <color name="call_gray">#717182</color>"
-    <color name="call_green">#09B83E</color>"
+    <color name="call_gray">#717182</color>
+    <color name="call_green">#09B83E</color>
     <color name="primary_300">#2196F3</color>
     <color name="secondary_300">#64B5F6</color>
     <color name="background">#FFFFFF</color>
     <color name="divider">#e0e0e0</color>
     <color name="red">#EF4444</color>
-    <color name="primary_bg_light">#64B5F6</color>
+    <color name="primary_bg_light">#2465FF</color>
     <color name="sent_msg_bg">#92C6F6</color>
     <color name="primary_bg_dark">#122017</color>
     <color name="bg_light">#f6f8f7</color>
@@ -24,4 +24,16 @@
     <color name="call_gb">#2C2C2E</color>
     <color name="selected">#E8E8E8</color>
     <color name="title">#141414</color>
+
+    <!-- Auth module tokens -->
+    <color name="auth_text_primary">#212121</color>
+    <color name="auth_text_secondary">#858585</color>
+    <color name="auth_primary">#2465FF</color>
+    <color name="auth_primary_loading">#83A7FC</color>
+    <color name="auth_input_bg">#F5F7F9</color>
+    <color name="auth_button_disabled_bg">#E6E7EA</color>
+    <color name="auth_button_disabled_text">#858585</color>
+    <color name="auth_error">#EF4444</color>
+    <color name="auth_code_divider">#E5E5E5</color>
+    <color name="auth_status_bar_bg">#E4ECF8</color>
 </resources>
