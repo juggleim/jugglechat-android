@@ -20,6 +20,7 @@ import androidx.fragment.app.FragmentTransaction;
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.auth.AuthGuard;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
@@ -59,10 +60,15 @@ public class MainActivity extends AppCompatActivity {
     private BottomNavView bottomNav;
     private TextView tvTitle;
     private ImageView btnMore, btnSearch;
+    private AuthGuard authGuard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        authGuard = AuthGuard.create(this);
+        if (!authGuard.requireValidSessionForWrite(this, "main.enter")) {
+            return;
+        }
         JIMChatCore.getInstance().connect(ConfigUtils.imToken);
 
         setContentView(R.layout.activity_main);
@@ -97,9 +103,15 @@ public class MainActivity extends AppCompatActivity {
                 popup.setOnMenuItemClickListener(item -> {
                     int id = item.getItemId();
                     if (id == R.id.menu_add_friend) {
+                        if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.add_friend")) {
+                            return true;
+                        }
                         startActivity(new android.content.Intent(MainActivity.this, AddFriendActivity.class));
                         return true;
                     } else if (id == R.id.menu_create_group) {
+                        if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.create_group")) {
+                            return true;
+                        }
                         startActivity(new android.content.Intent(MainActivity.this, CreateGroupActivity.class));
                         return true;
                     }
@@ -224,7 +236,8 @@ public class MainActivity extends AppCompatActivity {
             v.setVisibility(VISIBLE);
             TextView vStatus = findViewById(R.id.connect_text_view);
             if (event.getCode() == 11011) {
-                vStatus.setText("账户在其他设备登录");
+                authGuard.handleSessionInvalid(this, "remote_login_11011");
+                return;
             } else {
                 vStatus.setText("连接失败，请检查网络");
             }

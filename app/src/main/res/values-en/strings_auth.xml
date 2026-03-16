@@ -50,6 +50,8 @@
     <string name="auth_error_login_failed">Login failed: %1$s</string>
     <string name="auth_error_send_code_failed">Failed to send code: %1$s</string>
     <string name="auth_error_register_failed">Registration failed: %1$s</string>
+    <string name="auth_error_session_invalid">Session expired, please log in again</string>
+    <string name="auth_error_account_logged_in_other_device">Your account logged in on another device</string>
 
     <string name="auth_error_register_empty_account">Please enter account</string>
     <string name="auth_error_register_account_invalid">Account can only contain letters and digits</string>

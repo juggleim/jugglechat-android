@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.SessionRepository;
+import com.juggle.im.android.auth.StartupRouteUseCase;
 import com.juggle.im.android.model.ConfigUtils;
 
 public class FlashActivity extends AppCompatActivity {
@@ -17,8 +18,9 @@ public class FlashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flash);
 
-        // 检查是否存在有效的登录 token（会自动处理旧字段迁移）。
-        if (restoreValidSession()) {
+        StartupRouteUseCase.RouteDecision routeDecision = StartupRouteUseCase.create(this).decide();
+        if (routeDecision.getTargetRoute() == StartupRouteUseCase.TargetRoute.MAIN) {
+            applySession(routeDecision);
             // 自动登录
             autoLogin();
         } else {
@@ -29,15 +31,13 @@ public class FlashActivity extends AppCompatActivity {
         window.setNavigationBarColor(getColor(R.color.primary_bg_light));
     }
 
-    private boolean restoreValidSession() {
-        SessionRepository repository = SessionRepository.create(this);
-        SessionRepository.SessionState sessionState = repository.getValidSession();
+    private void applySession(StartupRouteUseCase.RouteDecision routeDecision) {
+        SessionRepository.SessionState sessionState = routeDecision.getSessionState();
         if (sessionState == null) {
-            return false;
+            return;
         }
         ConfigUtils.appToken = sessionState.getAppToken();
         ConfigUtils.imToken = sessionState.getImToken();
-        return true;
     }
 
     private void autoLogin() {

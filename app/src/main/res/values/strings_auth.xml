@@ -50,6 +50,8 @@
     <string name="auth_error_login_failed">登录失败: %1$s</string>
     <string name="auth_error_send_code_failed">验证码发送失败: %1$s</string>
     <string name="auth_error_register_failed">注册失败: %1$s</string>
+    <string name="auth_error_session_invalid">登录状态已失效，请重新登录</string>
+    <string name="auth_error_account_logged_in_other_device">账户在其他设备登录，请重新登录</string>
 
     <string name="auth_error_register_empty_account">请输入账号</string>
     <string name="auth_error_register_account_invalid">账号只能包含字母和数字</string>
