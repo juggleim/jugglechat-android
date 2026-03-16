@@ -1,0 +1,30 @@
+name: Android CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - feat/**
+  push:
+    branches:
+      - feat/**
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Validate quality gates
+        run: bash scripts/ci/check-quality.sh

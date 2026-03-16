@@ -456,6 +456,26 @@ public interface Listener {
 ./gradlew test
 ```
 
+## CI 质量门禁
+
+项目已提供可本地复现的质量门禁脚本与 GitHub Actions 流水线：
+
+- 质量脚本：`scripts/ci/check-quality.sh`
+- 流水线：`.github/workflows/android-ci.yml`
+
+默认门禁顺序：
+
+```bash
+./gradlew verifyModuleBoundaries
+./gradlew :app:testDebugUnitTest
+./gradlew :app:lintDebug
+./gradlew :app:assembleDebug
+```
+
+说明：
+- `lint` 默认是强门禁（失败即阻断）。
+- 仅本地临时排障可用：`ALLOW_LINT_FAILURE=true bash scripts/ci/check-quality.sh`。
+
 ## 依赖库
 
 - [JuggleIM SDK](https://juggle.im) - 即时通讯核心功能
