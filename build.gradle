@@ -2,3 +2,19 @@
 plugins {
 alias(libs.plugins.android.application) apply false
 }
+
+apply from: "${rootDir}/build-logic/dependency-rules.gradle.kts"
+
+project(":app") {
+    afterEvaluate {
+        dependencies {
+            implementation project(':app-shell')
+            implementation project(':core-domain')
+            implementation project(':core-data')
+            implementation project(':core-ui')
+            implementation project(':feature-auth')
+            implementation project(':feature-chat')
+            implementation project(':feature-conversation-list')
+        }
+    }
+}
