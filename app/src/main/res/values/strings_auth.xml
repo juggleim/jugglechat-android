@@ -39,6 +39,8 @@
     <string name="auth_user_agreement">《用户协议》</string>
     <string name="auth_privacy_policy">《隐私政策》</string>
     <string name="auth_privacy_text_full">%1$s%2$s%3$s%4$s</string>
+    <string name="auth_user_agreement_page_title">用户协议</string>
+    <string name="auth_privacy_policy_page_title">隐私协议</string>
 
     <string name="auth_toast_code_sent">验证码已发送</string>
     <string name="auth_toast_register_success">注册成功</string>

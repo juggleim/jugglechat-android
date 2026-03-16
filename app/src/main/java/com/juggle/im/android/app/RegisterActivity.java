@@ -2,7 +2,6 @@ package com.juggle.im.android.app;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.SpannableString;
@@ -32,9 +31,6 @@ import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.ToastUtils;
 
 public class RegisterActivity extends AppCompatActivity {
-    private static final String USER_AGREEMENT_URL = "https://secretchat.im/user/user.html";
-    private static final String PRIVACY_POLICY_URL = "https://secretchat.im/user/privacy.html";
-
     private EditText registerAccountInput;
     private EditText registerPasswordInput;
     private EditText registerConfirmPasswordInput;
@@ -118,11 +114,13 @@ public class RegisterActivity extends AppCompatActivity {
         int privacyEnd = privacyStart + privacyPolicyText.length();
 
         if (agreementStart >= 0) {
-            spannable.setSpan(new LinkSpan(USER_AGREEMENT_URL), agreementStart, agreementEnd,
+            spannable.setSpan(new LinkSpan(() -> WebViewPageActivity.navToUseragreement(RegisterActivity.this)),
+                    agreementStart, agreementEnd,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         if (privacyStart >= 0) {
-            spannable.setSpan(new LinkSpan(PRIVACY_POLICY_URL), privacyStart, privacyEnd,
+            spannable.setSpan(new LinkSpan(() -> WebViewPageActivity.navToPrivace(RegisterActivity.this)),
+                    privacyStart, privacyEnd,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
@@ -209,21 +207,16 @@ public class RegisterActivity extends AppCompatActivity {
         return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
     }
 
-    private void openWebPage(String url) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(intent);
-    }
-
     private final class LinkSpan extends ClickableSpan {
-        private final String url;
+        private final Runnable clickAction;
 
-        private LinkSpan(String url) {
-            this.url = url;
+        private LinkSpan(Runnable clickAction) {
+            this.clickAction = clickAction;
         }
 
         @Override
         public void onClick(@NonNull View widget) {
-            openWebPage(url);
+            clickAction.run();
         }
 
         @Override

@@ -2,7 +2,6 @@ package com.juggle.im.android.app;
 
 import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
@@ -40,9 +39,6 @@ import com.juggle.im.android.utils.ToastUtils;
 
 public class LoginActivity extends AppCompatActivity {
     private static final String TAG = "LoginActivity";
-    private static final String USER_AGREEMENT_URL = "https://secretchat.im/user/user.html";
-    private static final String PRIVACY_POLICY_URL = "https://secretchat.im/user/privacy.html";
-
     private static final long TOKEN_VALIDITY_DURATION = 2L * 24 * 60 * 60 * 1000;
 
     private TextView accountTab;
@@ -189,11 +185,13 @@ public class LoginActivity extends AppCompatActivity {
         int privacyEnd = privacyStart + privacyPolicyText.length();
 
         if (agreementStart >= 0) {
-            spannable.setSpan(new LinkSpan(USER_AGREEMENT_URL), agreementStart, agreementEnd,
+            spannable.setSpan(new LinkSpan(() -> WebViewPageActivity.navToUseragreement(LoginActivity.this)),
+                    agreementStart, agreementEnd,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         if (privacyStart >= 0) {
-            spannable.setSpan(new LinkSpan(PRIVACY_POLICY_URL), privacyStart, privacyEnd,
+            spannable.setSpan(new LinkSpan(() -> WebViewPageActivity.navToPrivace(LoginActivity.this)),
+                    privacyStart, privacyEnd,
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
@@ -233,8 +231,9 @@ public class LoginActivity extends AppCompatActivity {
         if (isEmailMode) {
             String email = safeTrim(emailInput.getText().toString());
             String code = safeTrim(emailCodeInput.getText().toString());
-            if (!AuthInputValidator.canSubmitEmailLogin(email, code)) {
-                ToastUtils.show(this, R.string.auth_error_invalid_email_and_code);
+            int errorResId = AuthInputValidator.validateLoginErrorResId(true, email, code);
+            if (errorResId != 0) {
+                ToastUtils.show(this, errorResId);
                 return;
             }
             showLoading(true);
@@ -258,8 +257,9 @@ public class LoginActivity extends AppCompatActivity {
 
         String account = safeTrim(accountInput.getText().toString());
         String password = safeTrim(passwordInput.getText().toString());
-        if (!AuthInputValidator.canSubmitAccountLogin(account, password)) {
-            ToastUtils.show(this, R.string.auth_error_account_password_required);
+        int errorResId = AuthInputValidator.validateLoginErrorResId(false, account, password);
+        if (errorResId != 0) {
+            ToastUtils.show(this, errorResId);
             return;
         }
 
@@ -359,9 +359,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void updateLoginButtonState() {
-        boolean canSubmit = isEmailMode
-                ? AuthInputValidator.canSubmitEmailLogin(emailInput.getText().toString(), emailCodeInput.getText().toString())
-                : AuthInputValidator.canSubmitAccountLogin(accountInput.getText().toString(), passwordInput.getText().toString());
+        String principal = isEmailMode ? emailInput.getText().toString() : accountInput.getText().toString();
+        String credential = isEmailMode ? emailCodeInput.getText().toString() : passwordInput.getText().toString();
+        boolean canSubmit = AuthInputValidator.validateLoginErrorResId(isEmailMode, principal, credential) == 0;
 
         if (isLoading) {
             loginButton.setEnabled(false);
@@ -405,21 +405,16 @@ public class LoginActivity extends AppCompatActivity {
         return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
     }
 
-    private void openWebPage(String url) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-        startActivity(intent);
-    }
-
     private final class LinkSpan extends ClickableSpan {
-        private final String url;
+        private final Runnable clickAction;
 
-        private LinkSpan(String url) {
-            this.url = url;
+        private LinkSpan(Runnable clickAction) {
+            this.clickAction = clickAction;
         }
 
         @Override
         public void onClick(@NonNull View widget) {
-            openWebPage(url);
+            clickAction.run();
         }
 
         @Override

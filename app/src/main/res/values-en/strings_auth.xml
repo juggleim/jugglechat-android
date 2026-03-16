@@ -39,6 +39,8 @@
     <string name="auth_user_agreement">User Agreement</string>
     <string name="auth_privacy_policy">Privacy Policy</string>
     <string name="auth_privacy_text_full">%1$s%2$s%3$s%4$s</string>
+    <string name="auth_user_agreement_page_title">User Agreement</string>
+    <string name="auth_privacy_policy_page_title">Privacy Policy</string>
 
     <string name="auth_toast_code_sent">Verification code sent</string>
     <string name="auth_toast_register_success">Registration successful</string>

@@ -17,6 +17,23 @@ public final class AuthInputValidator {
         return !isEmpty(trimmedEmail) && trimmedCode.matches("\\d{6}");
     }
 
+    /**
+     * 统一登录错误态校验。
+     *
+     * @param emailMode 是否邮箱验证码登录模式
+     * @return 0 表示可提交；非 0 为对应提示文案资源
+     */
+    public static int validateLoginErrorResId(boolean emailMode, String principal, String credential) {
+        if (emailMode) {
+            return canSubmitEmailLogin(principal, credential)
+                    ? 0
+                    : R.string.auth_error_invalid_email_and_code;
+        }
+        return canSubmitAccountLogin(principal, credential)
+                ? 0
+                : R.string.auth_error_account_password_required;
+    }
+
     public static int validateRegisterErrorResId(String account, String password, String confirmPassword) {
         String trimmedAccount = safeTrim(account);
         String trimmedPassword = safeTrim(password);
