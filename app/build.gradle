@@ -94,10 +94,12 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:2.9.0"
 
     implementation "com.google.zxing:core:3.3.2"
+    implementation "androidx.security:security-crypto:1.0.0"
 
 
     // juggleim
-    implementation 'com.juggle.im:juggle:1.8.27.1'
+    // 最新版本来源：/Users/panyantong/juggle/im-android-sdk/JuggleIM/upload-maven.gradle
+    implementation 'com.juggle.im:juggle:1.8.44'
     implementation 'org.java-websocket:Java-WebSocket:1.5.5'
     implementation 'com.google.protobuf:protobuf-javalite:3.18.0'
     implementation 'com.qiniu:qiniu-android-sdk:8.7.0'

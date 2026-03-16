@@ -1,8 +1,6 @@
 package com.juggle.im.android.app;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,6 +29,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthInputValidator;
 import com.juggle.im.android.auth.AuthRequestFactory;
+import com.juggle.im.android.auth.SessionRepository;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.CodeRequest;
@@ -44,10 +43,6 @@ public class LoginActivity extends AppCompatActivity {
     private static final String USER_AGREEMENT_URL = "https://secretchat.im/user/user.html";
     private static final String PRIVACY_POLICY_URL = "https://secretchat.im/user/privacy.html";
 
-    public static final String PREFS_NAME = "login_prefs";
-    public static final String KEY_APP_TOKEN = "app_token";
-    public static final String KEY_IM_TOKEN = "im_token";
-    private static final String KEY_EXPIRE_TIME = "expire_time";
     private static final long TOKEN_VALIDITY_DURATION = 2L * 24 * 60 * 60 * 1000;
 
     private TextView accountTab;
@@ -74,12 +69,14 @@ public class LoginActivity extends AppCompatActivity {
     private boolean isLoading = false;
     private boolean isSendingCode = false;
     private boolean isPasswordVisible = false;
+    private SessionRepository sessionRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setupSystemBars();
         setContentView(R.layout.activity_login);
+        sessionRepository = SessionRepository.create(this);
 
         initViews();
         setupListeners();
@@ -297,7 +294,10 @@ public class LoginActivity extends AppCompatActivity {
         ConfigUtils.myName = data.getNickname();
         ConfigUtils.myAvatarUrl = data.getAvatar();
 
-        saveToken(data.getAuthorization(), data.getIm_token());
+        if (!persistSession(data.getAuthorization(), data.getIm_token())) {
+            showLoading(false);
+            return;
+        }
         JIMChatCore.getInstance().connect(ConfigUtils.imToken);
         showLoading(false);
         switchToConversationList();
@@ -341,13 +341,16 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void saveToken(String token, String imToken) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString(KEY_APP_TOKEN, token);
-        editor.putString(KEY_IM_TOKEN, imToken);
-        editor.putLong(KEY_EXPIRE_TIME, System.currentTimeMillis() + TOKEN_VALIDITY_DURATION);
-        editor.apply();
+    private boolean persistSession(String appToken, String imToken) {
+        try {
+            long expireAtMillis = System.currentTimeMillis() + TOKEN_VALIDITY_DURATION;
+            sessionRepository.saveSession(appToken, imToken, expireAtMillis);
+            return true;
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Failed to persist session", e);
+            ToastUtils.show(this, R.string.operation_failed);
+            return false;
+        }
     }
 
     private void showLoading(boolean loading) {

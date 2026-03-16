@@ -1,38 +1,24 @@
 package com.juggle.im.android.app;
 
-import static com.juggle.im.android.app.LoginActivity.KEY_APP_TOKEN;
-import static com.juggle.im.android.app.LoginActivity.KEY_IM_TOKEN;
-
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Window;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.juggle.im.android.R;
-import com.juggle.im.android.core.JIMChatCore;
+import com.juggle.im.android.auth.SessionRepository;
 import com.juggle.im.android.model.ConfigUtils;
-import com.juggle.im.android.server.http.ServiceManager;
-
-import java.util.Date;
 
 public class FlashActivity extends AppCompatActivity {
-    private static final String TAG = "FlashActivity";
-    private static final String PREFS_NAME = "login_prefs";
-    private static final String KEY_EXPIRE_TIME = "expire_time";
-    private static final long TOKEN_VALIDITY_DURATION = 2 * 24 * 60 * 60 * 1000; // 2天
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_flash);
 
-        // 检查是否存在有效的登录token
-        if (hasValidToken()) {
+        // 检查是否存在有效的登录 token（会自动处理旧字段迁移）。
+        if (restoreValidSession()) {
             // 自动登录
             autoLogin();
         } else {
@@ -43,18 +29,15 @@ public class FlashActivity extends AppCompatActivity {
         window.setNavigationBarColor(getColor(R.color.primary_bg_light));
     }
 
-    private boolean hasValidToken() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        String token = prefs.getString(KEY_APP_TOKEN, null);
-        long expireTime = prefs.getLong(KEY_EXPIRE_TIME, 0);
-        String imToken = prefs.getString(KEY_IM_TOKEN, null);
-
-        if (token != null && imToken != null && expireTime > System.currentTimeMillis()) {
-            ConfigUtils.appToken = token;
-            ConfigUtils.imToken = imToken;
-            return true;
+    private boolean restoreValidSession() {
+        SessionRepository repository = SessionRepository.create(this);
+        SessionRepository.SessionState sessionState = repository.getValidSession();
+        if (sessionState == null) {
+            return false;
         }
-        return false;
+        ConfigUtils.appToken = sessionState.getAppToken();
+        ConfigUtils.imToken = sessionState.getImToken();
+        return true;
     }
 
     private void autoLogin() {

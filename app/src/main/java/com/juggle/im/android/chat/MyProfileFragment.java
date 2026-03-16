@@ -1,9 +1,6 @@
 package com.juggle.im.android.chat;
 
-import static com.juggle.im.android.app.LoginActivity.PREFS_NAME;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -21,6 +18,7 @@ import com.bumptech.glide.Glide;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.app.LoginActivity;
+import com.juggle.im.android.auth.SessionRepository;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.beans.UserInfoRequest;
@@ -181,10 +179,7 @@ public class MyProfileFragment extends Fragment {
         ConfigUtils.imToken = null;
         ConfigUtils.myName = null;
         ConfigUtils.myAvatarUrl = null;
-        SharedPreferences prefs = getActivity().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.clear();
-        editor.apply();
+        SessionRepository.create(requireContext()).clearSession();
         JIM.getInstance().getConnectionManager().disconnect(false);
 
         // 跳转到登录页面
