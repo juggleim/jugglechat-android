@@ -14,7 +14,6 @@ project(":app") {
             implementation project(':core-ui')
             implementation project(':feature-auth')
             implementation project(':feature-chat')
-            implementation project(':feature-conversation-list')
         }
     }
 }

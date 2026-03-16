@@ -1,4 +1,4 @@
-package com.juggle.im.feature.conversation;
+package com.juggle.im.feature.chat.conversation;
 
 /**
  * 会话列表能力占位契约。
