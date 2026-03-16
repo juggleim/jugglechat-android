@@ -13,7 +13,18 @@ public class UserInfoRequest {
     }
 
     public void setAvatar(String avatar) {
-        this.avatar = avatar;
+        String normalized = normalize(avatar);
+        this.avatar = normalized;
+    }
+
+    /**
+     * 头像更新协议约束：当前仅接受 http/https URL。
+     */
+    public boolean hasValidAvatarProtocol() {
+        if (avatar == null || avatar.isEmpty()) {
+            return true;
+        }
+        return avatar.startsWith("http://") || avatar.startsWith("https://");
     }
 
     public String getNickname() {
@@ -29,6 +40,14 @@ public class UserInfoRequest {
     }
 
     public void setUserId(String userId) {
-        this.userId = userId;
+        this.userId = normalize(userId);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

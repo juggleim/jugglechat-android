@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
@@ -24,6 +25,7 @@ import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.beans.UserInfoRequest;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.utils.ToastUtils;
 
 public class MyProfileFragment extends Fragment {
 
@@ -77,7 +79,9 @@ public class MyProfileFragment extends Fragment {
                 if (getActivity() == null) return;
                 
                 getActivity().runOnUiThread(() -> 
-                    Toast.makeText(getContext(), "获取用户信息失败: " + errorMsg, Toast.LENGTH_SHORT).show()
+                    Toast.makeText(getContext(),
+                            getString(R.string.profile_error_load_failed, normalizeErrorMessage(errorMsg)),
+                            Toast.LENGTH_SHORT).show()
                 );
             }
         });
@@ -100,7 +104,7 @@ public class MyProfileFragment extends Fragment {
         if (!TextUtils.isEmpty(currentUserInfo.getNickname())) {
             tvNickname.setText(currentUserInfo.getNickname());
         } else {
-            tvNickname.setText("未设置");
+            tvNickname.setText(R.string.profile_field_not_set);
         }
 
         // 显示用户ID
@@ -108,8 +112,30 @@ public class MyProfileFragment extends Fragment {
     }
 
     private void updateAvatar() {
-        // 这里可以实现更换头像的功能，暂时显示提示
-        Toast.makeText(getContext(), "更换头像功能待实现", Toast.LENGTH_SHORT).show();
+        if (getContext() == null) {
+            return;
+        }
+
+        final android.widget.EditText avatarInput = new android.widget.EditText(requireContext());
+        avatarInput.setSingleLine(true);
+        avatarInput.setHint(R.string.profile_avatar_dialog_hint);
+        if (currentUserInfo != null && !TextUtils.isEmpty(currentUserInfo.getAvatar())) {
+            avatarInput.setText(currentUserInfo.getAvatar());
+        }
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.profile_avatar_dialog_title)
+                .setView(avatarInput)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                    String avatarUrl = safeTrim(avatarInput.getText().toString());
+                    if (avatarUrl.isEmpty()) {
+                        ToastUtils.show(requireContext(), R.string.profile_avatar_empty);
+                        return;
+                    }
+                    updateUserInfo(null, avatarUrl);
+                })
+                .show();
     }
 
     private void updateNickname() {
@@ -133,6 +159,9 @@ public class MyProfileFragment extends Fragment {
     }
 
     private void updateUserInfo(String nickname, String avatar) {
+        ProfileSnapshot snapshot = captureSnapshot();
+        applyLocalProfilePatch(nickname, avatar);
+
         UserInfoRequest request = new UserInfoRequest();
         request.setUserId(JIM.getInstance().getCurrentUserId());
         if (nickname != null) {
@@ -147,30 +176,54 @@ public class MyProfileFragment extends Fragment {
             public void onSuccess(Void data) {
                 if (getActivity() == null) return;
                 
-                getActivity().runOnUiThread(() -> {
-                    Toast.makeText(getContext(), "更新成功", Toast.LENGTH_SHORT).show();
-                    // 更新本地缓存
-                    if (nickname != null) {
-                        ConfigUtils.myName = nickname;
-                        currentUserInfo.setNickname(nickname);
-                    }
-                    if (avatar != null) {
-                        ConfigUtils.myAvatarUrl = avatar;
-                        currentUserInfo.setAvatar(avatar);
-                    }
-                    updateUI();
-                });
+                getActivity().runOnUiThread(() ->
+                        Toast.makeText(getContext(), R.string.profile_toast_update_success, Toast.LENGTH_SHORT).show());
             }
 
             @Override
             public void onError(int errorCode, String errorMsg) {
                 if (getActivity() == null) return;
                 
-                getActivity().runOnUiThread(() -> 
-                    Toast.makeText(getContext(), "更新失败: " + errorMsg, Toast.LENGTH_SHORT).show()
-                );
+                getActivity().runOnUiThread(() -> {
+                    rollbackProfilePatch(snapshot);
+                    Toast.makeText(getContext(),
+                            getString(R.string.profile_error_update_failed, normalizeErrorMessage(errorMsg)),
+                            Toast.LENGTH_SHORT).show();
+                });
             }
         });
+    }
+
+    private void applyLocalProfilePatch(String nickname, String avatar) {
+        if (nickname != null) {
+            ConfigUtils.myName = nickname;
+            if (currentUserInfo != null) {
+                currentUserInfo.setNickname(nickname);
+            }
+        }
+        if (avatar != null) {
+            ConfigUtils.myAvatarUrl = avatar;
+            if (currentUserInfo != null) {
+                currentUserInfo.setAvatar(avatar);
+            }
+        }
+        updateUI();
+    }
+
+    private ProfileSnapshot captureSnapshot() {
+        String nickname = currentUserInfo == null ? null : currentUserInfo.getNickname();
+        String avatar = currentUserInfo == null ? null : currentUserInfo.getAvatar();
+        return new ProfileSnapshot(nickname, avatar, ConfigUtils.myName, ConfigUtils.myAvatarUrl);
+    }
+
+    private void rollbackProfilePatch(ProfileSnapshot snapshot) {
+        ConfigUtils.myName = snapshot.myName;
+        ConfigUtils.myAvatarUrl = snapshot.myAvatarUrl;
+        if (currentUserInfo != null) {
+            currentUserInfo.setNickname(snapshot.nickname);
+            currentUserInfo.setAvatar(snapshot.avatar);
+        }
+        updateUI();
     }
 
     private void logout() {
@@ -188,6 +241,29 @@ public class MyProfileFragment extends Fragment {
         startActivity(intent);
         if (getActivity() != null) {
             getActivity().finish();
+        }
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeErrorMessage(String value) {
+        String trimmed = safeTrim(value);
+        return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
+    }
+
+    private static final class ProfileSnapshot {
+        private final String nickname;
+        private final String avatar;
+        private final String myName;
+        private final String myAvatarUrl;
+
+        private ProfileSnapshot(String nickname, String avatar, String myName, String myAvatarUrl) {
+            this.nickname = nickname;
+            this.avatar = avatar;
+            this.myName = myName;
+            this.myAvatarUrl = myAvatarUrl;
         }
     }
 }

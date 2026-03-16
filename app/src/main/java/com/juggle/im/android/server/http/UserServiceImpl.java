@@ -26,6 +26,8 @@ import okhttp3.OkHttpClient;
  * on a background thread and dispatch callbacks on the main (UI) thread.
  */
 public class UserServiceImpl extends BaseService implements UserService {
+    private static final int CODE_INVALID_PROFILE_REQUEST = 4001;
+
     public UserServiceImpl(OkHttpClient client, String baseUrl) {
         super(client, baseUrl);
     }
@@ -55,6 +57,14 @@ public class UserServiceImpl extends BaseService implements UserService {
 
     @Override
     public void updateUserInfo(UserInfoRequest userInfo, ApiCallback<Void> callback) {
+        if (userInfo == null) {
+            dispatchProfileValidationError(callback, "用户资料不能为空");
+            return;
+        }
+        if (!userInfo.hasValidAvatarProtocol()) {
+            dispatchProfileValidationError(callback, "头像字段必须是 http/https URL");
+            return;
+        }
         enqueueJson("/jim/users/update", userInfo, Void.class, callback);
     }
 
@@ -143,5 +153,13 @@ public class UserServiceImpl extends BaseService implements UserService {
         StringBuilder sb = new StringBuilder("/jim/friends/applications?");
         sb.append("start=").append(start).append("&count=").append(count);
         enqueueGet(sb.toString(), com.juggle.im.android.server.beans.FriendApplicationsData.class, callback);
+    }
+
+    private void dispatchProfileValidationError(ApiCallback<Void> callback, String message) {
+        if (callback == null) {
+            return;
+        }
+        new Handler(Looper.getMainLooper()).post(() ->
+                callback.onError(CODE_INVALID_PROFILE_REQUEST, message));
     }
 }

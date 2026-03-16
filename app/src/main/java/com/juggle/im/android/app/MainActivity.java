@@ -21,6 +21,7 @@ import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthGuard;
+import com.juggle.im.android.auth.MultiDevicePolicy;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
@@ -235,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
                 || event.getConnectionStatus() == JIMConst.ConnectionStatus.DISCONNECTED) {
             v.setVisibility(VISIBLE);
             TextView vStatus = findViewById(R.id.connect_text_view);
-            if (event.getCode() == 11011) {
+            if (MultiDevicePolicy.shouldForceLogout(event.getCode())) {
                 authGuard.handleSessionInvalid(this, "remote_login_11011");
                 return;
             } else {
