@@ -22,4 +22,11 @@ public class ConfigUtils {
 
     public static String myAvatarUrl = null;
     public static String myName = null;
+
+    /**
+     * 仅调试构建可用的 TLS 放宽开关。
+     * <p>
+     * 默认关闭，避免联调配置误入发布环境。
+     */
+    public static boolean allowInsecureTlsForDebug = false;
 }

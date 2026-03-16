@@ -2,14 +2,9 @@ package com.juggle.im.android.server.http;
 
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
-import com.google.gson.Gson;
 import com.juggle.im.android.model.ConfigUtils;
-import com.juggle.im.android.server.beans.HttpResult;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
 
 import okhttp3.*;
 
@@ -20,8 +15,7 @@ public class ServiceManager {
     private static final MomentService momentService;
 
     static {
-        OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                .sslSocketFactory(Objects.requireNonNull(SSLHelper.getTrustAllSSLSocketFactory()), SSLHelper.getTrustAllManager())
+        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder()
                 .addInterceptor(new Interceptor() {
                     @NonNull
                     @Override
@@ -34,8 +28,10 @@ public class ServiceManager {
                         return chain.proceed(request);
                     }
                 })
-                .hostnameVerifier((hostname, session) -> true)
-                .build();
+                ;
+        // 默认走系统 TLS 校验；仅在 DEBUG + 手动开关时放宽策略用于联调。
+        SSLHelper.applyTlsPolicy(clientBuilder);
+        OkHttpClient okHttpClient = clientBuilder.build();
         userService = new UserServiceImpl(okHttpClient, ConfigUtils.appServerUrl);
         momentService = new MomentServiceImpl(okHttpClient, ConfigUtils.appServerUrl);
     }
