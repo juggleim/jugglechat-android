@@ -3,6 +3,7 @@ package com.juggle.im.android.server.http;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import com.juggle.im.android.model.ConfigUtils;
+import com.juggle.im.android.model.TraceContext;
 
 import java.io.IOException;
 
@@ -21,10 +22,14 @@ public class ServiceManager {
                     @Override
                     public Response intercept(@NonNull Chain chain) throws IOException {
                         Request request = chain.request();
+                        String traceId = TraceContext.currentOrNew();
                         if (!TextUtils.isEmpty(ConfigUtils.appToken)) {
                             request = request.newBuilder().addHeader("authorization", ConfigUtils.appToken).build();
                         }
-                        request = request.newBuilder().addHeader("appkey", ConfigUtils.appKey).build();
+                        request = request.newBuilder()
+                                .addHeader("appkey", ConfigUtils.appKey)
+                                .addHeader("x-trace-id", traceId)
+                                .build();
                         return chain.proceed(request);
                     }
                 })
