@@ -3,6 +3,7 @@ package com.juggle.im.android.chat.provider;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,25 +52,45 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
      */
     final public void bind(T message, K content, boolean isGroup, View itemView) {
         ImageView ivAvatar = itemView.findViewById(R.id.image_avatar);
-        UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(message.getSenderId());
-        if (sendUser != null && ivAvatar != null) {
-            String name = sendUser.getUserName();
-            message.setSenderName(name);
-            AvatarUtils.loadAvatar(ivAvatar, sendUser.getPortrait(), name, sendUser.getUserId());
-            TextView txSender = itemView.findViewById(R.id.text_sender_name);
-            if (txSender != null) {
-                if (isGroup && message.getDirection() != com.juggle.im.model.Message.MessageDirection.SEND) {
-                    txSender.setVisibility(VISIBLE);
-                    txSender.setText(sendUser.getUserName());
-                } else {
-                    txSender.setVisibility(GONE);
-                }
+        String senderId = message.getSenderId();
+        UserInfo sendUser = null;
+        if (message.getDirection() == Message.MessageDirection.SEND) {
+            String currentUserId = JIM.getInstance().getCurrentUserId();
+            if (!TextUtils.isEmpty(currentUserId)) {
+                senderId = currentUserId;
+            }
+            sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(senderId);
+        }
+        if (sendUser == null) {
+            if (TextUtils.isEmpty(senderId) && message.getDirection() == Message.MessageDirection.SEND) {
+                senderId = JIM.getInstance().getCurrentUserId();
+            }
+            sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(senderId);
+        }
+        String senderName = sendUser != null ? sendUser.getUserName() : message.getSenderName();
+        String senderPortrait = sendUser != null ? sendUser.getPortrait() : null;
+
+        if (ivAvatar != null) {
+            ivAvatar.setVisibility(VISIBLE);
+            AvatarUtils.loadAvatar(ivAvatar, senderPortrait, senderName, senderId);
+        }
+        if (!TextUtils.isEmpty(senderName)) {
+            message.setSenderName(senderName);
+        }
+        TextView txSender = itemView.findViewById(R.id.text_sender_name);
+        if (txSender != null) {
+            if (isGroup && message.getDirection() != com.juggle.im.model.Message.MessageDirection.SEND) {
+                txSender.setVisibility(VISIBLE);
+                txSender.setText(!TextUtils.isEmpty(senderName) ? senderName : senderId);
+            } else {
+                txSender.setVisibility(GONE);
             }
         }
         TextView vMsgTime = itemView.findViewById(R.id.msg_sent_time);
         if (message.getDirection() == com.juggle.im.model.Message.MessageDirection.SEND) {
             ProgressBar progressBar = itemView.findViewById(R.id.msg_send_status);
             ViewGroup msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
+            ImageView ivStatus = msgStatusContainer != null ? msgStatusContainer.findViewById(R.id.msg_read_status) : null;
             if (progressBar != null) {
                 if (message.getMessage().getState().getValue() == Message.MessageState.SENDING.getValue()
                         || message.getMessage().getState().getValue() == Message.MessageState.UPLOADING.getValue()) {
@@ -80,7 +101,9 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             }
             if (msgStatusContainer != null) {
                 msgStatusContainer.setVisibility(VISIBLE);
-                ImageView ivStatus = msgStatusContainer.findViewById(R.id.msg_read_status);
+                if (ivStatus != null) {
+                    ivStatus.setVisibility(GONE);
+                }
                 // 已读
                 if (message.getMessage().isHasRead()) {
                     if (ivStatus != null) {

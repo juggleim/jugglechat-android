@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestOptions;
 import com.juggle.im.android.R;
 
 /**
@@ -50,12 +51,15 @@ public final class AvatarUtils {
                 return; // URL 相同，跳过加载
             }
             iv.setTag(TAG_URL, url);
-
+            RequestOptions options = RequestOptions.circleCropTransform();
             Glide.with(iv)
                     .load(url)
-                    .centerCrop()
-                    .transform(new CircleCrop())
-                    .dontAnimate()
+                    .apply(options)
+                    .error(
+                            Glide.with(iv.getContext())
+                                    .load(R.drawable.icon_default_avatar)
+                                    .apply(options)
+                    )
                     .into(iv);
             return;
         }

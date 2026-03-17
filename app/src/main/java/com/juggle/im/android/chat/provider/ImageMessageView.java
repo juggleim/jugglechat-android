@@ -1,6 +1,7 @@
 package com.juggle.im.android.chat.provider;
 
 import android.content.Intent;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -9,7 +10,6 @@ import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.ImagePreviewActivity;
 import com.juggle.im.android.model.UiMessage;
@@ -28,13 +28,16 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
     public void bindItem(UiMessage m, ImageMessage img, boolean isGroup) {
         ImageView imageView = this.itemView.findViewById(R.id.image_message_thumb);
         String url = img.getLocalPath() != null ? img.getLocalPath() : (img.getThumbnailUrl() != null ? img.getThumbnailUrl() : img.getUrl());
-        Glide.with(imageView)
-                .load(url)
-                .placeholder(R.drawable.ic_default_img)
-                .centerCrop()
-                .transform(new RoundedCorners(20))
-                .transition(DrawableTransitionOptions.withCrossFade())
-                .into(imageView);
+        if (TextUtils.isEmpty(url)) {
+            imageView.setImageResource(R.drawable.ic_default_img);
+        } else {
+            Glide.with(imageView)
+                    .load(url)
+                    .centerCrop()
+                    .transform(new RoundedCorners(20))
+                    .dontAnimate()
+                    .into(imageView);
+        }
 
         // Open full screen preview when tapping the thumbnail
         final String previewUrl = url;
@@ -50,7 +53,10 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
         // Forward long-clicks on the image to the parent itemView so the adapter's
         // long-click listener (e.g. for selection/actions) can run.
         imageView.setOnLongClickListener(v -> {
-            ((ViewGroup) this.itemView.getParent()).performLongClick();
+            View parent = (View) this.itemView.getParent();
+            if (parent != null) {
+                parent.performLongClick();
+            }
             return false;
         });
     }

@@ -5,6 +5,7 @@ import static android.view.View.VISIBLE;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -33,6 +34,7 @@ import com.juggle.im.model.messages.TextMessage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.ViewHolder> {
     private final boolean isGroup;
@@ -173,6 +175,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final ImageView selectBox;
+        private String lastBoundStableKey = "";
+        private Class<?> lastBoundContentClass = null;
+        private boolean lastBoundHasReply = false;
 
         MessageHolder(@NonNull View itemView, OnMessageActionListener listener) {
             super(itemView);
@@ -184,34 +189,52 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         void bind(UiMessage m, boolean isGroup, boolean isSend, boolean inSelectionMode, boolean selected) {
             if (container == null) return;
             container.setVisibility(VISIBLE);
-            if (container instanceof ViewGroup) {
-                ((ViewGroup) container).removeAllViews();
-            } else {
+            if (!(container instanceof ViewGroup)) {
                 container.setVisibility(GONE);
                 return;
             }
-            // 回复消息
-            if (m.getMessage().getReferredMessage() != null) {
-                LayoutInflater inflater = LayoutInflater.from(itemView.getContext());
-                View vReply = inflater.inflate(R.layout.content_reply, container, false);
-                Message replyMsg = m.getMessage().getReferredMessage();
-                TextView vTitle = vReply.findViewById(R.id.text_message_title);
-                TextView vContent = vReply.findViewById(R.id.reply_text_message_content);
-                ImageView ivImage = vReply.findViewById(R.id.reply_image_id);
-                UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(replyMsg.getSenderUserId());
-                if (sendUser != null) {
-                    vTitle.setText("回复：" + sendUser.getUserName());
+            long clientMsgNo = m.getMessage().getClientMsgNo();
+            String stableKey = clientMsgNo > 0L
+                    ? "c:" + clientMsgNo
+                    : "m:" + m.getMessageId();
+            Class<?> contentClass = m.getMessage().getContent() != null
+                    ? m.getMessage().getContent().getClass()
+                    : null;
+            boolean hasReply = m.getMessage().getReferredMessage() != null;
+            boolean needReinflate = delegate == null
+                    || !TextUtils.equals(stableKey, lastBoundStableKey)
+                    || !Objects.equals(contentClass, lastBoundContentClass)
+                    || hasReply != lastBoundHasReply
+                    || container.getChildCount() == 0;
+
+            if (needReinflate) {
+                container.removeAllViews();
+                // 回复消息
+                if (hasReply) {
+                    LayoutInflater inflater = LayoutInflater.from(itemView.getContext());
+                    View vReply = inflater.inflate(R.layout.content_reply, container, false);
+                    Message replyMsg = m.getMessage().getReferredMessage();
+                    TextView vTitle = vReply.findViewById(R.id.text_message_title);
+                    TextView vContent = vReply.findViewById(R.id.reply_text_message_content);
+                    ImageView ivImage = vReply.findViewById(R.id.reply_image_id);
+                    UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(replyMsg.getSenderUserId());
+                    if (sendUser != null) {
+                        vTitle.setText("回复：" + sendUser.getUserName());
+                    }
+                    vContent.setText(MessageUtils.getMessageSummary(itemView.getContext(), replyMsg));
+                    if (replyMsg.getContent() instanceof ImageMessage) {
+                        ivImage.setVisibility(VISIBLE);
+                        AvatarUtils.loadImage(ivImage, ((ImageMessage) replyMsg.getContent()).getThumbnailUrl());
+                    } else {
+                        ivImage.setVisibility(GONE);
+                    }
+                    container.addView(vReply);
                 }
-                vContent.setText(MessageUtils.getMessageSummary(itemView.getContext(), replyMsg));
-                if (replyMsg.getContent() instanceof ImageMessage) {
-                    ivImage.setVisibility(VISIBLE);
-                    AvatarUtils.loadImage(ivImage, ((ImageMessage) replyMsg.getContent()).getThumbnailUrl());
-                } else {
-                    ivImage.setVisibility(GONE);
-                }
-                container.addView(vReply);
+                delegate = MessageUtils.createMessageViewHolder(m, container);
+                lastBoundStableKey = stableKey;
+                lastBoundContentClass = contentClass;
+                lastBoundHasReply = hasReply;
             }
-            delegate = MessageUtils.createMessageViewHolder(m, container);
             delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
 
             // set long click to either enter selection mode (if supported) or show actions
@@ -392,13 +415,23 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     private static final DiffUtil.ItemCallback<UiMessage> DIFF = new DiffUtil.ItemCallback<UiMessage>() {
         @Override
         public boolean areItemsTheSame(@NonNull UiMessage oldItem, @NonNull UiMessage newItem) {
-            boolean sameId = false;
-            if (oldItem.getMessageId() != null) {
-                sameId = oldItem.getMessageId().equals(newItem.getMessageId());
+            String oldMessageId = oldItem.getMessageId();
+            String newMessageId = newItem.getMessageId();
+            boolean sameId;
+            if (!TextUtils.isEmpty(oldMessageId) && !TextUtils.isEmpty(newMessageId)) {
+                sameId = oldMessageId.equals(newMessageId);
             } else {
-                sameId = oldItem.getMessage().getClientMsgNo() == newItem.getMessage().getClientMsgNo();
+                long oldClientMsgNo = oldItem.getMessage().getClientMsgNo();
+                long newClientMsgNo = newItem.getMessage().getClientMsgNo();
+                if (oldClientMsgNo > 0L && newClientMsgNo > 0L) {
+                    sameId = oldClientMsgNo == newClientMsgNo;
+                } else {
+                    sameId = oldMessageId.equals(newMessageId);
+                }
             }
-            return sameId && (oldItem.getMessage().getContentType() == null || oldItem.getMessage().getContentType().equals(newItem.getMessage().getContentType()));
+            String oldContentType = oldItem.getMessage().getContentType();
+            String newContentType = newItem.getMessage().getContentType();
+            return sameId && (oldContentType == null || oldContentType.equals(newContentType));
         }
 
         @Override

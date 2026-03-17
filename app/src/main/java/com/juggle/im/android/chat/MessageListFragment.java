@@ -22,6 +22,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
@@ -129,6 +130,12 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         recyclerView = view.findViewById(R.id.recycler_view_messages);
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
+        RecyclerView.ItemAnimator animator = recyclerView.getItemAnimator();
+        if (animator instanceof SimpleItemAnimator) {
+            SimpleItemAnimator simpleItemAnimator = (SimpleItemAnimator) animator;
+            simpleItemAnimator.setSupportsChangeAnimations(false);
+            simpleItemAnimator.setChangeDuration(0);
+        }
         adapter = new MessageListAdapter(isGroup, (message, action) -> {
             // handle message actions here on UI thread (position is adapter/display
             // position)
