@@ -11,17 +11,21 @@ import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS_N
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -35,6 +39,7 @@ import com.juggle.im.android.chat.mention.MentionModel;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
 import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
+import com.juggle.im.android.chat.plugin.TimedDeletePlugin;
 import com.juggle.im.android.chat.plugin.VideoCallPlugin;
 import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.android.chat.utils.FileUtils;
@@ -57,6 +62,7 @@ import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.MergeMessage;
 import com.juggle.im.model.messages.TextMessage;
 import com.juggle.im.model.messages.VoiceMessage;
+import com.juggle.im.android.utils.ToastUtils;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -229,6 +235,9 @@ public class ConversationActivity extends AppCompatActivity {
                     getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
                 }
             });
+            if (!TextUtils.isEmpty(title)) {
+                inputBar.setInputHint(getString(R.string.input_msg_to, title));
+            }
         }
 
         // 消息置顶
@@ -243,8 +252,7 @@ public class ConversationActivity extends AppCompatActivity {
                 Log.i("TAG", "getTopMessage error: " + i);
             }
         });
-        Window window = getWindow();
-        window.setNavigationBarColor(getColor(R.color.input_bg_light));
+        applySystemBarStyle();
     }
 
     @NonNull
@@ -265,14 +273,40 @@ public class ConversationActivity extends AppCompatActivity {
     private void handleTopMessage(Message message, UserInfo userInfo) {
         View vPin = findViewById(R.id.layout_pin_message);
         TextView tvContent = vPin.findViewById(R.id.pin_message_content);
+        TextView tvSubtitle = vPin.findViewById(R.id.pin_message_subtitle);
+        String userName = userInfo == null ? "" : userInfo.getUserName();
         tvContent.setText(
-                userInfo.getUserName() + "：" + MessageUtils.getMessageSummary(ConversationActivity.this, message));
+                userName + "：" + MessageUtils.getMessageSummary(ConversationActivity.this, message));
+        if (tvSubtitle != null) {
+            tvSubtitle.setText(getString(R.string.msg_pin_by_user, userName));
+        }
         View del = findViewById(R.id.button_del_pin);
         del.setOnClickListener(v -> {
             JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, false, null);
             vPin.setVisibility(GONE);
         });
         vPin.setVisibility(VISIBLE);
+    }
+
+    private void applySystemBarStyle() {
+        Window window = getWindow();
+        window.setStatusBarColor(getColor(R.color.white));
+        window.setNavigationBarColor(getColor(R.color.white));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsAppearance(
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int ui = window.getDecorView().getSystemUiVisibility();
+            ui |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ui |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+            }
+            window.getDecorView().setSystemUiVisibility(ui);
+        }
     }
 
     @Nullable
@@ -479,7 +513,30 @@ public class ConversationActivity extends AppCompatActivity {
                         JIM.getInstance().getCurrentUserId(),
                         ids, "outgoing");
             }
+        } else if (pluginId.equals(TimedDeletePlugin.ID)) {
+            showTimedDeleteSelector();
         }
+    }
+
+    private void showTimedDeleteSelector() {
+        final String[] durations = new String[]{
+                getString(R.string.design_timed_delete_1d),
+                getString(R.string.design_timed_delete_1w),
+                getString(R.string.design_timed_delete_1m),
+                getString(R.string.design_timed_delete_3m),
+                getString(R.string.design_timed_delete_6m),
+                getString(R.string.design_timed_delete_1y)
+        };
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.timed_delete)
+                .setItems(durations, (dialog, which) -> {
+                    if (which < 0 || which >= durations.length) {
+                        return;
+                    }
+                    ToastUtils.show(this, getString(R.string.timed_delete_selected, durations[which]));
+                })
+                .setNegativeButton(R.string.txt_cancel, null)
+                .show();
     }
 
     private void editTextMessage(String msgId, TextMessage msg, MessageOptions options, Conversation conversation) {

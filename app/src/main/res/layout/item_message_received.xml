@@ -38,18 +38,30 @@
             android:visibility="gone" />
 
         <LinearLayout
-            android:background="@drawable/bg_message_received"
-            android:id="@+id/message_content_container"
-            android:orientation="vertical"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/msg_sent_time"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="@color/gray"
-            android:textSize="10sp" />
+            android:background="@drawable/bg_message_received"
+            android:orientation="vertical"
+            android:paddingStart="4dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="4dp"
+            android:paddingBottom="2dp">
+
+            <LinearLayout
+                android:id="@+id/message_content_container"
+                android:orientation="vertical"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/msg_sent_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginTop="2dp"
+                android:textColor="#A1A7B3"
+                android:textSize="11sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </LinearLayout>

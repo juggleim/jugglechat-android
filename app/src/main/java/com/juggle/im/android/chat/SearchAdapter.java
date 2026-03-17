@@ -24,15 +24,17 @@ import com.juggle.im.model.GroupInfo;
 import com.juggle.im.model.UserInfo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
 public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder> {
 
     private LinkedHashMap<String, List<SearchResult>> resultsMap = new LinkedHashMap<>();
-
-    private static final int VIEW_TYPE_ITEM = 0;
-    private static final int VIEW_TYPE_ITEM_EXTRA = 1;
+    private static final List<String> TYPE_ORDER = Arrays.asList(
+            SearchActivity.SEARCH_TYPE_CONTACT,
+            SearchActivity.SEARCH_TYPE_GROUP,
+            SearchActivity.SEARCH_TYPE_RECORD);
 
     public SearchAdapter() {
     }
@@ -41,12 +43,12 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_result_nav, parent, false);
-        return new ViewHolder(view, viewType);
+        return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        List<String> keys = new ArrayList<>(resultsMap.keySet());
+        List<String> keys = getOrderedTypes();
         String title = keys.get(position);
         List<SearchResult> r = resultsMap.get(title);
         holder.bind(title, r);
@@ -54,7 +56,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
 
     @Override
     public int getItemCount() {
-        return resultsMap.size();
+        return getOrderedTypes().size();
     }
 
     public void clear() {
@@ -71,14 +73,27 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
         notifyDataSetChanged();
     }
 
+    private List<String> getOrderedTypes() {
+        List<String> ordered = new ArrayList<>();
+        for (String type : TYPE_ORDER) {
+            if (resultsMap.containsKey(type)) {
+                ordered.add(type);
+            }
+        }
+        for (String key : resultsMap.keySet()) {
+            if (!ordered.contains(key)) {
+                ordered.add(key);
+            }
+        }
+        return ordered;
+    }
+
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        private int type;
         private ImageView memberImage;
         private TextView memberTitle, memberContent;
 
-        public ViewHolder(@NonNull View itemView, int type) {
+        public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            this.type = type;
         }
 
         public void bind(String title, List<SearchResult> items) {
@@ -87,11 +102,13 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
             TextView tvTitle = itemView.findViewById(R.id.search_header_title);
             tvTitle.setText(title);
             container.removeAllViews();
-            for (SearchResult item : items) {
+            for (int i = 0; i < items.size(); i++) {
+                SearchResult item = items.get(i);
                 View vItem = inflater.inflate(R.layout.item_member_extra, container, false);
                 memberImage = vItem.findViewById(R.id.img_member_avatar);
                 memberTitle = vItem.findViewById(R.id.tv_member_name);
                 memberContent = vItem.findViewById(R.id.tv_member_content);
+                View itemDivider = vItem.findViewById(R.id.item_divider);
                 String name = item.getName(), url = item.getAvatar();
                 if (item.getType().equals(SEARCH_TYPE_CONTACT)) {
                     vItem.setOnClickListener(v -> {
@@ -138,6 +155,7 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
                 } else {
                     memberContent.setVisibility(GONE);
                 }
+                itemDivider.setVisibility(i == items.size() - 1 ? GONE : VISIBLE);
                 container.addView(vItem);
             }
         }

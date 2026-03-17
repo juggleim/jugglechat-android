@@ -1,12 +1,17 @@
 package com.juggle.im.android.app;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -16,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,11 +35,17 @@ import com.juggle.im.android.utils.AvatarUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class AddFriendActivity extends AppCompatActivity {
-    private EditText edtSearch;
-    private TextView btnCancel;
-    private RecyclerView rvResults;
+
+    private static final long SEARCH_DEBOUNCE_MS = 280L;
+
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingSearchTask;
+
+    private EditText searchInput;
+    private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private SearchAdapter adapter;
 
@@ -42,173 +54,232 @@ public class AddFriendActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_friend);
 
-        edtSearch = findViewById(R.id.edt_search);
-        btnCancel = findViewById(R.id.btn_cancel);
-        rvResults = findViewById(R.id.rv_results);
+        setupWindowStyle();
+        initViews();
+        bindEvents();
+    }
+
+    private void setupWindowStyle() {
+        Window window = getWindow();
+        window.setStatusBarColor(getColor(R.color.white));
+        window.setNavigationBarColor(getColor(R.color.white));
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+        controller.setAppearanceLightStatusBars(true);
+    }
+
+    private void initViews() {
+        searchInput = findViewById(R.id.edt_search);
+        recyclerView = findViewById(R.id.rv_results);
         progressBar = findViewById(R.id.progress_bar);
-        View btnBack = findViewById(R.id.btn_back);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v -> finish());
-        }
 
-        adapter = new SearchAdapter(new ArrayList<>());
-        rvResults.setLayoutManager(new LinearLayoutManager(this));
-        rvResults.setAdapter(adapter);
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
 
-        edtSearch.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                showKeyboard(edtSearch);
+        adapter = new SearchAdapter();
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        recyclerView.setAdapter(adapter);
+
+        adapter.setOnAddClickListener(this::applyFriend);
+    }
+
+    private void bindEvents() {
+        searchInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                scheduleSearch(s == null ? "" : s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
             }
         });
 
-        edtSearch.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
-                String t = s == null ? "" : s.toString();
-                btnCancel.setVisibility(TextUtils.isEmpty(t) ? View.GONE : View.VISIBLE);
-                // show a temporary search item at top
-                adapter.setSearchPreview(t);
+        searchInput.setOnEditorActionListener((TextView v, int actionId, KeyEvent event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
+                String keyword = normalizeKeyword(v.getText() == null ? "" : v.getText().toString());
+                if (!keyword.isEmpty()) {
+                    if (pendingSearchTask != null) {
+                        searchHandler.removeCallbacks(pendingSearchTask);
+                    }
+                    doSearch(keyword);
+                    hideKeyboard(v);
+                }
+                return true;
             }
-            @Override public void afterTextChanged(Editable s) {}
-        });
-
-        btnCancel.setOnClickListener(v -> {
-            edtSearch.setText("");
-            edtSearch.clearFocus();
-            hideKeyboard();
-        });
-
-        adapter.setOnSearchPreviewClick(keyword -> {
-            // remove preview and perform search
-            adapter.setSearchPreview(null);
-            edtSearch.clearFocus();
-            hideKeyboard();
-            doSearch(keyword);
-        });
-
-        adapter.setOnItemClick(user -> {
-            // apply friend
-            ServiceManager.getUserService().applyFriend(user.getUser_id(), new ApiCallback<FriendApplicationBean>() {
-                @Override
-                public void onSuccess(FriendApplicationBean data) {
-                    Toast.makeText(AddFriendActivity.this, "Request sent", Toast.LENGTH_SHORT).show();
-                }
-
-                @Override
-                public void onError(int code, String message) {
-                    Toast.makeText(AddFriendActivity.this, "Failed: " + message, Toast.LENGTH_SHORT).show();
-                }
-            });
+            return false;
         });
     }
 
+    /**
+     * 输入阶段做轻量防抖，避免每个字符都发请求。
+     */
+    private void scheduleSearch(String rawKeyword) {
+        String keyword = normalizeKeyword(rawKeyword);
+        if (pendingSearchTask != null) {
+            searchHandler.removeCallbacks(pendingSearchTask);
+            pendingSearchTask = null;
+        }
+
+        if (keyword.isEmpty()) {
+            progressBar.setVisibility(View.GONE);
+            adapter.setItems(new ArrayList<>());
+            return;
+        }
+
+        pendingSearchTask = () -> doSearch(keyword);
+        searchHandler.postDelayed(pendingSearchTask, SEARCH_DEBOUNCE_MS);
+    }
+
+    private String normalizeKeyword(String text) {
+        return text == null ? "" : text.trim();
+    }
+
     private void doSearch(String keyword) {
-        if (TextUtils.isEmpty(keyword)) return;
         progressBar.setVisibility(View.VISIBLE);
         ServiceManager.getUserService().searchUsers(keyword, new ApiCallback<FriendsListData>() {
             @Override
             public void onSuccess(FriendsListData data) {
+                // 忽略输入已变化的过期结果，避免列表闪回。
+                String latest = normalizeKeyword(searchInput.getText() == null ? "" : searchInput.getText().toString());
+                if (!TextUtils.equals(latest, keyword)) {
+                    return;
+                }
+
                 progressBar.setVisibility(View.GONE);
-                adapter.setItems(data.getItems());
+                List<FriendBean> items = data == null || data.getItems() == null
+                        ? new ArrayList<>()
+                        : data.getItems();
+                adapter.setItems(items);
             }
 
             @Override
             public void onError(int code, String message) {
+                String latest = normalizeKeyword(searchInput.getText() == null ? "" : searchInput.getText().toString());
+                if (!TextUtils.equals(latest, keyword)) {
+                    return;
+                }
+
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(AddFriendActivity.this, "Search failed: " + message, Toast.LENGTH_SHORT).show();
+                Toast.makeText(AddFriendActivity.this,
+                        getString(R.string.add_friend_search_failed, String.valueOf(message)),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private void showKeyboard(View v) {
-        v.post(() -> {
-            InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-            if (imm != null) imm.showSoftInput(v, InputMethodManager.SHOW_IMPLICIT);
+    private void applyFriend(FriendBean friendBean) {
+        if (friendBean == null || TextUtils.isEmpty(friendBean.getUser_id())) {
+            return;
+        }
+        ServiceManager.getUserService().applyFriend(friendBean.getUser_id(), new ApiCallback<FriendApplicationBean>() {
+            @Override
+            public void onSuccess(FriendApplicationBean data) {
+                Toast.makeText(AddFriendActivity.this,
+                        R.string.add_friend_request_sent,
+                        Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(int code, String message) {
+                Toast.makeText(AddFriendActivity.this,
+                        getString(R.string.add_friend_request_failed, String.valueOf(message)),
+                        Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
-    private void hideKeyboard() {
+    private void hideKeyboard(View target) {
         InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
-        View v = getCurrentFocus();
-        if (v == null) v = new View(this);
-        if (imm != null) imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
-    }
-
-    // simple adapter
-    static class SearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        private static final int TYPE_PREVIEW = 0;
-        private static final int TYPE_ITEM = 1;
-        private String preview;
-        private List<FriendBean> items;
-        private OnSearchPreviewClick previewClick;
-        private OnItemClick itemClick;
-
-        interface OnSearchPreviewClick { void onClick(String keyword); }
-        interface OnItemClick { void onClick(FriendBean user); }
-
-        SearchAdapter(List<FriendBean> items) { this.items = items; }
-
-        void setSearchPreview(String p) { this.preview = p; notifyDataSetChanged(); }
-        void setItems(List<FriendBean> newItems) { this.items = newItems; notifyDataSetChanged(); }
-        void setOnSearchPreviewClick(OnSearchPreviewClick l) { this.previewClick = l; }
-        void setOnItemClick(OnItemClick l) { this.itemClick = l; }
-
-        @Override public int getItemViewType(int position) {
-            if (preview != null && !preview.isEmpty()) {
-                return position == 0 ? TYPE_PREVIEW : TYPE_ITEM;
-            }
-            return TYPE_ITEM;
-        }
-
-        @Override public int getItemCount() {
-            int base = items == null ? 0 : items.size();
-            return (preview != null && !preview.isEmpty()) ? base + 1 : base;
-        }
-
-        @NonNull @Override public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            if (viewType == TYPE_PREVIEW) {
-                View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_preview, parent, false);
-                return new PreviewHolder(v);
-            }
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_result, parent, false);
-            return new ItemHolder(v);
-        }
-
-        @Override public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
-            if (getItemViewType(position) == TYPE_PREVIEW) {
-                PreviewHolder h = (PreviewHolder) holder;
-                h.tv.setText("Search: " + preview);
-                h.itemView.setOnClickListener(v -> {
-                    if (previewClick != null) previewClick.onClick(preview);
-                });
-                return;
-            }
-            int idx = (preview != null && !preview.isEmpty()) ? position - 1 : position;
-            FriendBean user = items.get(idx);
-            ItemHolder h = (ItemHolder) holder;
-            h.tvName.setText(user.getNickname());
-            AvatarUtils.loadAvatar(h.ivAvatar, user.getAvatar(), user.getNickname());
-            h.tvFriendAdd.setOnClickListener(v -> { if (itemClick != null) itemClick.onClick(user); });
-        }
-
-        static class PreviewHolder extends RecyclerView.ViewHolder {
-            TextView tv;
-            PreviewHolder(@NonNull View v) { super(v); tv = v.findViewById(R.id.tv_preview); }
-        }
-
-        static class ItemHolder extends RecyclerView.ViewHolder {
-            ImageView ivAvatar; TextView tvName, tvFriendAdd;
-            ItemHolder(@NonNull View v) { super(v);
-                ivAvatar = v.findViewById(R.id.iv_avatar);
-                tvName = v.findViewById(R.id.tv_name);
-                tvFriendAdd = v.findViewById(R.id.friend_add);
-            }
+        if (imm != null && target != null) {
+            imm.hideSoftInputFromWindow(target.getWindowToken(), 0);
         }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        hideKeyboard();
+        if (pendingSearchTask != null) {
+            searchHandler.removeCallbacks(pendingSearchTask);
+            pendingSearchTask = null;
+        }
+    }
+
+    static class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ItemViewHolder> {
+
+        private final List<FriendBean> items = new ArrayList<>();
+        private OnAddClickListener onAddClickListener;
+
+        void setItems(List<FriendBean> newItems) {
+            items.clear();
+            if (newItems != null) {
+                items.addAll(newItems);
+            }
+            notifyDataSetChanged();
+        }
+
+        void setOnAddClickListener(OnAddClickListener onAddClickListener) {
+            this.onAddClickListener = onAddClickListener;
+        }
+
+        @NonNull
+        @Override
+        public ItemViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_result, parent, false);
+            return new ItemViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ItemViewHolder holder, int position) {
+            FriendBean item = items.get(position);
+            String displayName = resolveDisplayName(item);
+            holder.nameView.setText(displayName);
+            AvatarUtils.loadAvatar(holder.avatarView, item.getAvatar(), displayName);
+            holder.addView.setOnClickListener(v -> {
+                if (onAddClickListener != null) {
+                    onAddClickListener.onAddClick(item);
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        private String resolveDisplayName(FriendBean item) {
+            if (item == null) {
+                return "";
+            }
+            if (!TextUtils.isEmpty(item.getNickname())) {
+                return item.getNickname();
+            }
+            if (!TextUtils.isEmpty(item.getUser_id())) {
+                return item.getUser_id();
+            }
+            if (!TextUtils.isEmpty(item.getPhone())) {
+                return item.getPhone();
+            }
+            return Locale.getDefault().getLanguage().startsWith("zh") ? "未知用户" : "Unknown";
+        }
+
+        interface OnAddClickListener {
+            void onAddClick(FriendBean friendBean);
+        }
+
+        static class ItemViewHolder extends RecyclerView.ViewHolder {
+            final ImageView avatarView;
+            final TextView nameView;
+            final TextView addView;
+
+            ItemViewHolder(@NonNull View itemView) {
+                super(itemView);
+                avatarView = itemView.findViewById(R.id.iv_avatar);
+                nameView = itemView.findViewById(R.id.tv_name);
+                addView = itemView.findViewById(R.id.friend_add);
+            }
+        }
     }
 }

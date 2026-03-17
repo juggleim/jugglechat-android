@@ -249,7 +249,6 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         private void showActionPopup(View anchor, UiMessage ui) {
             if (anchor == null || ui == null || actionListener == null) return;
-            // 1. 创建 PopupWindow
             LayoutInflater inflater = LayoutInflater.from(anchor.getContext());
             View popupView = inflater.inflate(R.layout.layout_message_popup, null);
 
@@ -281,68 +280,92 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             int screenWidth = dm.widthPixels;
             int screenHeight = dm.heightPixels;
 
-//            float touchX = lastTouchX; // 你在 onLongClick/onTouch 里记录的点击坐标
-            float centerX = anchorX;// + touchX;
+            float centerX = anchorX + anchorWidth / 2f;
 
             int x = (int) (centerX - popupWidth / 2);
-            int y = anchorY - popupHeight - ResourceUtils.dp2px(anchor.getContext(), 6); // 上方间距 6dp
+            int y = anchorY - popupHeight - ResourceUtils.dp2px(anchor.getContext(), 6);
 
             if (x < ResourceUtils.dp2px(anchor.getContext(), 4)) {
                 x = ResourceUtils.dp2px(anchor.getContext(), 4);
             } else if (x + popupWidth > screenWidth - ResourceUtils.dp2px(anchor.getContext(), 4)) {
                 x = screenWidth - popupWidth - ResourceUtils.dp2px(anchor.getContext(), 4);
             }
+            if (y < ResourceUtils.dp2px(anchor.getContext(), 8)) {
+                y = anchorY + anchorHeight + ResourceUtils.dp2px(anchor.getContext(), 6);
+            }
+            if (y + popupHeight > screenHeight - ResourceUtils.dp2px(anchor.getContext(), 8)) {
+                y = screenHeight - popupHeight - ResourceUtils.dp2px(anchor.getContext(), 8);
+            }
 
             pw.showAtLocation(anchor, Gravity.NO_GRAVITY, x, y);
 
-
-            // wire buttons
+            View vTranslate = popupView.findViewById(R.id.action_translate);
             View vCopy = popupView.findViewById(R.id.action_copy);
-            View vForward = popupView.findViewById(R.id.action_forward);
-            View vReply = popupView.findViewById(R.id.action_reply);
-            View vDelete = popupView.findViewById(R.id.action_delete);
+            View vEdit = popupView.findViewById(R.id.action_edit);
             View vRecall = popupView.findViewById(R.id.action_recall);
             View vTop = popupView.findViewById(R.id.action_top);
-            View vEdit = popupView.findViewById(R.id.action_edit);
+            View vFavorite = popupView.findViewById(R.id.action_favorite);
+            View vReply = popupView.findViewById(R.id.action_reply);
+            View vForward = popupView.findViewById(R.id.action_forward);
+            View vMultiSelect = popupView.findViewById(R.id.action_multi_select);
+            View vReport = popupView.findViewById(R.id.action_report);
+            View vDelete = popupView.findViewById(R.id.action_delete);
+            View reactionOk = popupView.findViewById(R.id.reaction_ok_hand);
+            View reactionThumbUp = popupView.findViewById(R.id.reaction_thumb_up);
+            View reactionLove = popupView.findViewById(R.id.reaction_love_face);
+            View reactionSalute = popupView.findViewById(R.id.reaction_salute);
+            View reactionHeart = popupView.findViewById(R.id.reaction_heart);
+            View reactionBrokenHeart = popupView.findViewById(R.id.reaction_broken_heart);
+            View reactionPoop = popupView.findViewById(R.id.reaction_poop);
+            View reactionParty = popupView.findViewById(R.id.reaction_party);
 
+            boolean isSend = ui.getMessage().getDirection() == Message.MessageDirection.SEND;
+            boolean canRecall = isSend && ui.getMessage().getState() == Message.MessageState.SENT;
+            boolean isText = ui.getMessage().getContent() instanceof TextMessage;
+            boolean canEdit = isSend && isText;
+            boolean canTranslate = isText;
 
-            if (ui.getMessage().getDirection() == Message.MessageDirection.SEND) {
-                if (ui.getMessage().getState() != Message.MessageState.SENT) {
-                    vRecall.setVisibility(GONE);
-                }
-            } else {
-                vRecall.setVisibility(GONE);
-                vEdit.setVisibility(GONE);
-            }
+            setActionEnabled(vRecall, canRecall);
+            setActionEnabled(vEdit, canEdit);
+            setActionEnabled(vCopy, isText);
+            setActionEnabled(vTranslate, canTranslate);
+            setActionEnabled(vReport, !isSend);
 
-            vCopy.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.COPY);
+            bindAction(vTranslate, pw, ui, Action.TRANSLATE);
+            bindAction(vCopy, pw, ui, Action.COPY);
+            bindAction(vEdit, pw, ui, Action.EDIT);
+            bindAction(vRecall, pw, ui, Action.RECALL);
+            bindAction(vTop, pw, ui, Action.TOP);
+            bindAction(vFavorite, pw, ui, Action.FAVORITE);
+            bindAction(vReply, pw, ui, Action.REPLY);
+            bindAction(vForward, pw, ui, Action.FORWARD);
+            bindAction(vMultiSelect, pw, ui, Action.MULTI_SELECT);
+            bindAction(vReport, pw, ui, Action.REPORT);
+            bindAction(vDelete, pw, ui, Action.DELETE);
+
+            bindAction(reactionOk, pw, ui, Action.REACTION_PREFIX + "👌");
+            bindAction(reactionThumbUp, pw, ui, Action.REACTION_PREFIX + "👍");
+            bindAction(reactionLove, pw, ui, Action.REACTION_PREFIX + "😍");
+            bindAction(reactionSalute, pw, ui, Action.REACTION_PREFIX + "🫡");
+            bindAction(reactionHeart, pw, ui, Action.REACTION_PREFIX + "❤️");
+            bindAction(reactionBrokenHeart, pw, ui, Action.REACTION_PREFIX + "💔");
+            bindAction(reactionPoop, pw, ui, Action.REACTION_PREFIX + "💩");
+            bindAction(reactionParty, pw, ui, Action.REACTION_PREFIX + "🎉");
+        }
+
+        private void bindAction(View actionView, PopupWindow popupWindow, UiMessage uiMessage, String action) {
+            if (actionView == null) return;
+            actionView.setOnClickListener(v -> {
+                if (!actionView.isEnabled()) return;
+                popupWindow.dismiss();
+                actionListener.onMessageAction(uiMessage, action);
             });
-            vEdit.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.EDIT);
-            });
-            vTop.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.TOP);
-            });
-            vForward.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.FORWARD);
-            });
-            vReply.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.REPLY);
-            });
-            vDelete.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.DELETE);
-            });
-            vRecall.setOnClickListener(v -> {
-                pw.dismiss();
-                actionListener.onMessageAction(ui, Action.RECALL);
-            });
+        }
+
+        private void setActionEnabled(View actionView, boolean enabled) {
+            if (actionView == null) return;
+            actionView.setEnabled(enabled);
+            actionView.setAlpha(enabled ? 1f : 0.35f);
         }
     }
 
@@ -351,12 +374,17 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     }
 
     public static class Action {
+        public static final String TRANSLATE = "translate";
         public static final String COPY = "copy";
         public static final String EDIT = "edit";
         public static final String TOP = "top";
         public static final String RECALL = "recall";
+        public static final String FAVORITE = "favorite";
         public static final String FORWARD = "forward";
         public static final String REPLY = "relay";
+        public static final String MULTI_SELECT = "multi_select";
+        public static final String REPORT = "report";
+        public static final String REACTION_PREFIX = "reaction:";
         public static final String DELETE = "delete";
     }
 

@@ -136,37 +136,67 @@ public class MessageUtils {
     }
 
     public static String formateConversationTime(long timestamp) {
-        com.juggle.im.android.chat.message.InsertTimeStatusMessage st = new com.juggle.im.android.chat.message.InsertTimeStatusMessage();
-
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(timestamp);
 
         Calendar now = Calendar.getInstance();
 
-        String text;
-        // same day -> show HH:mm
         boolean sameYear = now.get(Calendar.YEAR) == cal.get(Calendar.YEAR);
         boolean sameDay = sameYear && now.get(Calendar.DAY_OF_YEAR) == cal.get(Calendar.DAY_OF_YEAR);
 
-        // yesterday
         Calendar yesterday = (Calendar) now.clone();
         yesterday.add(Calendar.DAY_OF_YEAR, -1);
         boolean isYesterday = sameYear && yesterday.get(Calendar.DAY_OF_YEAR) == cal.get(Calendar.DAY_OF_YEAR);
 
         if (sameDay) {
             DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            text = df.format(new Date(timestamp));
-        } else if (isYesterday) {
-            DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            text = "昨天 " + df.format(new Date(timestamp));
-        } else if (sameYear) {
-            DateFormat df = new SimpleDateFormat("MM-dd", Locale.getDefault());
-            text = df.format(new Date(timestamp));
-        } else {
-            DateFormat df = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            text = df.format(new Date(timestamp));
+            return df.format(new Date(timestamp));
         }
-        return text;
+        if (isYesterday) {
+            DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            return "昨天 " + df.format(new Date(timestamp));
+        }
+        if (isSameWeek(now, cal)) {
+            DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            return toChineseWeekday(cal) + " " + df.format(new Date(timestamp));
+        }
+        if (sameYear) {
+            DateFormat df = new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault());
+            return df.format(new Date(timestamp));
+        }
+        DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+        return df.format(new Date(timestamp));
+    }
+
+    /**
+     * 判断两个时间是否处于同一自然周（以周一作为一周起始）。
+     */
+    private static boolean isSameWeek(Calendar left, Calendar right) {
+        Calendar l = (Calendar) left.clone();
+        Calendar r = (Calendar) right.clone();
+        l.setFirstDayOfWeek(Calendar.MONDAY);
+        r.setFirstDayOfWeek(Calendar.MONDAY);
+        return l.getWeekYear() == r.getWeekYear()
+                && l.get(Calendar.WEEK_OF_YEAR) == r.get(Calendar.WEEK_OF_YEAR);
+    }
+
+    private static String toChineseWeekday(Calendar calendar) {
+        switch (calendar.get(Calendar.DAY_OF_WEEK)) {
+            case Calendar.MONDAY:
+                return "周一";
+            case Calendar.TUESDAY:
+                return "周二";
+            case Calendar.WEDNESDAY:
+                return "周三";
+            case Calendar.THURSDAY:
+                return "周四";
+            case Calendar.FRIDAY:
+                return "周五";
+            case Calendar.SATURDAY:
+                return "周六";
+            default:
+                return "周日";
+        }
     }
 
     public static void registerMessageView(Class<? extends MessageContent> message, Class<? extends MessageView> holder) {

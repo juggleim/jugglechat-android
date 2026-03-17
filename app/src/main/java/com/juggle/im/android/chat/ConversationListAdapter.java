@@ -4,9 +4,6 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -38,7 +35,6 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     private OnNewConversationListener newConversationListener;
     private RecyclerView recyclerView; // 持有RecyclerView引用,用于直接控制滚动
     private int selectedPosition = -1;
-    private Drawable selectableItemBackground;
 
     public interface OnConversationClickListener {
         void onConversationClick(UiConversation uiConversation);
@@ -261,16 +257,6 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_conversation_list, parent, false);
-        
-        // 获取系统点击效果
-        if (selectableItemBackground == null) {
-            int[] attrs = new int[]{android.R.attr.selectableItemBackground};
-            Context context = parent.getContext();
-            android.content.res.TypedArray typedArray = context.obtainStyledAttributes(attrs);
-            selectableItemBackground = typedArray.getDrawable(0);
-            typedArray.recycle();
-        }
-        
         return new ViewHolder(view);
     }
 
@@ -278,12 +264,10 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UiConversation uiConversation = uiConversations.get(position);
         holder.bind(uiConversation);
-        
+
         // 设置选中状态
         if (position == selectedPosition) {
-            holder.itemView.setBackgroundResource(R.color.selected);
-        } else if (uiConversation.isTop()) {
-            holder.itemView.setBackgroundResource(R.color.app_primary_inverse);
+            holder.itemView.setBackgroundResource(R.color.conversation_page_bg);
         } else {
             holder.itemView.setBackgroundResource(android.R.color.transparent);
         }
@@ -325,7 +309,8 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         private TextView lastMessageView;
         private ImageView muteView;
         private ImageView avatarView;
-        private TextView unreadDot;
+        private TextView unreadCountView;
+        private View mutedUnreadDotView;
         private ProgressBar progressBar;
         private ImageView ivMsgStatus;
 
@@ -338,7 +323,8 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             lastMessageView = itemView.findViewById(R.id.tv_last_message);
             muteView = itemView.findViewById(R.id.iv_mute);
             avatarView = itemView.findViewById(R.id.iv_avatar);
-            unreadDot = itemView.findViewById(R.id.unread_dot);
+            unreadCountView = itemView.findViewById(R.id.tv_unread_count);
+            mutedUnreadDotView = itemView.findViewById(R.id.v_muted_unread_dot);
             progressBar = itemView.findViewById(R.id.msg_progress);
             ivMsgStatus = itemView.findViewById(R.id.iv_msg_status);
 
@@ -346,22 +332,6 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             itemView.setOnClickListener(v -> {
                 int position = getAbsoluteAdapterPosition();
                 if (position != RecyclerView.NO_POSITION && listener != null) {
-                    // 添加点击效果
-                    if (selectableItemBackground != null) {
-                        itemView.setBackground(selectableItemBackground);
-                    }
-                    
-                    // 延迟一点时间后恢复原状
-                    itemView.postDelayed(() -> {
-                        if (position == selectedPosition) {
-                            itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.gray));
-                        } else if (uiConversations.size() > position && uiConversations.get(position).isTop()) {
-                            itemView.setBackgroundResource(R.drawable.bg_pinned);
-                        } else {
-                            itemView.setBackgroundResource(android.R.color.transparent);
-                        }
-                    }, 100);
-                    
                     listener.onConversationClick(uiConversations.get(position));
                 }
             });
@@ -377,7 +347,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
 
         @SuppressLint("DefaultLocale")
         void bind(UiConversation uiConversation) {
-            AvatarUtils.loadAvatar(avatarView, uiConversation.getAvatar(), uiConversation.getName());
+            AvatarUtils.loadAvatar(avatarView, uiConversation.getAvatar(), uiConversation.getName(), uiConversation.getId());
 
             // 设置名称
             nameView.setText(uiConversation.getName());
@@ -392,7 +362,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 if (uiConversation.getConversationInfo().getMentionInfo() != null) {
                     SpannableString spannable = new SpannableString("[有人@我]" + MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
                     spannable.setSpan(
-                            new ForegroundColorSpan(Color.RED),
+                            new ForegroundColorSpan(itemView.getResources().getColor(R.color.conversation_badge_red)),
                             0,
                             6,
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -400,17 +370,31 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 } else {
                     lastMessageView.setText(MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
                 }
+            } else {
+                lastMessageView.setText("");
             }
 
             // 设置免打扰图标
             muteView.setVisibility(uiConversation.isMuted() ? VISIBLE : GONE);
 
-            // 未读红点（简单样式：如果 unreadCount > 0 则显示）
-            if (uiConversation.getUnreadCount() > 0) {
-                unreadDot.setVisibility(VISIBLE);
-                unreadDot.setText(String.format("%d", uiConversation.getUnreadCount()));
+            // 未读展示规则：
+            // 1) 非免打扰：显示数量胶囊（最大 99+）
+            // 2) 免打扰：仅显示红点，不显示数量
+            int unreadCount = uiConversation.getUnreadCount();
+            if (unreadCount > 0) {
+                if (uiConversation.isMuted()) {
+                    unreadCountView.setVisibility(GONE);
+                    mutedUnreadDotView.setVisibility(VISIBLE);
+                } else {
+                    mutedUnreadDotView.setVisibility(GONE);
+                    unreadCountView.setVisibility(VISIBLE);
+                    boolean overflow = unreadCount > 99;
+                    unreadCountView.setMinWidth(dpToPx(overflow ? 30 : 18));
+                    unreadCountView.setText(overflow ? "99+" : String.format("%d", unreadCount));
+                }
             } else {
-                unreadDot.setVisibility(GONE);
+                unreadCountView.setVisibility(GONE);
+                mutedUnreadDotView.setVisibility(GONE);
             }
 
             if (lastMessage != null) {
@@ -424,7 +408,15 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                     progressBar.setVisibility(VISIBLE);
                     ivMsgStatus.setVisibility(GONE);
                 }
+            } else {
+                progressBar.setVisibility(GONE);
+                ivMsgStatus.setVisibility(GONE);
             }
+        }
+
+        private int dpToPx(int dp) {
+            float density = itemView.getResources().getDisplayMetrics().density;
+            return Math.round(dp * density);
         }
     }
 

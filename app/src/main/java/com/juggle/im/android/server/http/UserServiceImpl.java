@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupListData;
+import com.juggle.im.android.server.beans.BlockUsersData;
 import com.juggle.im.android.server.beans.LoginRequest;
 import com.juggle.im.android.server.beans.LoginResult;
 import com.juggle.im.android.server.beans.CodeRequest;
@@ -153,6 +154,17 @@ public class UserServiceImpl extends BaseService implements UserService {
         StringBuilder sb = new StringBuilder("/jim/friends/applications?");
         sb.append("start=").append(start).append("&count=").append(count);
         enqueueGet(sb.toString(), com.juggle.im.android.server.beans.FriendApplicationsData.class, callback);
+    }
+
+    @Override
+    public void getBlockUsers(int count, String offset, ApiCallback<BlockUsersData> callback) {
+        int c = count <= 0 ? 20 : count;
+        StringBuilder sb = new StringBuilder("/jim/users/blockusers/list?");
+        sb.append("count=").append(c);
+        if (offset != null && !offset.isEmpty()) {
+            sb.append("&offset=").append(offset);
+        }
+        enqueueGet(sb.toString(), BlockUsersData.class, callback);
     }
 
     private void dispatchProfileValidationError(ApiCallback<Void> callback, String message) {

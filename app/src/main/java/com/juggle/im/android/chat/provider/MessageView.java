@@ -55,7 +55,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         if (sendUser != null && ivAvatar != null) {
             String name = sendUser.getUserName();
             message.setSenderName(name);
-            AvatarUtils.loadAvatar(ivAvatar, sendUser.getPortrait(), name);
+            AvatarUtils.loadAvatar(ivAvatar, sendUser.getPortrait(), name, sendUser.getUserId());
             TextView txSender = itemView.findViewById(R.id.text_sender_name);
             if (txSender != null) {
                 if (isGroup && message.getDirection() != com.juggle.im.model.Message.MessageDirection.SEND) {
@@ -69,7 +69,6 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         TextView vMsgTime = itemView.findViewById(R.id.msg_sent_time);
         if (message.getDirection() == com.juggle.im.model.Message.MessageDirection.SEND) {
             ProgressBar progressBar = itemView.findViewById(R.id.msg_send_status);
-            ImageView errorView = itemView.findViewById(R.id.send_error);
             ViewGroup msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
             if (progressBar != null) {
                 if (message.getMessage().getState().getValue() == Message.MessageState.SENDING.getValue()
@@ -79,29 +78,27 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                     progressBar.setVisibility(GONE);
                 }
             }
-            if (errorView != null) {
-                if (message.getMessage().getState().getValue() == Message.MessageState.FAIL.getValue()) {
-                    errorView.setVisibility(VISIBLE);
-                } else {
-                    errorView.setVisibility(GONE);
-                }
-            }
             if (msgStatusContainer != null) {
                 msgStatusContainer.setVisibility(VISIBLE);
                 ImageView ivStatus = msgStatusContainer.findViewById(R.id.msg_read_status);
                 // 已读
                 if (message.getMessage().isHasRead()) {
-                    ivStatus.setVisibility(VISIBLE);
-                    ivStatus.setImageResource(R.drawable.ic_msg_read);
+                    if (ivStatus != null) {
+                        ivStatus.setVisibility(VISIBLE);
+                        ivStatus.setImageResource(R.drawable.ic_msg_read);
+                    }
                 }
                 // 已发送
                 else if (message.getMessage().getState().getValue() == Message.MessageState.SENT.getValue()) {
-                    ivStatus.setVisibility(VISIBLE);
-                    ivStatus.setImageResource(R.drawable.ic_msg_sent);
-                }
-                // 发送中或者失败
-                else {
-                    ivStatus.setVisibility(GONE);
+                    if (ivStatus != null) {
+                        ivStatus.setVisibility(VISIBLE);
+                        ivStatus.setImageResource(R.drawable.ic_msg_sent);
+                    }
+                } else if (message.getMessage().getState().getValue() == Message.MessageState.FAIL.getValue()) {
+                    if (ivStatus != null) {
+                        ivStatus.setVisibility(VISIBLE);
+                        ivStatus.setImageResource(R.drawable.ic_send_error);
+                    }
                 }
             }
         }
@@ -113,6 +110,11 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                 spanTimeTxt = MessageUtils.formatTimestamp(message.getMessage().getTimestamp()) + spanTimeTxt;
             }
             vMsgTime.setText(spanTimeTxt);
+            if (message.getDirection() == Message.MessageDirection.SEND) {
+                vMsgTime.setTextColor(0xCCFFFFFF);
+            } else {
+                vMsgTime.setTextColor(0xFF9AA0AB);
+            }
         }
         this.bindItem(message, content, isGroup);
     }

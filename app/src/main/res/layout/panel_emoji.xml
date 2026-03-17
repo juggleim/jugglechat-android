@@ -1,59 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="250dp">
+    android:layout_height="@dimen/input_panel_height"
+    android:background="@color/emoji_bg"
+    android:orientation="vertical">
 
-    <!-- Main vertical content -->
-    <LinearLayout
+    <View
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/input_bg_light"
-        android:orientation="vertical">
+        android:layout_height="0.5dp"
+        android:background="@color/divider" />
 
-        <!-- Use a single vertically scrollable grid for emojis instead of a horizontal ViewPager -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:background="#F5F7F9"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/emoji_tab_container"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp" />
+    </HorizontalScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@color/divider" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="180dp">
+
         <GridView
             android:id="@+id/emoji_grid"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:padding="2dp"
-            android:layout_weight="1"
-            android:numColumns="8"
-            android:verticalSpacing="4dp"
-            android:horizontalSpacing="4dp"
-            android:stretchMode="columnWidth"
-            android:gravity="center" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:columnWidth="40dp"
+            android:gravity="start"
+            android:horizontalSpacing="10dp"
+            android:numColumns="7"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp"
+            android:stretchMode="none"
+            android:verticalSpacing="10dp" />
 
-    </LinearLayout>
-
-    <!-- Overlay floating actions: delete and send pinned to bottom-end -->
-    <LinearLayout
-        android:id="@+id/emoji_floating_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="bottom|end"
-        android:background="@drawable/rectangle_bg"
-        android:layout_margin="12dp">
-
-        <ImageView
-            android:id="@+id/emoji_delete"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:contentDescription="delete"
-            android:padding="8dp"
-            android:src="@drawable/ic_emoji_del" />
-
-        <TextView
-            android:id="@+id/emoji_send"
+        <LinearLayout
+            android:id="@+id/emoji_action_bar"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:gravity="center"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp"
-            android:text="@string/send"
-            android:textColor="@color/primary_bg_light" />
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
-    </LinearLayout>
+            <FrameLayout
+                android:id="@+id/emoji_delete_container"
+                android:layout_width="45dp"
+                android:layout_height="35dp"
+                android:layout_margin="5dp"
+                android:background="@drawable/bg_emoji_tab_selected">
 
-</FrameLayout>
+                <ImageView
+                    android:id="@+id/emoji_delete"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="delete"
+                    android:src="@drawable/ic_emoji_del" />
+            </FrameLayout>
+
+            <FrameLayout
+                android:background="@drawable/bg_emoji_send_button"
+                android:layout_margin="5dp"
+                android:layout_width="45dp"
+                android:layout_height="35dp">
+
+                <TextView
+                    android:id="@+id/emoji_send"
+                    android:layout_width="45dp"
+                    android:layout_gravity="center"
+                    android:layout_height="35dp"
+                    android:gravity="center"
+                    android:text="@string/send"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

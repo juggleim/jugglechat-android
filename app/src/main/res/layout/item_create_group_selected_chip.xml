@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="28dp"
+    android:background="@drawable/bg_create_group_selected_chip"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/iv_chip_avatar"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="4dp"
+        android:contentDescription="@string/contact"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/tv_chip_name"
+        android:layout_width="wrap_content"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="8dp"
+        android:gravity="center_vertical"
+        android:maxLines="1"
+        android:textColor="@color/conversation_primary_text"
+        android:textSize="12sp" />
+
+</LinearLayout>

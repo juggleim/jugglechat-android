@@ -63,7 +63,7 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
     public void onBindViewHolder(@NonNull VH holder, int position) {
         FriendBean f = items.get(position);
         holder.tv.setText(f.getNickname() != null ? f.getNickname() : f.getUser_id());
-        AvatarUtils.loadAvatar(holder.iv, f.getAvatar(), f.getNickname());
+        AvatarUtils.loadAvatar(holder.iv, f.getAvatar(), f.getNickname(), f.getUser_id());
         if (selectionMode) {
             // show a selectable behavior: toggle selection on click
             holder.itemView.setOnClickListener(v -> {

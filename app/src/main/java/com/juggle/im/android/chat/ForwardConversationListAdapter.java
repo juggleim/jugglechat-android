@@ -115,7 +115,7 @@ public class ForwardConversationListAdapter extends RecyclerView.Adapter<Forward
 
         void bind(UiConversation ui) {
             name.setText(ui.getName());
-            AvatarUtils.loadAvatar(avatar, ui.getAvatar(), ui.getName());
+            AvatarUtils.loadAvatar(avatar, ui.getAvatar(), ui.getName(), ui.getId());
             // pinned background similar to ConversationListAdapter
             if (ui.isTop()) {
                 itemView.setBackgroundResource(R.drawable.bg_pinned);

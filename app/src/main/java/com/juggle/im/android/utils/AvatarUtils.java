@@ -3,10 +3,8 @@ package com.juggle.im.android.utils;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.widget.ImageView;
@@ -17,8 +15,9 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.juggle.im.android.R;
 
 /**
- * Simple avatar helper: loads avatar from url if present, otherwise generates a circular bitmap
- * with the initial letter and a gradient background deterministically derived from the letter.
+ * Avatar helper:
+ * 1) url 有效时加载网络头像
+ * 2) url 为空时，按 userId 首字符 ASCII % 6 选定固定底色生成默认头像
  */
 public final class AvatarUtils {
     private AvatarUtils() {
@@ -26,8 +25,21 @@ public final class AvatarUtils {
 
     // 使用一个不会与其他资源冲突的 ID 作为 tag key
     private static final int TAG_URL = 0x7F0A0001;
+    // 颜色规则：ASCII % 6
+    private static final int[] AVATAR_COLORS = new int[]{
+            0xFFFE812E, // 橙色
+            0xFFF6A502, // 金黄色
+            0xFF28C841, // 绿色
+            0xFF00CFBA, // 青绿色
+            0xFF2465FF, // 蓝色
+            0xFFBD24FF  // 紫色
+    };
 
     public static void loadAvatar(ImageView iv, String url, String name) {
+        loadAvatar(iv, url, name, null);
+    }
+
+    public static void loadAvatar(ImageView iv, String url, String name, String userId) {
         if (iv == null) return;
         Context ctx = iv.getContext();
 
@@ -48,17 +60,17 @@ public final class AvatarUtils {
             return;
         }
 
-        // 处理没有 URL 的情况（生成首字母头像）
-        // 使用 name + 特殊前缀作为 tag，区分不同的生成的头像
-        String generatedTag = "generated:" + name;
+        // 无网络头像时：颜色由 userId 决定，字符优先展示 name 首字母。
+        String generatedTag = "generated:" + safeValue(userId) + ":" + safeValue(name);
         if (generatedTag.equals(currentUrl)) {
             return; // 相同的生成头像，跳过
         }
         iv.setTag(TAG_URL, generatedTag);
 
-        String initial = extractInitial(name);
+        String initial = extractDisplayInitial(name, userId);
+        int bgColor = colorForUserId(userId);
         int sizePx = dpToPx(ctx, 40);
-        Bitmap bmp = createInitialsBitmap(sizePx, initial);
+        Bitmap bmp = createInitialsBitmap(sizePx, initial, bgColor);
         Glide.with(iv).load(bmp).circleCrop().dontAnimate().into(iv);
     }
 
@@ -71,25 +83,23 @@ public final class AvatarUtils {
                 .into(iv);
     }
 
-    private static String extractInitial(String name) {
-        if (TextUtils.isEmpty(name)) return "";
-        name = name.trim();
-        if (name.length() == 0) return "";
-        // use first code point
-        int cp = name.codePointAt(0);
+    private static String extractDisplayInitial(String name, String userId) {
+        String source = !TextUtils.isEmpty(name) ? name.trim() : safeValue(userId);
+        if (TextUtils.isEmpty(source)) {
+            return "A";
+        }
+        int cp = source.codePointAt(0);
         return new String(Character.toChars(cp)).toUpperCase();
     }
 
-    private static Bitmap createInitialsBitmap(int sizePx, String initial) {
+    private static Bitmap createInitialsBitmap(int sizePx, String initial, int bgColor) {
         if (sizePx <= 0) sizePx = 64;
         Bitmap bmp = Bitmap.createBitmap(sizePx, sizePx, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(bmp);
 
-        // background gradient based on initial hash
-        int[] colors = colorsForString(initial);
+        // 固定纯色背景，不使用渐变。
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        Shader shader = new LinearGradient(0, 0, sizePx, sizePx, colors[0], colors[1], Shader.TileMode.CLAMP);
-        paint.setShader(shader);
+        paint.setColor(bgColor);
         RectF r = new RectF(0, 0, sizePx, sizePx);
         c.drawRoundRect(r, sizePx / 2f, sizePx / 2f, paint);
 
@@ -108,23 +118,15 @@ public final class AvatarUtils {
         return bmp;
     }
 
-    private static int[] colorsForString(String s) {
-        if (s == null || s.isEmpty()) {
-            return new int[]{0xFF888888, 0xFFBBBBBB};
-        }
-        int h = s.hashCode();
-        // derive two colors from hash
-        int r1 = 80 + (Math.abs(h) % 120);
-        int g1 = 80 + (Math.abs(h / 31) % 120);
-        int b1 = 80 + (Math.abs(h / 17) % 120);
+    private static int colorForUserId(String userId) {
+        String normalized = safeValue(userId);
+        char first = normalized.isEmpty() ? 'A' : normalized.charAt(0);
+        int index = first % AVATAR_COLORS.length;
+        return AVATAR_COLORS[index];
+    }
 
-        int r2 = 120 + (Math.abs(h / 13) % 120);
-        int g2 = 120 + (Math.abs(h / 7) % 120);
-        int b2 = 120 + (Math.abs(h / 3) % 120);
-
-        int c1 = 0xFF000000 | ((r1 & 0xFF) << 16) | ((g1 & 0xFF) << 8) | (b1 & 0xFF);
-        int c2 = 0xFF000000 | ((r2 & 0xFF) << 16) | ((g2 & 0xFF) << 8) | (b2 & 0xFF);
-        return new int[]{c1, c2};
+    private static String safeValue(String value) {
+        return value == null ? "" : value.trim();
     }
 
     private static int dpToPx(Context ctx, int dp) {

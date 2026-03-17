@@ -2,14 +2,15 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/conversation_bg_light"
     xmlns:tools="http://schemas.android.com/tools">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view_messages"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
         android:clipToPadding="false"
         android:overScrollMode="always" />
 

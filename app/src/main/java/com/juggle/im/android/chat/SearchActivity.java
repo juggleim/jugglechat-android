@@ -5,11 +5,14 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -32,6 +35,7 @@ import java.util.List;
 public class SearchActivity extends AppCompatActivity {
 
     private EditText searchInput;
+    private TextView cancelView;
     private RecyclerView recyclerView;
     private SearchAdapter adapter;
 
@@ -45,13 +49,22 @@ public class SearchActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
+        Window window = getWindow();
+        window.setStatusBarColor(getColor(R.color.conversation_page_bg));
+        window.setNavigationBarColor(getColor(R.color.conversation_page_bg));
+        WindowInsetsControllerCompat controller =
+                new WindowInsetsControllerCompat(window, window.getDecorView());
+        controller.setAppearanceLightStatusBars(true);
+
         searchInput = findViewById(R.id.search_input);
+        cancelView = findViewById(R.id.tv_cancel);
         recyclerView = findViewById(R.id.search_recycler_view);
-        findViewById(R.id.iv_back).setOnClickListener(v -> finish());
+        cancelView.setOnClickListener(v -> finish());
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
         adapter = new SearchAdapter();
         recyclerView.setAdapter(adapter);
+        searchInput.requestFocus();
 
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -70,18 +83,20 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private void search(String keyword) {
-        if (keyword.isEmpty()) {
-            adapter.clear();
+        String searchWord = keyword == null ? "" : keyword.trim();
+        adapter.clear();
+        if (searchWord.isEmpty()) {
             return;
         }
-        adapter.clear();
+
         // 搜索好友
-        ServiceManager.getUserService().searchFriends(keyword, 0, 5, new ApiCallback<FriendsListData>() {
+        ServiceManager.getUserService().searchFriends(searchWord, 0, 5, new ApiCallback<FriendsListData>() {
             @Override
             public void onSuccess(FriendsListData data) {
                 List<SearchResult> results = new ArrayList<>();
                 if (data != null && data.getItems() != null) {
                     for (FriendBean friend : data.getItems()) {
+                        if (results.size() >= 3) break;
                         results.add(new SearchResult(friend.getUser_id(), friend.getNickname(), friend.getAvatar(), SEARCH_TYPE_CONTACT, null));
                     }
                 }
@@ -94,12 +109,13 @@ public class SearchActivity extends AppCompatActivity {
         });
 
         // 搜索群组
-        ServiceManager.getUserService().searchMyGroups(keyword, 5, new ApiCallback<GroupListData>() {
+        ServiceManager.getUserService().searchMyGroups(searchWord, 5, new ApiCallback<GroupListData>() {
             @Override
             public void onSuccess(GroupListData data) {
                 List<SearchResult> results = new ArrayList<>();
-                if (data != null) {
+                if (data != null && data.getItems() != null) {
                     for (GroupBean group : data.getItems()) {
+                        if (results.size() >= 3) break;
                         results.add(new SearchResult(group.getGroup_id(), group.getGroup_name(), group.getGroup_portrait(), SEARCH_TYPE_GROUP, null));
                     }
                 }
@@ -114,7 +130,7 @@ public class SearchActivity extends AppCompatActivity {
 
         // 搜索会话
         MessageQueryOptions.Builder builder = new MessageQueryOptions.Builder();
-        builder.setSearchContent(keyword);
+        builder.setSearchContent(searchWord);
         builder.setConversationTypes(Arrays.asList(Conversation.ConversationType.GROUP, Conversation.ConversationType.PRIVATE));
         JIM.getInstance().getMessageManager().searchConversationsWithMessageContent(builder.build(), list -> {
             List<SearchResult> results = new ArrayList<>();
@@ -123,11 +139,11 @@ public class SearchActivity extends AppCompatActivity {
                 SearchResult r = new SearchResult(l.getConversationInfo().getConversation().getConversationId(),
                         l.getConversationInfo().getConversation().getConversationId(), "",
                         SEARCH_TYPE_RECORD,
-                        l.getMatchedCount() + "条匹配记录");
+                        l.getMatchedCount() + " 条匹配记录");
                 r.setConversation(l.getConversationInfo().getConversation());
                 results.add(r);
                 count++;
-                if (count >= 5) break;
+                if (count >= 2) break;
             }
             adapter.addResults(results, SEARCH_TYPE_RECORD);
         });

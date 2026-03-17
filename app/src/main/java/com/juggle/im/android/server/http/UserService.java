@@ -67,4 +67,9 @@ public interface UserService {
      * @param count Number of items to fetch (default 50)
      */
     void getFriendApplications(int start, int count, ApiCallback<FriendApplicationsData> callback);
+
+    /**
+     * Query block users list. GET /jim/users/blockusers/list
+     */
+    void getBlockUsers(int count, String offset, ApiCallback<BlockUsersData> callback);
 }

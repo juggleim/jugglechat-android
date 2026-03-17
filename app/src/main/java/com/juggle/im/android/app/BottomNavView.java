@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -25,14 +26,14 @@ public class BottomNavView extends LinearLayout {
     private View tabFriend;
     private View tabMe;
 
-    private android.widget.ImageView tabChatIcon;
-    private android.widget.TextView tabChatLabel;
-    private android.widget.ImageView tabContactIcon;
-    private android.widget.TextView tabContactLabel;
-    private android.widget.ImageView tabFriendIcon;
-    private android.widget.TextView tabFriendLabel;
-    private android.widget.ImageView tabMeIcon;
-    private android.widget.TextView tabMeLabel;
+    private ImageView tabChatIcon;
+    private TextView tabChatLabel;
+    private ImageView tabContactIcon;
+    private TextView tabContactLabel;
+    private ImageView tabFriendIcon;
+    private TextView tabFriendLabel;
+    private ImageView tabMeIcon;
+    private TextView tabMeLabel;
     private TextView unReadView;
 
     public BottomNavView(Context context) {
@@ -88,19 +89,26 @@ public class BottomNavView extends LinearLayout {
     public void setSelectedTab(int index) {
         selectedIndex = index;
         int activeColor = getResources().getColor(R.color.app_primary);
-        int inactiveColor = getResources().getColor(android.R.color.darker_gray);
+        int inactiveColor = getResources().getColor(R.color.conversation_secondary_text);
 
-        // tabChat
-        if (tabChatIcon != null) tabChatIcon.setColorFilter(index == 0 ? activeColor : inactiveColor);
+        if (tabChatIcon != null) tabChatIcon.setImageResource(index == 0
+                ? R.drawable.nav_chat_selected
+                : R.drawable.nav_chat_unselected);
         if (tabChatLabel != null) tabChatLabel.setTextColor(index == 0 ? activeColor : inactiveColor);
-        // tabContact
-        if (tabContactIcon != null) tabContactIcon.setColorFilter(index == 1 ? activeColor : inactiveColor);
+
+        if (tabContactIcon != null) tabContactIcon.setImageResource(index == 1
+                ? R.drawable.nav_contact_selected
+                : R.drawable.nav_contact_unselected);
         if (tabContactLabel != null) tabContactLabel.setTextColor(index == 1 ? activeColor : inactiveColor);
-        // tabFriend
-        if (tabFriendIcon != null) tabFriendIcon.setColorFilter(index == 2 ? activeColor : inactiveColor);
+
+        if (tabFriendIcon != null) tabFriendIcon.setImageResource(index == 2
+                ? R.drawable.nav_discover_selected
+                : R.drawable.nav_discover_unselected);
         if (tabFriendLabel != null) tabFriendLabel.setTextColor(index == 2 ? activeColor : inactiveColor);
-        // tabMe
-        if (tabMeIcon != null) tabMeIcon.setColorFilter(index == 3 ? activeColor : inactiveColor);
+
+        if (tabMeIcon != null) tabMeIcon.setImageResource(index == 3
+                ? R.drawable.nav_me_selected
+                : R.drawable.nav_me_unselected);
         if (tabMeLabel != null) tabMeLabel.setTextColor(index == 3 ? activeColor : inactiveColor);
     }
 
@@ -109,9 +117,13 @@ public class BottomNavView extends LinearLayout {
     }
 
     public void updateUnreadCount(int c) {
-        if (c > 0) unReadView.setVisibility(VISIBLE);
-        else unReadView.setVisibility(GONE);
-        // Show 99+ when count exceeds 99
-        unReadView.setText(c > 99 ? "99+" : String.valueOf(c));
+        if (unReadView == null) return;
+        if (c > 0) {
+            unReadView.setVisibility(VISIBLE);
+            unReadView.setText(c > 99 ? "99+" : String.valueOf(c));
+        } else {
+            unReadView.setVisibility(GONE);
+        }
     }
+
 }

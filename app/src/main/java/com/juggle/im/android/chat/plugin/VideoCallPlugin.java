@@ -25,7 +25,7 @@ public class VideoCallPlugin extends MorePlugin {
 
     @Override
     public int getIconRes() {
-        return R.drawable.ic_video_call;
+        return R.drawable.ic_more_video_call_design;
     }
 
     @Override

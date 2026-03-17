@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -29,6 +30,7 @@ import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.android.utils.ToastUtils;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.Message;
@@ -330,7 +332,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             ImageView ivBack = getActivity().findViewById(R.id.iv_back);
             if (selectionMode) {
                 if (ivBack != null) {
-                    ivBack.setImageResource(R.drawable.ic_back_white);
+                    ivBack.setImageResource(R.drawable.ic_back);
                     ivBack.setOnClickListener(v -> exitSelectionMode());
                 }
                 if (tv != null) {
@@ -339,7 +341,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 getActivity().findViewById(R.id.iv_settings).setVisibility(GONE);
             } else {
                 if (ivBack != null) {
-                    ivBack.setImageResource(R.drawable.ic_back_white);
+                    ivBack.setImageResource(R.drawable.ic_back);
                     ivBack.setOnClickListener(v -> requireActivity().finish());
                 }
             }
@@ -685,24 +687,31 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private void onMessageAction(UiMessage message, String action) {
         if (message == null || action == null)
             return;
+        if (action.startsWith(MessageListAdapter.Action.REACTION_PREFIX)) {
+            String emoji = action.substring(MessageListAdapter.Action.REACTION_PREFIX.length());
+            addReactionToMessage(message, emoji);
+            return;
+        }
         switch (action) {
-            case MessageListAdapter.Action.COPY:
-                // copy text content to clipboard if text
-                android.content.ClipboardManager cm = (android.content.ClipboardManager) requireContext()
-                        .getSystemService(android.content.Context.CLIPBOARD_SERVICE);
-                MessageContent content = message.getMessage().getContent();
-                String text = "";
-                if (content instanceof TextMessage) {
-                    text = ((TextMessage) content).getContent();
-                } else {
+            case MessageListAdapter.Action.TRANSLATE:
+                String source = extractTextMessage(message);
+                if (source == null || source.trim().isEmpty()) {
+                    ToastUtils.show(requireContext(), R.string.operation_failed);
                     return;
                 }
+                ToastUtils.show(requireContext(), R.string.msg_action_translation_pending);
+                break;
+            case MessageListAdapter.Action.COPY:
+                String text = extractTextMessage(message);
+                if (text == null) return;
+                android.content.ClipboardManager cm = (android.content.ClipboardManager) requireContext()
+                        .getSystemService(android.content.Context.CLIPBOARD_SERVICE);
                 if (text != null) {
                     android.content.ClipData clip = android.content.ClipData.newPlainText("message", text);
                     if (cm != null)
                         cm.setPrimaryClip(clip);
                 }
-                android.widget.Toast.makeText(requireContext(), "Copied", android.widget.Toast.LENGTH_SHORT).show();
+                ToastUtils.show(requireContext(), R.string.msg_action_copied);
                 break;
             case MessageListAdapter.Action.TOP:
                 Conversation conversation = message.getMessage().getConversation();
@@ -722,58 +731,147 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             case MessageListAdapter.Action.RECALL:
                 this.recallMessage(message);
                 break;
+            case MessageListAdapter.Action.FAVORITE:
+                ToastUtils.show(requireContext(), R.string.msg_action_favorited);
+                break;
             case MessageListAdapter.Action.FORWARD:
-                // If not in selection mode, enter selection mode selecting this message
                 if (!selectionMode) {
                     enterSelectionMode(message);
                 } else {
-                    // already in selection mode: toggle this message
-                    if (message.getMessageId() != null) {
-                        adapter.toggleSelect(message);
-                        // sync fragment selectedIds from adapter
-                        selectedIds.clear();
-                        for (UiMessage um : adapter.getSelectedMessages()) {
-                            if (um.getMessageId() != null)
-                                selectedIds.add(um.getMessageId());
-                        }
-                        updateOptionBarState(selectedIds.size());
-                    }
+                    toggleSelectionForMessage(message);
+                }
+                if (adapter.getSelectionCount() > 0) {
+                    showForwardMenu();
                 }
                 break;
-            case "toggle_select":
-                // toggle selection for this message (checkbox clicked)
-                if (message.getMessageId() != null) {
-                    adapter.toggleSelect(message);
-                    selectedIds.clear();
-                    for (UiMessage um : adapter.getSelectedMessages()) {
-                        if (um.getMessageId() != null)
-                            selectedIds.add(um.getMessageId());
-                    }
-                    updateOptionBarState(selectedIds.size());
+            case MessageListAdapter.Action.MULTI_SELECT:
+                if (!selectionMode) {
+                    enterSelectionMode(message);
+                } else {
+                    toggleSelectionForMessage(message);
                 }
+                break;
+            case MessageListAdapter.Action.REPORT:
+                ToastUtils.show(requireContext(), R.string.msg_action_reported);
+                break;
+            case "toggle_select":
+                toggleSelectionForMessage(message);
                 break;
             case MessageListAdapter.Action.EDIT:
                 ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
+                if (input == null) return;
                 input.showReferMsgPanel(message.getSenderName(),
                         MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(),
                         R.id.tag_edit_msg);
                 break;
             case MessageListAdapter.Action.REPLY:
                 input = getActivity().findViewById(R.id.input_bar);
+                if (input == null) return;
                 input.showReferMsgPanel(message.getSenderName(),
                         MessageUtils.getMessageSummary(getContext(), message.getMessage()), message.getMessageId(),
                         R.id.tag_reply_msg);
                 break;
             case MessageListAdapter.Action.DELETE:
-                List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
-                final int idx = adapter.getIndexByMessageNo(message.getMessage().getClientMsgNo());
-                if (idx >= 0) {
-                    current.remove(idx);
+                if (message.getDirection() == Message.MessageDirection.SEND) {
+                    new AlertDialog.Builder(requireContext())
+                            .setItems(new String[]{
+                                            getString(R.string.msg_action_delete_self),
+                                            getString(R.string.msg_action_delete_both)},
+                                    (dialog, which) -> {
+                                        if (which == 1) {
+                                            ToastUtils.show(requireContext(), R.string.msg_action_delete_remote_unsupported);
+                                        }
+                                        deleteSingleMessage(message);
+                                    })
+                            .show();
+                } else {
+                    deleteSingleMessage(message);
                 }
-                this.deleteMessages(Arrays.asList(message), current);
                 break;
             default:
                 break;
+        }
+    }
+
+    private void toggleSelectionForMessage(UiMessage message) {
+        if (message.getMessageId() == null) return;
+        adapter.toggleSelect(message);
+        selectedIds.clear();
+        for (UiMessage um : adapter.getSelectedMessages()) {
+            if (um.getMessageId() != null) {
+                selectedIds.add(um.getMessageId());
+            }
+        }
+        updateOptionBarState(selectedIds.size());
+    }
+
+    @Nullable
+    private String extractTextMessage(UiMessage message) {
+        MessageContent content = message.getMessage().getContent();
+        if (content instanceof TextMessage) {
+            return ((TextMessage) content).getContent();
+        }
+        return null;
+    }
+
+    private void deleteSingleMessage(UiMessage message) {
+        List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
+        final int idx = adapter.getIndexByMessageNo(message.getMessage().getClientMsgNo());
+        if (idx >= 0) {
+            current.remove(idx);
+        }
+        this.deleteMessages(Arrays.asList(message), current);
+    }
+
+    private void addReactionToMessage(UiMessage message, String emoji) {
+        if (message.getMessageId() == null || message.getMessageId().trim().isEmpty()) {
+            ToastUtils.show(requireContext(), R.string.operation_failed);
+            return;
+        }
+        Conversation conv = message.getMessage().getConversation();
+        if (conv == null) {
+            conv = new Conversation(
+                    isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
+                    conversationId);
+        }
+        String reactionId = toReactionId(emoji);
+        JIM.getInstance().getMessageManager().addMessageReaction(
+                message.getMessageId(),
+                conv,
+                reactionId,
+                new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        ToastUtils.show(requireContext(), getString(R.string.msg_action_reaction_added, emoji));
+                    }
+
+                    @Override
+                    public void onError(int i) {
+                        ToastUtils.show(requireContext(), R.string.operation_failed);
+                    }
+                });
+    }
+
+    private String toReactionId(String emoji) {
+        switch (emoji) {
+            case "👌":
+                return ":ok_hand";
+            case "👍":
+                return ":thumb_up";
+            case "😍":
+                return ":heart_eyes";
+            case "🫡":
+                return ":salute";
+            case "❤️":
+                return ":heart";
+            case "💔":
+                return ":broken_heart";
+            case "💩":
+                return ":poop";
+            case "🎉":
+                return ":tada";
+            default:
+                return ":smile";
         }
     }
 
@@ -810,7 +908,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
 
                     @Override
                     public void onError(int i) {
-                        Toast.makeText(requireContext(), "Delete failed", Toast.LENGTH_SHORT).show();
+                        ToastUtils.show(requireContext(), R.string.operation_failed);
                     }
                 });
     }

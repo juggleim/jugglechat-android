@@ -14,19 +14,23 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.server.beans.FriendApplicationBean;
 import com.juggle.im.android.server.beans.FriendApplicationsData;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.model.Conversation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FriendApplicationsActivity extends AppCompatActivity {
+    private static final String FRIEND_APPLY = "friend_apply";
     private RecyclerView rvApplications;
     private ProgressBar progressBar;
+    private TextView emptyView;
     private ApplicationsAdapter adapter;
 
     @Override
@@ -36,6 +40,7 @@ public class FriendApplicationsActivity extends AppCompatActivity {
 
         rvApplications = findViewById(R.id.rv_applications);
         progressBar = findViewById(R.id.progress_bar);
+        emptyView = findViewById(R.id.tv_empty);
         View btnBack = findViewById(R.id.btn_back);
 
         if (btnBack != null) {
@@ -46,6 +51,9 @@ public class FriendApplicationsActivity extends AppCompatActivity {
         rvApplications.setLayoutManager(new LinearLayoutManager(this));
         rvApplications.setAdapter(adapter);
 
+        Conversation conversation = new Conversation(Conversation.ConversationType.SYSTEM, FRIEND_APPLY);
+        JIM.getInstance().getConversationManager().clearUnreadCount(conversation, null);
+
         loadApplications();
     }
 
@@ -55,15 +63,23 @@ public class FriendApplicationsActivity extends AppCompatActivity {
             @Override
             public void onSuccess(FriendApplicationsData data) {
                 progressBar.setVisibility(View.GONE);
-                if (data != null && data.getItems() != null) {
-                    adapter.setItems(data.getItems());
+                List<FriendApplicationBean> items = data == null ? null : data.getItems();
+                if (items == null) {
+                    items = new ArrayList<>();
                 }
+                items.sort((left, right) -> Long.compare(right.getApplyTime(), left.getApplyTime()));
+                adapter.setItems(items);
+                boolean isEmpty = items.isEmpty();
+                emptyView.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+                rvApplications.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
             }
 
             @Override
             public void onError(int code, String message) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(FriendApplicationsActivity.this, "Failed to load: " + message, Toast.LENGTH_SHORT)
+                emptyView.setVisibility(View.VISIBLE);
+                rvApplications.setVisibility(View.GONE);
+                Toast.makeText(FriendApplicationsActivity.this, "加载新朋友失败：" + message, Toast.LENGTH_SHORT)
                         .show();
             }
         });
@@ -100,9 +116,9 @@ public class FriendApplicationsActivity extends AppCompatActivity {
 
             // Set description based on is_sponsor
             if (app.isSponsor()) {
-                holder.tvDescription.setText("You applied");
+                holder.tvDescription.setText("你已申请");
             } else {
-                holder.tvDescription.setText("Applied to add you");
+                holder.tvDescription.setText("申请添加你为好友");
             }
 
             // Set status text based on status code
@@ -110,17 +126,17 @@ public class FriendApplicationsActivity extends AppCompatActivity {
             String statusText;
             switch (app.getStatus()) {
                 case 1:
-                    statusText = "Added";
+                    statusText = "已添加";
                     break;
                 case 2:
-                    statusText = "Rejected";
+                    statusText = "已拒绝";
                     break;
                 case 3:
-                    statusText = "Expired";
+                    statusText = "已过期";
                     break;
                 case 0:
                 default:
-                    statusText = "Applying";
+                    statusText = "申请中";
                     break;
             }
             holder.tvStatus.setText(statusText);

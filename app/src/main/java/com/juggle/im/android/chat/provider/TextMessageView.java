@@ -1,8 +1,5 @@
 package com.juggle.im.android.chat.provider;
 
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
@@ -26,5 +23,10 @@ public class TextMessageView extends MessageView<UiMessage, TextMessage> {
     public void bindItem(UiMessage m, TextMessage t, boolean isGroup) {
         TextView tvContent = this.itemView.findViewById(R.id.text_message_content);
         tvContent.setText(t.getContent());
+        if (m.getDirection() == Message.MessageDirection.SEND) {
+            tvContent.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.white));
+        } else {
+            tvContent.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));
+        }
     }
 }

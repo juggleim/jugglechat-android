@@ -1,6 +1,6 @@
 <!-- res/values/dimens.xml -->
 <resources>
     <dimen name="message_image_fixed_height">200dp</dimen>
-    <dimen name="chat_input_height">60dp</dimen>
-    <dimen name="input_panel_height">250dp</dimen>
+    <dimen name="chat_input_height">50dp</dimen>
+    <dimen name="input_panel_height">230dp</dimen>
 </resources>

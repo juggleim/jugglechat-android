@@ -4,13 +4,19 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.widget.LinearLayout;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -36,6 +42,7 @@ import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.model.UiConversation;
+import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.call.CallConst;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
@@ -60,8 +67,14 @@ public class MainActivity extends AppCompatActivity {
     private MyProfileFragment myProfileFragment;
     private BottomNavView bottomNav;
     private TextView tvTitle;
+    private TextView tvHeaderName;
+    private TextView tvHeaderUserId;
+    private TextView tvHeaderStatus;
+    private View headerProfileArea;
+    private ImageView ivHeaderAvatar;
     private ImageView btnMore, btnSearch;
     private AuthGuard authGuard;
+    private PopupWindow mainAddActionPopup;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,11 +88,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Window window = getWindow();
-        window.setStatusBarColor(getColor(R.color.primary_bg_light));
-        window.setNavigationBarColor(getColor(R.color.white));
+        window.setStatusBarColor(getColor(R.color.conversation_page_bg));
+        window.setNavigationBarColor(getColor(R.color.conversation_page_bg));
         WindowInsetsControllerCompat controller =
                 new WindowInsetsControllerCompat(window, window.getDecorView());
-        controller.setAppearanceLightStatusBars(false);
+        controller.setAppearanceLightStatusBars(true);
 
         // add conversation fragment as default
         FragmentManager fm = getSupportFragmentManager();
@@ -90,41 +103,27 @@ public class MainActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.footer_nav);
         tvTitle = findViewById(R.id.tv_title);
+        tvHeaderName = findViewById(R.id.tv_header_name);
+        tvHeaderUserId = findViewById(R.id.tv_header_user_id);
+        tvHeaderStatus = findViewById(R.id.tv_header_status);
+        ivHeaderAvatar = findViewById(R.id.iv_header_avatar);
+        headerProfileArea = findViewById(R.id.header_profile_area);
         if (bottomNav != null) {
             bottomNav.setOnTabClickListener(index -> onTabSelected(index));
             bottomNav.setSelectedTab(0);
         }
+        updateHeaderProfile();
+        updateHeaderStatus(getString(R.string.main_status_connecting));
 
-        // add button: show popup menu (Add friend, Create group)
+        // add button: show custom quick actions popup (Create group, Add friend, Scan QR)
         btnMore = findViewById(R.id.btn_more);
         if (btnMore != null) {
-            btnMore.setOnClickListener(v -> {
-                android.widget.PopupMenu popup = new android.widget.PopupMenu(MainActivity.this, v);
-                popup.getMenuInflater().inflate(R.menu.menu_add, popup.getMenu());
-                popup.setOnMenuItemClickListener(item -> {
-                    int id = item.getItemId();
-                    if (id == R.id.menu_add_friend) {
-                        if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.add_friend")) {
-                            return true;
-                        }
-                        startActivity(new android.content.Intent(MainActivity.this, AddFriendActivity.class));
-                        return true;
-                    } else if (id == R.id.menu_create_group) {
-                        if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.create_group")) {
-                            return true;
-                        }
-                        startActivity(new android.content.Intent(MainActivity.this, CreateGroupActivity.class));
-                        return true;
-                    }
-                    return false;
-                });
-                popup.show();
-            });
+            btnMore.setOnClickListener(this::showMainAddActionsPopup);
         }
         btnSearch = findViewById(R.id.btn_search);
-        btnSearch.setOnClickListener( v -> {
-            startActivity(new Intent(MainActivity.this, SearchActivity.class));
-        });
+        if (btnSearch != null) {
+            btnSearch.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SearchActivity.class)));
+        }
 
         EventBus.getDefault().register(this);
 
@@ -157,8 +156,15 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateHeaderProfile();
+    }
+
 
     private void onTabSelected(int index) {
+        dismissMainAddActionsPopupIfNeeded();
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction tx = fm.beginTransaction();
         switch (index) {
@@ -171,9 +177,14 @@ public class MainActivity extends AppCompatActivity {
                 if (discoverFragment != null) tx.hide(discoverFragment);
                 if (myProfileFragment != null) tx.hide(myProfileFragment);
                 tx.show(conversationListFragment);
-                tvTitle.setText("聊天");
+                tvTitle.setText(R.string.main_title);
                 btnMore.setVisibility(VISIBLE);
                 btnSearch.setVisibility(VISIBLE);
+                btnMore.setOnClickListener(this::showMainAddActionsPopup);
+                if (headerProfileArea != null) headerProfileArea.setVisibility(VISIBLE);
+                if (tvHeaderStatus != null && tvHeaderStatus.getText().length() > 0) {
+                    tvHeaderStatus.setVisibility(VISIBLE);
+                }
 
                 break;
             case 2:
@@ -190,6 +201,8 @@ public class MainActivity extends AppCompatActivity {
                 tvTitle.setText("发现");
                 btnMore.setVisibility(GONE);
                 btnSearch.setVisibility(GONE);
+                if (headerProfileArea != null) headerProfileArea.setVisibility(GONE);
+                if (tvHeaderStatus != null) tvHeaderStatus.setVisibility(GONE);
 
                 break;
             case 1:
@@ -201,9 +214,17 @@ public class MainActivity extends AppCompatActivity {
                 if (discoverFragment != null) tx.hide(discoverFragment);
                 if (myProfileFragment != null) tx.hide(myProfileFragment);
                 tx.show(friendsFragment);
-                tvTitle.setText("联系人");
-                btnMore.setVisibility(GONE);
+                tvTitle.setText(R.string.tab_contact);
+                btnMore.setVisibility(VISIBLE);
                 btnSearch.setVisibility(GONE);
+                btnMore.setOnClickListener(v -> {
+                    if (!authGuard.requireValidSessionForWrite(this, "main.contact.add_friend")) {
+                        return;
+                    }
+                    startActivity(new Intent(this, AddFriendActivity.class));
+                });
+                if (headerProfileArea != null) headerProfileArea.setVisibility(GONE);
+                if (tvHeaderStatus != null) tvHeaderStatus.setVisibility(GONE);
                 break;
             case 3:
                 if (myProfileFragment == null) {
@@ -217,6 +238,8 @@ public class MainActivity extends AppCompatActivity {
                 tvTitle.setText("我");
                 btnMore.setVisibility(GONE);
                 btnSearch.setVisibility(GONE);
+                if (headerProfileArea != null) headerProfileArea.setVisibility(GONE);
+                if (tvHeaderStatus != null) tvHeaderStatus.setVisibility(GONE);
 
                 break;
             default:
@@ -241,9 +264,11 @@ public class MainActivity extends AppCompatActivity {
                 return;
             } else {
                 vStatus.setText("连接失败，请检查网络");
+                updateHeaderStatus(getString(R.string.main_status_connecting));
             }
         } else {
             v.setVisibility(GONE);
+            updateHeaderStatus("");
         }
     }
 
@@ -302,6 +327,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        dismissMainAddActionsPopupIfNeeded();
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this);
         }
@@ -310,10 +336,100 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
+            dismissMainAddActionsPopupIfNeeded();
             // 当用户按下返回键时，将应用移至后台而不是关闭
             moveTaskToBack(true);
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    private void showMainAddActionsPopup(View anchor) {
+        if (mainAddActionPopup != null && mainAddActionPopup.isShowing()) {
+            mainAddActionPopup.dismiss();
+            return;
+        }
+        View content = LayoutInflater.from(this).inflate(R.layout.layout_main_add_action_popup, null);
+        mainAddActionPopup = new PopupWindow(
+                content,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                true);
+        mainAddActionPopup.setOutsideTouchable(true);
+        mainAddActionPopup.setFocusable(true);
+        mainAddActionPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        mainAddActionPopup.setElevation(dp(8));
+        mainAddActionPopup.setOnDismissListener(() -> mainAddActionPopup = null);
+
+        content.findViewById(R.id.action_create_group).setOnClickListener(v -> {
+            if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.create_group")) {
+                return;
+            }
+            startActivity(new Intent(MainActivity.this, CreateGroupActivity.class));
+            dismissMainAddActionsPopupIfNeeded();
+        });
+        content.findViewById(R.id.action_add_friend).setOnClickListener(v -> {
+            if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.add_friend")) {
+                return;
+            }
+            startActivity(new Intent(MainActivity.this, AddFriendActivity.class));
+            dismissMainAddActionsPopupIfNeeded();
+        });
+        content.findViewById(R.id.action_scan_qr).setOnClickListener(v -> {
+            Toast.makeText(MainActivity.this, R.string.scan_qr_todo, Toast.LENGTH_SHORT).show();
+            dismissMainAddActionsPopupIfNeeded();
+        });
+
+        content.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int popupWidth = content.getMeasuredWidth();
+        int xoff = anchor.getWidth() - popupWidth;
+        mainAddActionPopup.showAsDropDown(anchor, xoff, dp(8));
+    }
+
+    private void dismissMainAddActionsPopupIfNeeded() {
+        if (mainAddActionPopup != null && mainAddActionPopup.isShowing()) {
+            mainAddActionPopup.dismiss();
+        }
+    }
+
+    private int dp(int value) {
+        return Math.round(getResources().getDisplayMetrics().density * value);
+    }
+
+    /**
+     * 顶部左侧个人信息：显示当前登录用户头像、昵称和用户 ID。
+     * 仅用于 UI 头部展示，不参与业务写入。
+     */
+    private void updateHeaderProfile() {
+        if (tvHeaderName == null || tvHeaderUserId == null || ivHeaderAvatar == null) {
+            return;
+        }
+        String displayName = trimToEmpty(ConfigUtils.myName);
+        if (displayName.isEmpty()) {
+            displayName = getString(R.string.main_default_user_name);
+        }
+        tvHeaderName.setText(displayName);
+
+        String userId = trimToEmpty(JIM.getInstance().getCurrentUserId());
+        tvHeaderUserId.setText(userId.isEmpty() ? "" : "@" + userId);
+        AvatarUtils.loadAvatar(ivHeaderAvatar, ConfigUtils.myAvatarUrl, displayName);
+    }
+
+    /**
+     * 顶部中间副标题（例如“正在连接…”）。
+     */
+    private void updateHeaderStatus(String status) {
+        if (tvHeaderStatus == null) {
+            return;
+        }
+        String safeStatus = trimToEmpty(status);
+        tvHeaderStatus.setText(safeStatus);
+        tvHeaderStatus.setVisibility(safeStatus.isEmpty() ? GONE : VISIBLE);
+    }
+
+    private String trimToEmpty(String value) {
+        return value == null ? "" : value.trim();
     }
 }

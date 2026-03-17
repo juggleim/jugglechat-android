@@ -29,73 +29,77 @@
             android:gravity="end"
             android:orientation="horizontal">
 
-            <ImageView
-                android:id="@+id/send_error"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:layout_gravity="start|center_vertical"
-                android:layout_marginEnd="8dp"
-                android:contentDescription="select"
-                android:src="@drawable/ic_send_error"
-                android:visibility="gone" />
-
-            <ProgressBar
-                android:id="@+id/msg_send_status"
-                android:indeterminateDrawable="@drawable/msg_loading"
-                style="?android:attr/progressBarStyleSmallInverse"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_gravity="start|center_vertical"
-                android:indeterminate="true"
-                android:indeterminateTint="@color/black"
-                android:visibility="gone" />
-
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:gravity="end"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:background="@drawable/bg_message_sent"
+                android:paddingStart="4dp"
+                android:paddingTop="3dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="2dp">
 
                 <!-- container where a single content layout will be inflated at runtime -->
                 <LinearLayout
                     android:orientation="vertical"
                     android:id="@+id/message_content_container"
                     android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <LinearLayout
+                    android:id="@+id/msg_status_container"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_message_sent" />
+                    android:layout_gravity="end"
+                    android:gravity="center_vertical|end"
+                    android:orientation="horizontal"
+                    android:paddingStart="2dp"
+                    android:paddingTop="2dp"
+                    android:paddingEnd="2dp"
+                    android:paddingBottom="1dp">
+
+                    <TextView
+                        android:id="@+id/msg_sent_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="#CCFFFFFF"
+                        android:textSize="11sp"
+                        tools:text="10:01" />
+
+                    <FrameLayout
+                        android:layout_width="16dp"
+                        android:layout_height="16dp">
+                        <ImageView
+                            android:id="@+id/msg_read_status"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="4dp"
+                            android:visibility="gone"
+                            android:src="@drawable/ic_msg_read" />
+                        <ProgressBar
+                            android:id="@+id/msg_send_status"
+                            android:indeterminateDrawable="@drawable/ic_msg_sending"
+                            style="?android:attr/progressBarStyleSmallInverse"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_gravity="start|center_vertical"
+                            android:indeterminate="true"
+                            android:indeterminateTint="@color/black"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
+
+                </LinearLayout>
             </LinearLayout>
 
             <ImageView
                 android:id="@+id/image_avatar"
                 android:layout_width="40dp"
                 android:layout_height="40dp"
-                android:contentDescription="avatar"
                 android:src="@drawable/ic_avatar_placeholder" />
 
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/msg_status_container"
-            android:layout_width="wrap_content"
-            android:layout_height="24dp"
-            android:layout_marginRight="40dp"
-            android:gravity="center_vertical|end"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/msg_sent_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                tools:text="10:01"
-                android:textColor="@color/gray"
-                android:textSize="10sp" />
-
-            <ImageView
-                android:id="@+id/msg_read_status"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@drawable/ic_msg_read" />
         </LinearLayout>
     </LinearLayout>
 

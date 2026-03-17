@@ -14,34 +14,35 @@
         <LinearLayout
             android:id="@+id/input_action_bar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="50dp"
             android:background="@color/input_bg_light"
-            android:gravity="bottom"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:padding="8dp">
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
 
             <ImageView
                 android:id="@+id/button_voice"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="voice"
-                android:padding="6dp"
-                android:src="@drawable/ic_input_voice" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_chat_input_voice_design" />
 
             <LinearLayout
                 android:id="@+id/input_area"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:layout_weight="1"
-                android:background="@drawable/action_input_background"
-                android:orientation="vertical"
-                android:padding="8dp">
+                android:background="@drawable/bg_chat_input_field"
+                android:gravity="center_vertical"
+                android:orientation="vertical">
 
                 <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_gravity="center_vertical">
 
                     <com.juggle.im.android.chat.view.SendImeEditText
@@ -53,9 +54,13 @@
                         android:hint="@string/input_msg"
                         android:inputType="textMultiLine"
                         android:maxLines="4"
-                        android:minHeight="28dp"
+                        android:minHeight="40dp"
                         android:minLines="1"
                         android:focusable="true"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:textColor="@color/title"
+                        android:textColorHint="@color/conversation_secondary_text"
                         android:textSize="14sp"
                         android:focusableInTouchMode="true"
                         android:cursorVisible="true"
@@ -67,7 +72,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
-                        android:minHeight="28dp"
+                        android:minHeight="40dp"
                         android:visibility="gone" />
                 </FrameLayout>
 
@@ -75,20 +80,20 @@
 
             <ImageView
                 android:id="@+id/button_emoji"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="emoji"
-                android:padding="6dp"
-                android:src="@drawable/ic_input_emoji" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_chat_input_emoji_design" />
 
             <ImageView
                 android:id="@+id/button_more"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="12dp"
                 android:contentDescription="more"
-                android:padding="6dp"
-                android:src="@drawable/ic_input_more" />
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_chat_input_more_design" />
 
         </LinearLayout>
 
@@ -98,9 +103,9 @@
             android:id="@+id/refer_msg_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="50dp"
+            android:layout_marginStart="52dp"
             android:layout_marginTop="2dp"
-            android:layout_marginEnd="95dp"
+            android:layout_marginEnd="88dp"
             android:layout_marginBottom="4dp"
             android:background="@color/app_primary_inverse"
             tools:visibility="visible"

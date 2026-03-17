@@ -85,6 +85,14 @@
             android:name=".app.FriendApplicationsActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".app.MyGroupsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".app.BlockUsersActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name="com.juggle.im.android.app.LoginActivity"

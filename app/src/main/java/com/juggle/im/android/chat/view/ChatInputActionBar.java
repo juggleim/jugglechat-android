@@ -5,9 +5,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -18,7 +16,7 @@ import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.util.TypedValue;
-import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.GridView;
@@ -36,16 +34,13 @@ import com.juggle.im.android.chat.mention.MentionConfig;
 import com.juggle.im.android.chat.mention.MentionManager;
 import com.juggle.im.android.chat.mention.MentionModel;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
-import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
 import com.juggle.im.android.chat.plugin.MorePlugin;
+import com.juggle.im.android.chat.plugin.TimedDeletePlugin;
 import com.juggle.im.android.chat.plugin.VideoCallPlugin;
 import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
-import com.juggle.im.model.MessageMentionInfo;
 
 import androidx.core.app.ActivityCompat;
-import androidx.viewpager.widget.PagerAdapter;
-import androidx.viewpager.widget.ViewPager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -67,6 +62,8 @@ public class ChatInputActionBar extends LinearLayout {
     private Map<Integer, MorePlugin> activityResultHandlers = new HashMap<>();
     private Map<String, MorePlugin> pluginRegistry = new HashMap<>();
     private final PluginPermissionDispatcher pluginPermissionDispatcher = new PluginPermissionDispatcher();
+    private final List<EmojiTabConfig> emojiTabs = new ArrayList<>();
+    private int emojiTabIndex = 0;
 
     private enum InputMode {TEXT, VOICE, EMOJI, MORE}
 
@@ -128,6 +125,17 @@ public class ChatInputActionBar extends LinearLayout {
         this.listener = l;
     }
 
+    public void setInputHint(String hint) {
+        if (editTextInput == null) {
+            return;
+        }
+        if (TextUtils.isEmpty(hint)) {
+            editTextInput.setHint(R.string.input_msg);
+            return;
+        }
+        editTextInput.setHint(hint);
+    }
+
     public ChatInputActionBar(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         LayoutInflater.from(context).inflate(R.layout.chat_input_action_bar, this, true);
@@ -170,9 +178,9 @@ public class ChatInputActionBar extends LinearLayout {
         pluginRegistry.clear();
         registerMorePlugin(new ImagePlugin(cb));
         registerMorePlugin(new CameraPlugin(cb));
-        registerMorePlugin(new FilePlugin(cb));
         registerMorePlugin(new VoiceCallPlugin(cb));
         registerMorePlugin(new VideoCallPlugin(cb));
+        registerMorePlugin(new TimedDeletePlugin(cb));
     }
 
     /**
@@ -192,8 +200,20 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void setupListeners() {
         btnVoice.setOnClickListener(v -> toggleVoiceMode());
-        btnEmoji.setOnClickListener(v -> switchMode(InputMode.EMOJI));
-        btnMore.setOnClickListener(v -> switchMode(InputMode.MORE));
+        btnEmoji.setOnClickListener(v -> {
+            if (currentMode == InputMode.EMOJI) {
+                switchMode(InputMode.TEXT);
+            } else {
+                switchMode(InputMode.EMOJI);
+            }
+        });
+        btnMore.setOnClickListener(v -> {
+            if (currentMode == InputMode.MORE) {
+                switchMode(InputMode.TEXT);
+            } else {
+                switchMode(InputMode.MORE);
+            }
+        });
 
         editTextInput.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
@@ -417,6 +437,10 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void switchMode(InputMode mode) {
         currentMode = mode;
+        btnEmoji.setImageResource(mode == InputMode.EMOJI
+                ? R.drawable.ic_input_keyboard
+                : R.drawable.ic_chat_input_emoji_design);
+        btnMore.setImageResource(R.drawable.ic_chat_input_more_design);
         InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
         switch (mode) {
             case TEXT:
@@ -449,12 +473,12 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     private void ensurePanelHeight(boolean keyboardVisible) {
-        // if we know keyboard height, use it; otherwise fallback to 250dp
+        // if we know keyboard height, use it; otherwise fallback to configured panel height
         ViewGroup.LayoutParams lp = panelContainer.getLayoutParams();
         if (keyboardHeight > 0 && keyboardVisible) {
             lp.height = keyboardHeight - difference;
         } else {
-            lp.height = (int) (getResources().getDisplayMetrics().density * 250);
+            lp.height = getResources().getDimensionPixelSize(R.dimen.input_panel_height);
         }
         panelContainer.setLayoutParams(lp);
     }
@@ -553,7 +577,7 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void showInputArea(boolean showEdit) {
         // restore input area: ensure edit visible and remove voice view if present
-        btnVoice.setImageResource(R.drawable.ic_input_voice);
+        btnVoice.setImageResource(R.drawable.ic_chat_input_voice_design);
         editTextInput.setVisibility(VISIBLE);
         if (voiceActionView != null) voiceActionView.hide();
         if (showEdit && listener != null) listener.onKeyboardVisibilityChanged(true);
@@ -604,49 +628,59 @@ public class ChatInputActionBar extends LinearLayout {
 
     private View getEmojiPanel() {
         if (emojiPanel != null) return emojiPanel;
-        final List<String> emojis = buildEmojiListLarge();
-        // Always create a fresh panel instance to avoid stale view state after hide/show
-        // cycles which can make GridView's onItemClick stop firing.
+        ensureEmojiTabs();
         View panel = LayoutInflater.from(getContext()).inflate(R.layout.panel_emoji, panelContainer, false);
         GridView grid = panel.findViewById(R.id.emoji_grid);
-        // Defensive: ensure the panel itself does not capture clicks or focus
-        panel.setClickable(false);
-        panel.setFocusable(false);
-        panel.setFocusableInTouchMode(false);
-        // Diagnostic touch listener: will log touch actions but NOT consume them
-        grid.setOnTouchListener((v, event) -> {
-            Log.d("ChatInputActionBar", "emoji grid touch action=" + event.getAction() + " viewVisible=" + v.isShown());
-            return false; // do not consume; allow normal processing
-        });
-        // Prevent children from taking focus/clicks
-        grid.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-        grid.setFocusable(false);
-        grid.setFocusableInTouchMode(false);
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), R.layout.emoji_item, emojis) {
+        LinearLayout tabContainer = panel.findViewById(R.id.emoji_tab_container);
+
+        BaseAdapter adapter = new BaseAdapter() {
             @Override
-            public View getView(int pos, View convertView, ViewGroup parent) {
-                TextView tv = (TextView) super.getView(pos, convertView, parent);
-                tv.setText(getItem(pos));
+            public int getCount() {
+                return getCurrentEmojiList().size();
+            }
+
+            @Override
+            public Object getItem(int position) {
+                List<String> current = getCurrentEmojiList();
+                if (position < 0 || position >= current.size()) {
+                    return "";
+                }
+                return current.get(position);
+            }
+
+            @Override
+            public long getItemId(int position) {
+                return position;
+            }
+
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView tv;
+                if (convertView instanceof TextView) {
+                    tv = (TextView) convertView;
+                } else {
+                    tv = (TextView) LayoutInflater.from(getContext()).inflate(R.layout.emoji_item, parent, false);
+                }
+                tv.setText((String) getItem(position));
                 tv.setGravity(Gravity.CENTER);
-                // make sure the item view itself is not focusable/click-blocking
                 tv.setFocusable(false);
-                tv.setFocusableInTouchMode(false);
-                // allow click so ripple shows; GridView still delivers item clicks
                 tv.setClickable(false);
                 return tv;
             }
         };
+
         grid.setAdapter(adapter);
         grid.setOnItemClickListener((parent, view, pos, id) -> {
             Object item = parent.getItemAtPosition(pos);
-            if (item instanceof String) {
-                String e = (String) item;
-                int start = Math.max(editTextInput.getSelectionStart(), 0);
-                editTextInput.getText().insert(start, e);
+            if (!(item instanceof String)) {
+                return;
             }
+            String emoji = (String) item;
+            int start = Math.max(editTextInput.getSelectionStart(), 0);
+            editTextInput.getText().insert(start, emoji);
         });
+        renderEmojiTabs(tabContainer, adapter);
 
-        // floating delete and send buttons (stay fixed)
         View deleteBtn = panel.findViewById(R.id.emoji_delete);
         View sendBtn = panel.findViewById(R.id.emoji_send);
         if (deleteBtn != null) {
@@ -666,8 +700,74 @@ public class ChatInputActionBar extends LinearLayout {
         return panel;
     }
 
+    private void ensureEmojiTabs() {
+        if (!emojiTabs.isEmpty()) {
+            return;
+        }
+        List<String> source = buildEmojiListLarge();
+        int tabCount = 1;
+        int perTab = (int) Math.ceil(source.size() / (double) tabCount);
+        for (int i = 0; i < tabCount; i++) {
+            int start = i * perTab;
+            int end = Math.min(start + perTab, source.size());
+            List<String> tabEmojis = new ArrayList<>();
+            if (start < end) {
+                tabEmojis.addAll(source.subList(start, end));
+            } else {
+                tabEmojis.addAll(source);
+            }
+            int iconRes = i == 0
+                    ? R.drawable.ic_emoji_tab_default_design
+                    : R.drawable.ic_emoji_tab_pack_design;
+            emojiTabs.add(new EmojiTabConfig(iconRes, tabEmojis));
+        }
+    }
+
+    private List<String> getCurrentEmojiList() {
+        if (emojiTabs.isEmpty()) {
+            return new ArrayList<>();
+        }
+        int safeIndex = Math.max(0, Math.min(emojiTabIndex, emojiTabs.size() - 1));
+        return emojiTabs.get(safeIndex).emojis;
+    }
+
+    private void renderEmojiTabs(LinearLayout tabContainer, BaseAdapter adapter) {
+        if (tabContainer == null) {
+            return;
+        }
+        tabContainer.removeAllViews();
+        for (int i = 0; i < emojiTabs.size(); i++) {
+            FrameLayout tabView = new FrameLayout(getContext());
+            LinearLayout.LayoutParams tabLp = new LinearLayout.LayoutParams(dp(40), dp(40));
+            if (i > 0) tabLp.leftMargin = dp(12);
+            tabView.setLayoutParams(tabLp);
+            if (i == emojiTabIndex) {
+                tabView.setBackgroundResource(R.drawable.bg_emoji_tab_selected);
+            } else {
+                tabView.setBackgroundColor(getResources().getColor(android.R.color.transparent));
+            }
+
+            ImageView tabIcon = new ImageView(getContext());
+            FrameLayout.LayoutParams iconLp = new FrameLayout.LayoutParams(dp(24), dp(24), Gravity.CENTER);
+            tabIcon.setLayoutParams(iconLp);
+            tabIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            tabIcon.setImageResource(emojiTabs.get(i).iconRes);
+            tabView.addView(tabIcon);
+
+            final int index = i;
+            tabView.setOnClickListener(v -> {
+                if (emojiTabIndex == index) {
+                    return;
+                }
+                emojiTabIndex = index;
+                adapter.notifyDataSetChanged();
+                renderEmojiTabs(tabContainer, adapter);
+            });
+            tabContainer.addView(tabView);
+        }
+    }
+
     private List<String> buildEmojiListLarge() {
-        // extended emoji list (sample)
         String[] arr = new String[]{"\uD83D\uDE00", "\uD83D\uDE01", "\uD83D\uDE02", "\uD83D\uDE03", "\uD83D\uDE04", "\uD83D\uDE05", "\uD83D\uDE06", "\uD83D\uDE09", "\uD83D\uDE0A", "\uD83D\uDE0B", "\uD83D\uDE0D", "\uD83D\uDE0E", "\uD83D\uDE0F", "\uD83D\uDE12", "\uD83D\uDE14", "\uD83D\uDE1C", "\uD83D\uDE1D", "\uD83D\uDE1E", "\uD83D\uDE20", "\uD83D\uDE21", "\uD83D\uDE22", "\uD83D\uDE23", "\uD83D\uDE24", "\uD83D\uDE25", "\uD83D\uDE28", "\uD83D\uDE2A", "\uD83D\uDE2D", "\uD83D\uDE30", "\uD83D\uDE31", "\uD83D\uDE32", "\uD83D\uDE33", "\uD83D\uDE34", "\uD83D\uDE35", "\uD83D\uDE36", "\uD83D\uDE37", "\uD83D\uDE38", "\uD83D\uDE39", "\uD83D\uDE3A", "\uD83D\uDE3B", "\uD83D\uDE3C", "\uD83D\uDE3D", "\uD83D\uDE3E", "\uD83D\uDE3F", "\uD83D\uDE40", "\uD83D\uDE41", "\uD83D\uDE42", "\uD83D\uDE43", "\uD83D\uDE44", "\uD83D\uDE45", "\uD83D\uDE46", "\uD83D\uDE47", "\uD83D\uDE48", "\uD83D\uDE49", "\uD83D\uDE4A", "\uD83D\uDE4B"};
         List<String> list = new ArrayList<>();
         for (String s : arr) list.add(s);
@@ -688,6 +788,10 @@ public class ChatInputActionBar extends LinearLayout {
             }
         }
         editTextInput.getText().delete(deleteFrom, sel);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     /**
@@ -712,116 +816,76 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     private View getMorePanel() {
-        if (morePanel == null) {
-            morePanel = LayoutInflater.from(getContext()).inflate(R.layout.panel_more, panelContainer, false);
-            // replace existing grid container with a ViewPager that pages plugins 4x2
-            View existing = morePanel.findViewById(R.id.grid_more);
-            ViewGroup parent = null;
-            int index = -1;
-            if (existing != null) {
-                parent = (ViewGroup) existing.getParent();
-                for (int i = 0; i < parent.getChildCount(); i++) {
-                    if (parent.getChildAt(i) == existing) {
-                        index = i;
-                        break;
-                    }
+        if (morePanel != null) {
+            return morePanel;
+        }
+        morePanel = LayoutInflater.from(getContext()).inflate(R.layout.panel_more, panelContainer, false);
+        GridLayout grid = morePanel.findViewById(R.id.grid_more);
+        if (grid == null) {
+            return morePanel;
+        }
+        grid.removeAllViews();
+        final int columns = 4;
+        for (int i = 0; i < morePlugins.size(); i++) {
+            MorePlugin plugin = morePlugins.get(i);
+            if (getContext() instanceof Activity) {
+                try {
+                    plugin.setHostActivity((Activity) getContext());
+                } catch (Exception ignored) {
                 }
-                parent.removeView(existing);
             }
 
-            ViewPager pager = new ViewPager(getContext());
-            pager.setId(View.generateViewId());
-            int pad = (int) (8 * getResources().getDisplayMetrics().density);
-            pager.setPadding(pad, pad, pad, pad);
+            int row = i / columns;
+            int col = i % columns;
 
-            // build pages: 4 cols x 2 rows = 8 per page
-            final int perPage = 8;
-            List<View> pages = new ArrayList<>();
-            int total = morePlugins.size();
-            int pageCount = (total + perPage - 1) / perPage;
-            for (int p = 0; p < pageCount; p++) {
-                GridLayout grid = new GridLayout(getContext());
-                grid.setColumnCount(4);
-                grid.setRowCount(2);
-                grid.setUseDefaultMargins(true);
-                grid.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                int start = p * perPage;
-                int end = Math.min(start + perPage, total);
-                for (int i = start; i < end; i++) {
-                    com.juggle.im.android.chat.plugin.MorePlugin plugin = morePlugins.get(i);
-                    // provide host activity reference to plugin so it can call startActivityForResult
-                    if (getContext() instanceof Activity) {
-                        try {
-                            plugin.setHostActivity((Activity) getContext());
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    LinearLayout item = new LinearLayout(getContext());
-                    item.setOrientation(LinearLayout.VERTICAL);
-                    item.setGravity(Gravity.CENTER);
-                    ImageView iv = new ImageView(getContext());
-                    iv.setImageResource(plugin.getIconRes());
-                    LinearLayout.LayoutParams ivlp = new LinearLayout.LayoutParams((int) (48 * getResources().getDisplayMetrics().density), (int) (48 * getResources().getDisplayMetrics().density));
-                    iv.setLayoutParams(ivlp);
-                    TextView tv = new TextView(getContext());
-                    tv.setText(plugin.getLabel(getContext()));
-                    tv.setTextSize(12);
-                    tv.setGravity(Gravity.CENTER);
-                    GridLayout.LayoutParams glp = new GridLayout.LayoutParams();
-                    glp.width = 0;
-                    glp.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                    glp.rowSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-                    item.addView(iv);
-                    item.addView(tv);
-                    int padding = (int) (8 * getResources().getDisplayMetrics().density);
-                    item.setPadding(padding, padding, padding, padding);
-                    final com.juggle.im.android.chat.plugin.MorePlugin pplugin = plugin;
-                    // make plugin item show touch feedback
-                    item.setClickable(true);
-                    item.setFocusable(true);
-                    applySelectableBackground(item, android.R.attr.selectableItemBackground);
-                    item.setOnClickListener(v -> {
-                        Activity act = null;
-                        if (getContext() instanceof Activity) act = (Activity) getContext();
-                        final Activity activity = act;
-                        pplugin.onClick(activity);
-                    });
-                    grid.addView(item, glp);
-                }
-                pages.add(grid);
-            }
+            LinearLayout item = new LinearLayout(getContext());
+            item.setOrientation(LinearLayout.VERTICAL);
+            item.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL);
 
-            PagerAdapter adapter = new PagerAdapter() {
-                @Override
-                public int getCount() {
-                    return pages.size();
-                }
+            GridLayout.LayoutParams itemLp = new GridLayout.LayoutParams(
+                    GridLayout.spec(row),
+                    GridLayout.spec(col)
+            );
+            itemLp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            itemLp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            int topMargin = row == 0 ? 0 : dp(30);
+            int rightMargin = col == columns - 1 ? 0 : dp(34);
+            itemLp.setMargins(0, topMargin, rightMargin, 0);
+            item.setLayoutParams(itemLp);
 
-                @Override
-                public boolean isViewFromObject(View view, Object object) {
-                    return view == object;
-                }
+            FrameLayout iconContainer = new FrameLayout(getContext());
+            LinearLayout.LayoutParams iconContainerLp = new LinearLayout.LayoutParams(dp(53), dp(53));
+            iconContainer.setLayoutParams(iconContainerLp);
+            iconContainer.setBackgroundResource(R.drawable.bg_more_item_icon);
 
-                @Override
-                public Object instantiateItem(ViewGroup container, int position) {
-                    View v = pages.get(position);
-                    container.addView(v);
-                    return v;
-                }
+            ImageView icon = new ImageView(getContext());
+            FrameLayout.LayoutParams iconLp = new FrameLayout.LayoutParams(dp(27), dp(27), Gravity.CENTER);
+            icon.setLayoutParams(iconLp);
+            icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            icon.setImageResource(plugin.getIconRes());
+            iconContainer.addView(icon);
 
-                @Override
-                public void destroyItem(ViewGroup container, int position, Object object) {
-                    container.removeView((View) object);
-                }
-            };
-            pager.setAdapter(adapter);
+            TextView label = new TextView(getContext());
+            LinearLayout.LayoutParams labelLp = new LinearLayout.LayoutParams(dp(53), ViewGroup.LayoutParams.WRAP_CONTENT);
+            labelLp.topMargin = dp(3);
+            label.setLayoutParams(labelLp);
+            label.setText(plugin.getLabel(getContext()));
+            label.setTextColor(getResources().getColor(R.color.conversation_secondary_text));
+            label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+            label.setGravity(Gravity.CENTER);
 
-            if (parent != null && index >= 0) {
-                parent.addView(pager, index);
-            } else {
-                // fallback: add pager to root of morePanel
-                ((ViewGroup) morePanel).addView(pager);
-            }
+            item.addView(iconContainer);
+            item.addView(label);
+
+            final MorePlugin clickPlugin = plugin;
+            item.setClickable(true);
+            item.setFocusable(true);
+            applySelectableBackground(item, android.R.attr.selectableItemBackground);
+            item.setOnClickListener(v -> {
+                Activity act = getContext() instanceof Activity ? (Activity) getContext() : null;
+                clickPlugin.onClick(act);
+            });
+            grid.addView(item);
         }
         return morePanel;
     }
@@ -855,6 +919,16 @@ public class ChatInputActionBar extends LinearLayout {
             return handled;
         }
         return false;
+    }
+
+    private static final class EmojiTabConfig {
+        private final int iconRes;
+        private final List<String> emojis;
+
+        private EmojiTabConfig(int iconRes, List<String> emojis) {
+            this.iconRes = iconRes;
+            this.emojis = emojis;
+        }
     }
 
     /**
