@@ -65,6 +65,8 @@ public class ChatInputActionBar extends LinearLayout {
     // plugin system
     private List<MorePlugin> morePlugins = new ArrayList<>();
     private Map<Integer, MorePlugin> activityResultHandlers = new HashMap<>();
+    private Map<String, MorePlugin> pluginRegistry = new HashMap<>();
+    private final PluginPermissionDispatcher pluginPermissionDispatcher = new PluginPermissionDispatcher();
 
     private enum InputMode {TEXT, VOICE, EMOJI, MORE}
 
@@ -153,7 +155,10 @@ public class ChatInputActionBar extends LinearLayout {
 
             @Override
             public void requestPermissions(String[] permissions, int reqCode, String pid) {
-                ActivityCompat.requestPermissions((Activity) getContext(), permissions, reqCode);
+                pluginPermissionDispatcher.registerPendingRequest(reqCode, pid, permissions);
+                if (getContext() instanceof Activity) {
+                    ActivityCompat.requestPermissions((Activity) getContext(), permissions, reqCode);
+                }
             }
 
             @Override
@@ -162,11 +167,27 @@ public class ChatInputActionBar extends LinearLayout {
             }
         };
         morePlugins.clear();
-        morePlugins.add(new ImagePlugin(cb));
-        morePlugins.add(new CameraPlugin(cb));
-        morePlugins.add(new FilePlugin(cb));
-        morePlugins.add(new VoiceCallPlugin(cb));
-        morePlugins.add(new VideoCallPlugin(cb));
+        pluginRegistry.clear();
+        registerMorePlugin(new ImagePlugin(cb));
+        registerMorePlugin(new CameraPlugin(cb));
+        registerMorePlugin(new FilePlugin(cb));
+        registerMorePlugin(new VoiceCallPlugin(cb));
+        registerMorePlugin(new VideoCallPlugin(cb));
+    }
+
+    /**
+     * 插件统一注册入口，保证后续权限分发和渲染都基于同一份注册表。
+     * 新增插件时只需要调用该方法即可进入完整生命周期。
+     */
+    private void registerMorePlugin(MorePlugin plugin) {
+        if (plugin == null) {
+            return;
+        }
+        morePlugins.add(plugin);
+        String pluginId = plugin.getId();
+        if (!TextUtils.isEmpty(pluginId)) {
+            pluginRegistry.put(pluginId, plugin);
+        }
     }
 
     private void setupListeners() {
@@ -807,7 +828,17 @@ public class ChatInputActionBar extends LinearLayout {
 
     // To be called from Activity's onRequestPermissionsResult
     public void onPluginRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-
+        PluginPermissionDispatcher.PermissionDispatchResult result =
+                pluginPermissionDispatcher.consumeResult(requestCode, grantResults);
+        if (result == null) {
+            return;
+        }
+        MorePlugin plugin = pluginRegistry.get(result.getPluginId());
+        if (plugin == null) {
+            return;
+        }
+        Activity hostActivity = getContext() instanceof Activity ? (Activity) getContext() : null;
+        plugin.onRequestPermissionsResult(hostActivity, requestCode, result.getPermissions(), grantResults);
     }
 
     /**
@@ -824,5 +855,91 @@ public class ChatInputActionBar extends LinearLayout {
             return handled;
         }
         return false;
+    }
+
+    /**
+     * 插件权限请求分发器，负责维护 requestCode -> pluginId 的临时映射。
+     *
+     * <p>该类不依赖 Android View 生命周期，便于在本地单元测试直接验证
+     * 「权限请求登记 -> 权限结果消费」闭环。</p>
+     */
+    public static final class PluginPermissionDispatcher {
+        private final Map<Integer, PendingPermissionRequest> pendingPermissionRequests = new HashMap<>();
+
+        /**
+         * 记录一次待处理的权限请求。
+         */
+        public void registerPendingRequest(int requestCode, String pluginId, String[] permissions) {
+            if (pluginId == null || pluginId.trim().isEmpty()) {
+                return;
+            }
+            String[] safePermissions = permissions == null ? new String[0] : permissions.clone();
+            pendingPermissionRequests.put(requestCode, new PendingPermissionRequest(pluginId, safePermissions));
+        }
+
+        /**
+         * 消费一次权限结果。若不存在对应 requestCode，则返回 null。
+         */
+        @Nullable
+        public PermissionDispatchResult consumeResult(int requestCode, int[] grantResults) {
+            PendingPermissionRequest pendingPermissionRequest = pendingPermissionRequests.remove(requestCode);
+            if (pendingPermissionRequest == null) {
+                return null;
+            }
+            boolean granted = areAllPermissionsGranted(grantResults);
+            return new PermissionDispatchResult(
+                    pendingPermissionRequest.pluginId,
+                    pendingPermissionRequest.permissions,
+                    granted);
+        }
+
+        private static boolean areAllPermissionsGranted(int[] grantResults) {
+            if (grantResults == null || grantResults.length == 0) {
+                return false;
+            }
+            for (int grantResult : grantResults) {
+                if (grantResult != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static final class PendingPermissionRequest {
+            private final String pluginId;
+            private final String[] permissions;
+
+            private PendingPermissionRequest(String pluginId, String[] permissions) {
+                this.pluginId = pluginId;
+                this.permissions = permissions;
+            }
+        }
+
+        /**
+         * 权限结果的标准化输出，供输入面板决定下一步分发策略。
+         */
+        public static final class PermissionDispatchResult {
+            private final String pluginId;
+            private final String[] permissions;
+            private final boolean granted;
+
+            private PermissionDispatchResult(String pluginId, String[] permissions, boolean granted) {
+                this.pluginId = pluginId;
+                this.permissions = permissions;
+                this.granted = granted;
+            }
+
+            public String getPluginId() {
+                return pluginId;
+            }
+
+            public String[] getPermissions() {
+                return permissions.clone();
+            }
+
+            public boolean isGranted() {
+                return granted;
+            }
+        }
     }
 }

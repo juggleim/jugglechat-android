@@ -3,6 +3,7 @@ package com.juggle.im.android.chat.plugin;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 
 /**
  * Interface describing a "more" panel plugin item.
@@ -39,6 +40,22 @@ public abstract class MorePlugin {
      */
     public abstract void onClick(Activity activity);
 
+    /**
+     * Runtime permission callback entry.
+     *
+     * <p>Default behavior:
+     * if all permissions are granted, trigger {@link #onClick(Activity)} again so plugin
+     * logic stays in one place. Custom plugins can override for finer control.</p>
+     */
+    public void onRequestPermissionsResult(Activity activity,
+                                           int requestCode,
+                                           String[] permissions,
+                                           int[] grantResults) {
+        if (arePermissionsGranted(grantResults)) {
+            onClick(activity);
+        }
+    }
+
     public interface Callback {
         /**
          * Notify host that plugin wants to perform an action.
@@ -67,4 +84,19 @@ public abstract class MorePlugin {
      * Return true if the plugin consumed the result.
      */
     public abstract boolean onActivityResult(int requestCode, int resultCode, Intent data);
+
+    /**
+     * Helper for plugin implementations to evaluate runtime permission grant state.
+     */
+    protected final boolean arePermissionsGranted(int[] grantResults) {
+        if (grantResults == null || grantResults.length == 0) {
+            return false;
+        }
+        for (int grantResult : grantResults) {
+            if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

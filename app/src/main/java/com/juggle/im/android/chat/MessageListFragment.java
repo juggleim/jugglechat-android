@@ -43,7 +43,25 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public class MessageListFragment extends Fragment {
+/**
+ * 会话消息流对外契约。
+ *
+ * <p>上层容器（Activity）仅依赖该接口即可分发消息事件与输入态事件，
+ * 避免直接耦合具体 Fragment 实现，方便后续替换为 ViewModel/UDF 容器。</p>
+ */
+interface MessageStreamSink {
+    void onNewMessage(Message message);
+
+    void onUpdateMessage(List<Message> messages);
+
+    void scrollToBottomIfNeeded();
+
+    void insertMention(ArrayList<String> userIds, ArrayList<String> userNames);
+
+    void showKeyboardIfNeed();
+}
+
+public class MessageListFragment extends Fragment implements MessageStreamSink {
     private static final String ARG_CONV_ID = "arg_conv_id";
     private static final String ARG_IS_GROUP = "arg_is_group";
     private static final String ARG_UNREAD_COUNT = "arg_unread_count";

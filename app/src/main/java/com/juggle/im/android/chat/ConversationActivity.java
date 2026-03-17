@@ -16,14 +16,13 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -67,7 +66,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class ConversationActivity extends AppCompatActivity {
     public static final String EXTRA_CONVERSATION_ID = "extra_conversation_id";
@@ -83,7 +81,6 @@ public class ConversationActivity extends AppCompatActivity {
     private boolean isGroup;
     private String conversationId;
     private Conversation conversation;
-    private int lastHeight = 0;
 
     public static Intent intentFor(Context ctx,
             String conversationId,
@@ -219,12 +216,11 @@ public class ConversationActivity extends AppCompatActivity {
                 @Override
                 public void onKeyboardVisibilityChanged(boolean visible) {
                     if (visible) {
-                        // when keyboard shows, ensure messages are scrolled to bottom so input isn't
-                        // obscured
-                        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                                .findFragmentById(R.id.fragment_messages_container);
-                        if (frag != null)
-                            frag.scrollToBottomIfNeeded();
+                        // Keyboard 弹出时仅通过消息流接口通知，避免耦合具体 Fragment 实现。
+                        MessageStreamSink streamSink = findMessageStreamSink();
+                        if (streamSink != null) {
+                            streamSink.scrollToBottomIfNeeded();
+                        }
                     }
                 }
 
@@ -279,6 +275,35 @@ public class ConversationActivity extends AppCompatActivity {
         vPin.setVisibility(VISIBLE);
     }
 
+    @Nullable
+    private MessageStreamSink findMessageStreamSink() {
+        Fragment fragment = getSupportFragmentManager().findFragmentById(R.id.fragment_messages_container);
+        if (fragment instanceof MessageStreamSink) {
+            return (MessageStreamSink) fragment;
+        }
+        return null;
+    }
+
+    private void dispatchNewMessageToStream(@Nullable Message message) {
+        if (message == null) {
+            return;
+        }
+        MessageStreamSink streamSink = findMessageStreamSink();
+        if (streamSink != null) {
+            streamSink.onNewMessage(message);
+        }
+    }
+
+    private void dispatchUpdatedMessagesToStream(List<Message> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return;
+        }
+        MessageStreamSink streamSink = findMessageStreamSink();
+        if (streamSink != null) {
+            streamSink.onUpdateMessage(messages);
+        }
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -327,14 +352,15 @@ public class ConversationActivity extends AppCompatActivity {
                 frag.clearSelectionAfterForward();
             }
         } else if (requestCode == REQ_MENTION) {
-            MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                    .findFragmentById(R.id.fragment_messages_container);
+            MessageStreamSink streamSink = findMessageStreamSink();
             if (resultCode == RESULT_OK && data != null) {
                 ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
                 ArrayList<String> newNames = data.getStringArrayListExtra(SELECTED_MEMBERS_NAME);
-                frag.insertMention(newIds, newNames);
-            } else {
-                frag.showKeyboardIfNeed();
+                if (streamSink != null) {
+                    streamSink.insertMention(newIds, newNames);
+                }
+            } else if (streamSink != null) {
+                streamSink.showKeyboardIfNeed();
             }
         } else if ((requestCode == REQ_MULTI_CALL_VOICE || requestCode == REQ_MULTI_CALL_VIDEO)
                 && resultCode == RESULT_OK) {
@@ -348,16 +374,9 @@ public class ConversationActivity extends AppCompatActivity {
     }
 
     private void scrollMessageListIfNeed(boolean panelVisible) {
-        // find the fragment and notify it when a panel opens so it can scroll to bottom
-        // if needed
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
-        if (frag != null) {
-            if (panelVisible) {
-                frag.scrollToBottomIfNeeded();
-            } else {
-                // nothing special for hide currently
-            }
+        MessageStreamSink streamSink = findMessageStreamSink();
+        if (panelVisible && streamSink != null) {
+            streamSink.scrollToBottomIfNeeded();
         }
     }
 
@@ -379,12 +398,7 @@ public class ConversationActivity extends AppCompatActivity {
         if (!event.getMessage().getConversation().getConversationId().equals(conversationId)) {
             return;
         }
-        Message m = event.getMessage();
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
-        if (frag != null) {
-            frag.onNewMessage(m);
-        }
+        dispatchNewMessageToStream(event.getMessage());
         // tag message read
         Conversation conversation = new Conversation(
                 isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
@@ -397,18 +411,24 @@ public class ConversationActivity extends AppCompatActivity {
         if (!event.getConversation().getConversationId().equals(conversationId)) {
             return;
         }
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
-        if (frag != null) {
-            List<Message> messages = JIM.getInstance().getMessageManager()
-                    .getMessagesByMessageIds(event.getMessageIds());
-            frag.onUpdateMessage(messages);
-        }
+        List<Message> messages = JIM.getInstance().getMessageManager()
+                .getMessagesByMessageIds(event.getMessageIds());
+        dispatchUpdatedMessagesToStream(messages);
     }
 
     private void handlePluginResult(String pluginId, String action, Object data) {
+        if (pluginId == null) {
+            return;
+        }
         if (pluginId.equals(ImagePlugin.ID)) {
-            for (String url : (ArrayList<String>) data) {
+            if (!(data instanceof List)) {
+                return;
+            }
+            for (Object item : (List<?>) data) {
+                if (!(item instanceof String)) {
+                    continue;
+                }
+                String url = (String) item;
                 ImageMessage image = new ImageMessage();
                 image.setHeight(600);
                 image.setWidth(800);
@@ -418,6 +438,9 @@ public class ConversationActivity extends AppCompatActivity {
                 sendImageMessage(image, null, conversation);
             }
         } else if (pluginId.equals(CameraPlugin.ID)) {
+            if (data == null) {
+                return;
+            }
             ImageMessage image = new ImageMessage();
             image.setHeight(600);
             image.setWidth(800);
@@ -429,6 +452,9 @@ public class ConversationActivity extends AppCompatActivity {
         } else if (pluginId.equals("contact")) {
 
         } else if (pluginId.equals(FilePlugin.ID)) {
+            if (data == null) {
+                return;
+            }
             String fileUrl = FileUtils.convertContentUriToFile(this, data.toString());
             FileMessage fileMessage = new FileMessage();
             File f = new File(fileUrl);
@@ -461,11 +487,7 @@ public class ConversationActivity extends AppCompatActivity {
                 new IMessageManager.IMessageCallback() {
                     @Override
                     public void onSuccess(Message message) {
-                        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                                .findFragmentById(R.id.fragment_messages_container);
-                        if (frag != null) {
-                            frag.onUpdateMessage(Arrays.asList(message));
-                        }
+                        dispatchUpdatedMessagesToStream(Arrays.asList(message));
                     }
 
                     @Override
@@ -479,34 +501,20 @@ public class ConversationActivity extends AppCompatActivity {
         IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
             @Override
             public void onSuccess(Message message) {
-                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                        .findFragmentById(R.id.fragment_messages_container);
-                if (frag != null) {
-                    frag.onUpdateMessage(Arrays.asList(message));
-                }
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
 
             @Override
             public void onError(Message message, int errorCode) {
                 Log.i("TAG", "send message error: " + errorCode);
-                MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                        .findFragmentById(R.id.fragment_messages_container);
-                if (frag != null) {
-                    frag.onUpdateMessage(Arrays.asList(message));
-                }
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
         };
         Message message = JIM.getInstance().getMessageManager().sendMessage(text, conversation, options, callback);
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
-        if (frag != null) {
-            frag.onNewMessage(message);
-        }
+        dispatchNewMessageToStream(message);
     }
 
     private void sendImageMessage(ImageMessage image, MessageOptions options, Conversation conversation) {
-        final MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override
             public void onProgress(int progress, Message message) {
@@ -516,13 +524,13 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Message message) {
                 Log.i("sendImageMessage", "send message success");
-                frag.onUpdateMessage(Arrays.asList(message));
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
 
             @Override
             public void onError(Message message, int errorCode) {
                 Log.i("sendImageMessage", "send message error: " + errorCode);
-                frag.onUpdateMessage(Arrays.asList(message));
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
 
             @Override
@@ -532,14 +540,10 @@ public class ConversationActivity extends AppCompatActivity {
         };
         Message message = JIM.getInstance().getMessageManager().sendMediaMessage(image, conversation, callback);
         Log.i("TAG", "sendImageMessage msgId= " + message.getMessageId());
-        if (frag != null) {
-            frag.onNewMessage(message);
-        }
+        dispatchNewMessageToStream(message);
     }
 
     public void sendFileMessage(FileMessage fileMessage, Conversation conversation) {
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override
             public void onProgress(int progress, Message message) {
@@ -549,14 +553,14 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Message message) {
                 Log.i("TAG", "send message success");
-                frag.onUpdateMessage(Arrays.asList(message));
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
 
             }
 
             @Override
             public void onError(Message message, int errorCode) {
                 Log.i("TAG", "send message error: " + errorCode);
-                frag.onUpdateMessage(Arrays.asList(message));
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
 
             }
 
@@ -568,12 +572,10 @@ public class ConversationActivity extends AppCompatActivity {
 
         Message message = JIM.getInstance().getMessageManager().sendMediaMessage(fileMessage, conversation, callback);
         Log.i("TAG", "after send, clientMsgNo is " + message.getClientMsgNo());
-        frag.onNewMessage(message);
+        dispatchNewMessageToStream(message);
     }
 
     private void sendVoiceMessage(VoiceMessage voice, Conversation conversation) {
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
         IMessageManager.ISendMediaMessageCallback callback = new IMessageManager.ISendMediaMessageCallback() {
             @Override
             public void onProgress(int progress, Message message) {
@@ -583,13 +585,13 @@ public class ConversationActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Message message) {
                 Log.i("TAG", "send message success");
-                frag.onUpdateMessage(Arrays.asList(message));
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
 
             @Override
             public void onError(Message message, int errorCode) {
                 Log.i("TAG", "send message error: " + errorCode);
-                frag.onUpdateMessage(Arrays.asList(message));
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
 
             @Override
@@ -599,7 +601,7 @@ public class ConversationActivity extends AppCompatActivity {
         };
         Message message = JIM.getInstance().getMessageManager().sendMediaMessage(voice, conversation, callback);
         Log.i("TAG", "after send, clientMsgNo is " + message.getClientMsgNo());
-        frag.onNewMessage(message);
+        dispatchNewMessageToStream(message);
     }
 
     public void sendMergeMessage(List<UiMessage> forwardMsg, Conversation targetConv, String targetName) {
@@ -616,22 +618,20 @@ public class ConversationActivity extends AppCompatActivity {
             msgIds.add(forwardMsg.get(i).getMessageId());
         }
         MergeMessage merge = new MergeMessage(targetName, conversation, msgIds, previewList);
-        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_messages_container);
         Message m = JIM.getInstance().getMessageManager().sendMessage(merge, targetConv,
                 new IMessageManager.ISendMessageCallback() {
                     @Override
                     public void onSuccess(Message message) {
-                        frag.onUpdateMessage(Arrays.asList(message));
+                        dispatchUpdatedMessagesToStream(Arrays.asList(message));
                     }
 
                     @Override
                     public void onError(Message message, int errorCode) {
                         Log.i("TAG", "send message error: " + errorCode);
-                        frag.onUpdateMessage(Arrays.asList(message));
+                        dispatchUpdatedMessagesToStream(Arrays.asList(message));
                     }
                 });
-        frag.onNewMessage(m);
+        dispatchNewMessageToStream(m);
     }
 
     @Override
