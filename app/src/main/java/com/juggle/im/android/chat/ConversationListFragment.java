@@ -3,7 +3,16 @@ package com.juggle.im.android.chat;
 import static com.juggle.im.android.chat.MessageListFragment.ARG_MENTION;
 
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -11,38 +20,35 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.Gravity;
-import android.widget.PopupWindow;
-import android.widget.TextView;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.Color;
-
-import com.juggle.im.JIM;
+import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.domain.ConversationRepository;
+import com.juggle.im.android.chat.state.ConversationListReducer;
+import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.model.Conversation;
+import com.juggle.im.model.ConversationInfo;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Conversation list as a Fragment so it can be hosted inside MainActivity.
  */
 public class ConversationListFragment extends Fragment implements ConversationListAdapter.OnConversationClickListener {
     private static final String TAG = "ConvListFragment";
+    private static final int PAGE_SIZE = 20;
+
     private RecyclerView conversationListView;
     private ConversationListAdapter conversationListAdapter;
     private PopupWindow popupWindow;
-    private boolean isLoadingMore = false;
-    private boolean hasMore = true;
-    private static final int PAGE_SIZE = 20;
+    private ConversationRepository conversationRepository;
+    private ConversationListReducer reducer;
+    private ConversationListReducer.ConversationListState state = ConversationListReducer.ConversationListState.initial();
+
     // 追踪用户是否主动滚动离开顶部,用于决定是否自动滚动到新消息
     private boolean userScrolledAway = false;
-    // 记录在新item插入前是否在顶部,用于插入后的滚动决策
-    private boolean wasAtTopBeforeInsert = false;
 
     @Nullable
     @Override
@@ -54,10 +60,13 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        conversationRepository = new ConversationRepository();
+        reducer = new ConversationListReducer(conversationRepository);
+
         conversationListView = view.findViewById(R.id.rv_conversation_list);
         conversationListAdapter = new ConversationListAdapter();
         conversationListAdapter.setOnConversationClickListener(this);
-        
+
         // 设置RecyclerView引用到Adapter,让Adapter可以直接控制滚动
         conversationListAdapter.setRecyclerView(conversationListView);
 
@@ -65,14 +74,14 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         conversationListAdapter.setShouldAutoScrollChecker(() -> {
             boolean atTop = isAtTop();
             boolean shouldScroll = atTop && !userScrolledAway;
-            Log.d(TAG, "[检查器] isAtTop=" + atTop + ", userScrolledAway=" + userScrolledAway + ", shouldScroll=" + shouldScroll);
+            Log.d(TAG,
+                    "[检查器] isAtTop=" + atTop + ", userScrolledAway=" + userScrolledAway + ", shouldScroll=" + shouldScroll);
             return shouldScroll;
         });
 
         // 设置新会话监听器,这里只打印日志,滚动逻辑由Adapter内部直接处理
-        conversationListAdapter.setOnNewConversationListener(() -> {
-            Log.d(TAG, "[监听器] 新会话插入到顶部");
-        });
+        conversationListAdapter.setOnNewConversationListener(() -> Log.d(TAG, "[监听器] 新会话插入到顶部"));
+
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext());
         conversationListView.setLayoutManager(layoutManager);
         conversationListView.setAdapter(conversationListAdapter);
@@ -90,8 +99,9 @@ public class ConversationListFragment extends Fragment implements ConversationLi
                 // 如果用户滚动回到顶部,恢复自动滚动模式
                 if (dy != 0) { // 有滚动发生
                     boolean wasAtTop = isAtTop();
-                    Log.d(TAG, "[滚动监听] dy=" + dy + ", isAtTop=" + wasAtTop + ", userScrolledAway=" + userScrolledAway);
-                    
+                    Log.d(TAG,
+                            "[滚动监听] dy=" + dy + ", isAtTop=" + wasAtTop + ", userScrolledAway=" + userScrolledAway);
+
                     if (wasAtTop) {
                         // 用户滚动回到顶部,恢复自动滚动模式
                         if (userScrolledAway) {
@@ -108,7 +118,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
                 }
 
                 // Only load more when scrolling down and not already loading
-                if (dy > 0 && !isLoadingMore && hasMore) {
+                if (dy > 0 && !state.isLoadingMore() && state.hasMore()) {
                     int visibleItemCount = layoutManager.getChildCount();
                     int totalItemCount = layoutManager.getItemCount();
                     int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
@@ -128,96 +138,81 @@ public class ConversationListFragment extends Fragment implements ConversationLi
      */
     private boolean isAtTop() {
         LinearLayoutManager layoutManager = (LinearLayoutManager) conversationListView.getLayoutManager();
-        if (layoutManager == null) return false;
-        
+        if (layoutManager == null)
+            return false;
+
         int firstVisiblePosition = layoutManager.findFirstVisibleItemPosition();
         if (firstVisiblePosition != 0) {
             return false; // 第一个item不是位置0,肯定不在顶部
         }
-        
+
         // 检查第一个item的偏移量,只有完全可见(偏移量为0)时才认为在顶部
         View firstView = layoutManager.findViewByPosition(0);
         if (firstView == null) {
             return false;
         }
-        
+
         // 第一个item的top应该近似等于RecyclerView的paddingTop(允许极小误差)
         // 某些情况下可能有1像素的偏移
         int offset = Math.abs(firstView.getTop() - conversationListView.getPaddingTop());
         boolean atTop = offset <= 1;
-        Log.v(TAG, "[isAtTop] firstPos=" + firstVisiblePosition + ", firstTop=" + firstView.getTop() + ", rvTop=" + conversationListView.getPaddingTop() + ", result=" + atTop);
+        Log.v(TAG,
+                "[isAtTop] firstPos=" + firstVisiblePosition + ", firstTop=" + firstView.getTop() + ", rvTop="
+                        + conversationListView.getPaddingTop() + ", result=" + atTop);
         return atTop;
-    }
-
-    /**
-     * 检查是否应该自动滚动到顶部
-     * 只有当用户在顶部且未主动滚动离开时,才自动滚动
-     */
-    private boolean shouldAutoScrollToTop() {
-        return isAtTop() && !userScrolledAway;
-    }
-
-    /**
-     * 滚动到顶部
-     * 参考微信设计:使用瞬时滚动,确保新消息立即可见
-     */
-    private void scrollToTop() {
-        LinearLayoutManager layoutManager = (LinearLayoutManager) conversationListView.getLayoutManager();
-        if (layoutManager != null) {
-            // 使用scrollToPositionWithOffset确保第一个item完全对齐到顶部
-            // 参数0表示滚动到位置0,参数0表示偏移量为0(完全对齐)
-            layoutManager.scrollToPositionWithOffset(0, 0);
-        }
     }
 
     /**
      * Load more conversations when scrolling to bottom
      */
     private void loadMoreConversations() {
-        if (isLoadingMore || !hasMore) {
+        if (state.isLoadingMore() || !state.hasMore()) {
             return;
         }
-
-        isLoadingMore = true;
-
-        // Get the cursor (sortTime of the last item)
-        long cursor = conversationListAdapter.getLastSortTime();
+        dispatch(new ConversationListReducer.LoadMoreStarted());
+        long cursor = state.getCursor();
 
         // Load more conversations in background thread
         new Thread(() -> {
-            int loadedCount = com.juggle.im.android.core.JIMChatCore.getInstance()
-                    .loadMoreConversations(cursor, PAGE_SIZE);
-
-            // Update UI on main thread
-            if (getActivity() != null) {
-                getActivity().runOnUiThread(() -> {
-                    isLoadingMore = false;
-                    if (loadedCount < PAGE_SIZE) {
-                        hasMore = false;
-                    }
-                });
+            try {
+                List<ConversationInfo> page = JIMChatCore.getInstance()
+                        .fetchConversationPage(PAGE_SIZE, cursor, JIMConst.PullDirection.OLDER);
+                List<UiConversation> mapped = conversationRepository.mapAndSort(page);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(
+                            () -> dispatch(new ConversationListReducer.LoadMoreSucceeded(mapped, PAGE_SIZE)));
+                }
+            } catch (Throwable throwable) {
+                Log.w(TAG, "loadMoreConversations failed", throwable);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> dispatch(new ConversationListReducer.LoadMoreFailed()));
+                }
             }
         }).start();
     }
 
     public void upsertConversations(List<UiConversation> dataSet) {
-        conversationListAdapter.upsertConversations(dataSet);
+        dispatch(new ConversationListReducer.ConversationsMerged(dataSet));
     }
 
     @Override
     public void onConversationClick(UiConversation uiConversation) {
-        int unreadCount = uiConversation.getConversationInfo().getUnreadCount();
-        JIM.getInstance().getConversationManager()
-                .clearUnreadCount(uiConversation.getConversationInfo().getConversation(), null);
+        int unreadCount = uiConversation.getUnreadCount();
+        conversationRepository.clearUnread(uiConversation);
+
+        Conversation.ConversationType conversationType = uiConversation.getConversationType();
+        String conversationId = uiConversation.getId();
+
         Intent intent = ConversationActivity.intentFor(this.getActivity(),
-                uiConversation.getConversationInfo().getConversation().getConversationId(),
+                conversationId,
                 uiConversation.getName(),
-                uiConversation.getConversationInfo().getConversation().getConversationType()
-                        .equals(Conversation.ConversationType.GROUP),
+                conversationType == Conversation.ConversationType.GROUP,
                 uiConversation.isTop(),
                 uiConversation.isMuted());
         intent.putExtra(ConversationActivity.EXTRA_UNREAD_COUNT, unreadCount);
-        intent.putExtra(ARG_MENTION, uiConversation.getConversationInfo().getMentionInfo() != null);
+
+        ConversationInfo info = uiConversation.getConversationInfo();
+        intent.putExtra(ARG_MENTION, info != null && info.getMentionInfo() != null);
         startActivity(intent);
     }
 
@@ -238,9 +233,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         popupWindow.setElevation(10);
 
         // 设置PopupWindow消失监听器，用于清除选中状态
-        popupWindow.setOnDismissListener(() -> {
-            conversationListAdapter.clearSelectedPosition();
-        });
+        popupWindow.setOnDismissListener(() -> conversationListAdapter.clearSelectedPosition());
 
         // Get references to menu items
         TextView deleteItem = menuView.findViewById(R.id.menu_delete);
@@ -278,11 +271,9 @@ public class ConversationListFragment extends Fragment implements ConversationLi
             int[] location = new int[2];
             anchorView.getLocationOnScreen(location); // 获取 item 在屏幕中的绝对坐标
 
-            int anchorX = location[0];
             int anchorY = location[1];
 
-            // 获取 item 高度和屏幕宽度
-            int itemHeight = anchorView.getHeight();
+            // 获取屏幕宽度
             int screenWidth = anchorView.getResources().getDisplayMetrics().widthPixels;
 
             // 获取 PopupWindow 的宽高（需提前测量）
@@ -304,30 +295,64 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     }
 
     private void deleteConversation(UiConversation uiConversation) {
-        JIM.getInstance().getConversationManager().deleteConversationInfo(
-                uiConversation.getConversationInfo().getConversation(),
-                null);
-        conversationListAdapter.removeConversation(uiConversation);
+        conversationRepository.delete(uiConversation);
+        dispatch(new ConversationListReducer.ConversationRemoved(uiConversation.getId()));
     }
 
     private void toggleTopConversation(UiConversation uiConversation) {
         boolean newTopStatus = !uiConversation.isTop();
-        JIM.getInstance().getConversationManager().setTop(
-                uiConversation.getConversationInfo().getConversation(),
-                newTopStatus,
-                null);
-        uiConversation.getConversationInfo().setTop(newTopStatus);
-        int idx = conversationListAdapter.getPosition(uiConversation);
-        conversationListAdapter.notifyItemChanged(idx);
+        conversationRepository.setTop(uiConversation, newTopStatus);
+
+        UiConversation updated = copyConversation(uiConversation);
+        updated.setTop(newTopStatus);
+        if (updated.getConversationInfo() != null) {
+            updated.getConversationInfo().setTop(newTopStatus);
+        }
+        dispatch(new ConversationListReducer.ConversationsMerged(Collections.singletonList(updated)));
     }
 
     private void toggleMuteConversation(UiConversation uiConversation) {
         boolean newMuteStatus = !uiConversation.isMuted();
-        JIM.getInstance().getConversationManager().setMute(
-                uiConversation.getConversationInfo().getConversation(),
-                newMuteStatus,
-                null);
-        int idx = conversationListAdapter.getPosition(uiConversation);
-        conversationListAdapter.notifyItemChanged(idx);
+        conversationRepository.setMute(uiConversation, newMuteStatus);
+
+        UiConversation updated = copyConversation(uiConversation);
+        updated.setMuted(newMuteStatus);
+        dispatch(new ConversationListReducer.ConversationsMerged(Collections.singletonList(updated)));
+    }
+
+    private void dispatch(@NonNull ConversationListReducer.Action action) {
+        ConversationListReducer.ConversationListState previous = state;
+        ConversationListReducer.ConversationListState next = reducer.reduce(previous, action);
+        state = next;
+        render(previous, next);
+    }
+
+    private void render(@NonNull ConversationListReducer.ConversationListState previous,
+            @NonNull ConversationListReducer.ConversationListState next) {
+        // 仅在会话快照发生变化时触发 adapter 增量渲染，避免不必要抖动。
+        if (previous.getConversations() != next.getConversations()) {
+            conversationListAdapter.renderSnapshot(next.getConversations());
+        }
+    }
+
+    @NonNull
+    private UiConversation copyConversation(@NonNull UiConversation source) {
+        UiConversation target = new UiConversation();
+        target.setConversationInfo(source.getConversationInfo());
+        target.setId(source.getId());
+        target.setName(source.getName());
+        target.setAvatar(source.getAvatar());
+        target.setLastMessageUserName(source.getLastMessageUserName());
+        target.setTop(source.isTop());
+        target.setTopTime(source.getTopTime());
+        target.setSortTime(source.getSortTime());
+        target.setUnreadCount(source.getUnreadCount());
+        target.setMuted(source.isMuted());
+        target.setGroup(source.isGroup());
+        target.setConversationTypeKey(source.getConversationTypeKey());
+        for (Map.Entry<String, Object> entry : source.getExtensions().entrySet()) {
+            target.putExtension(entry.getKey(), entry.getValue());
+        }
+        return target;
     }
 }

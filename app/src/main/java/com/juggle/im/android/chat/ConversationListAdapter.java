@@ -85,6 +85,13 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     }
 
     /**
+     * UDF 渲染入口：接收新的会话快照并增量合并到当前列表。
+     */
+    public void renderSnapshot(List<UiConversation> snapshot) {
+        upsertConversations(snapshot);
+    }
+
+    /**
      * Incrementally upsert a list of conversations into the adapter.
      * Uses batched updates to minimize animations and prevent flickering.
      * New conversations will be inserted at the correct position based on sortTime.

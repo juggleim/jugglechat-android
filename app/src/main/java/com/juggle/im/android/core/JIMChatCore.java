@@ -21,6 +21,7 @@ import com.juggle.im.internal.logger.JLogLevel;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -120,7 +121,7 @@ public class JIMChatCore {
     public void syncConversationList() {
         long cursor = -1;
         for(;;) {
-            List<ConversationInfo> conversationInfoList = JIM.getInstance().getConversationManager().getConversationInfoList(20, cursor, JIMConst.PullDirection.NEWER);
+            List<ConversationInfo> conversationInfoList = fetchConversationPage(20, cursor, JIMConst.PullDirection.NEWER);
             if (conversationInfoList == null || conversationInfoList.isEmpty()) {
                 Log.i(tag, "empty conversation");
                 break;
@@ -150,8 +151,7 @@ public class JIMChatCore {
      * @return 加载的会话数量
      */
     public int loadMoreConversations(long cursor, int pageSize) {
-        List<ConversationInfo> conversationInfoList = JIM.getInstance().getConversationManager()
-                .getConversationInfoList(pageSize, cursor, JIMConst.PullDirection.OLDER);
+        List<ConversationInfo> conversationInfoList = fetchConversationPage(pageSize, cursor, JIMConst.PullDirection.OLDER);
         if (conversationInfoList == null || conversationInfoList.isEmpty()) {
             Log.i(tag, "no more conversations to load");
             return 0;
@@ -162,6 +162,17 @@ public class JIMChatCore {
         EventBus.getDefault().post(new ConversationUpdatedEvent(conversationInfoList));
 
         return conversationInfoList.size();
+    }
+
+    /**
+     * 读取会话分页，作为会话列表 UDF 管线的统一数据入口。
+     * <p>
+     * 复杂逻辑说明：统一在此做 null-safe 处理，避免上层出现空指针分支。
+     */
+    public List<ConversationInfo> fetchConversationPage(int pageSize, long cursor, JIMConst.PullDirection direction) {
+        List<ConversationInfo> conversationInfoList = JIM.getInstance().getConversationManager()
+                .getConversationInfoList(pageSize, cursor, direction);
+        return conversationInfoList == null ? Collections.emptyList() : conversationInfoList;
     }
 
     private void initListener() {
