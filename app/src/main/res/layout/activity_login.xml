@@ -41,15 +41,6 @@
                 android:layout_height="20dp"
                 android:contentDescription="@string/auth_cd_org_id"
                 android:src="@drawable/ic_org" />
-
-            <TextView
-                android:id="@+id/orgIdText"
-                style="@style/TextAppearance.Auth.Hint"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="7dp"
-                android:text="@string/auth_org_id"
-                android:textColor="@color/auth_text_primary" />
         </LinearLayout>
     </LinearLayout>
 

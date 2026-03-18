@@ -233,7 +233,7 @@ public class FeedbackActivity extends AbsAppActivity {
                 holder.progress.setVisibility(View.GONE);
                 holder.remove.setVisibility(View.GONE);
                 holder.image.setScaleType(ImageView.ScaleType.CENTER);
-                holder.image.setImageResource(R.drawable.ic_add);
+                holder.image.setImageResource(R.drawable.ic_feedback_submit);
                 holder.itemView.setOnClickListener(v -> pickImages());
                 return;
             }

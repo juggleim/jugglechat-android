@@ -17,10 +17,8 @@
         android:layout_height="24dp"
         android:layout_gravity="top|end"
         android:layout_margin="4dp"
-        android:background="#66000000"
         android:padding="5dp"
         android:src="@drawable/ic_delete"
-        android:tint="@android:color/white"
         android:visibility="gone" />
 
     <ProgressBar
