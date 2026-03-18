@@ -2,5 +2,39 @@
 <resources>
     <dimen name="message_image_fixed_height">200dp</dimen>
     <dimen name="chat_input_height">50dp</dimen>
-    <dimen name="input_panel_height">230dp</dimen>
+    <dimen name="input_panel_height">250dp</dimen>
+
+    <!-- 群组设置尺寸 -->
+    <!-- 页面边距 -->
+    <dimen name="group_page_margin">16dp</dimen>
+
+    <!-- 卡片内边距 -->
+    <dimen name="group_card_padding">16dp</dimen>
+    <dimen name="group_card_padding_horizontal">16dp</dimen>
+    <dimen name="group_card_padding_vertical">12dp</dimen>
+
+    <!-- 列表项间距 -->
+    <dimen name="group_item_height">56dp</dimen>
+    <dimen name="group_item_icon_margin_end">12dp</dimen>
+    <dimen name="group_item_text_margin_start">12dp</dimen>
+
+    <!-- 组件间距 -->
+    <dimen name="group_tool_margin">12dp</dimen>
+    <dimen name="group_card_margin_top">12dp</dimen>
+
+    <!-- 图标尺寸 -->
+    <dimen name="group_icon_size">24dp</dimen>
+    <dimen name="group_avatar_size">40dp</dimen>
+    <dimen name="group_avatar_size_small">32dp</dimen>
+    <dimen name="group_tool_icon_size">28dp</dimen>
+
+    <!-- 圆角 -->
+    <dimen name="group_card_corner_radius">8dp</dimen>
+    <dimen name="group_button_corner_radius">4dp</dimen>
+
+    <!-- 字体大小 -->
+    <dimen name="group_text_title">17sp</dimen>
+    <dimen name="group_text_primary">16sp</dimen>
+    <dimen name="group_text_secondary">14sp</dimen>
+    <dimen name="group_text_auxiliary">12sp</dimen>
 </resources>

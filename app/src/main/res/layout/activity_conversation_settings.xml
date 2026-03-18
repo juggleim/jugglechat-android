@@ -1,267 +1,231 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background"
+    android:background="@color/group_bg_page"
     android:orientation="vertical">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/cl_group_info"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/profile_cover"
-        tools:visibility="visible">
+        android:layout_height="44dp"
+        android:background="@android:color/white">
 
         <ImageView
             android:id="@+id/iv_back"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:src="@drawable/ic_back_white"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:contentDescription="@string/back"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:id="@+id/tv_page_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text=""
+            android:textColor="@color/conversation_header_text"
+            android:textSize="17sp" />
 
         <ImageView
-            android:id="@+id/iv_group_avatar"
-            android:layout_width="80dp"
-            android:layout_height="80dp"
-            android:src="@drawable/default_avatar"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.4" />
+            android:id="@+id/iv_edit_group"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="16dp"
+            android:contentDescription="edit"
+            android:src="@drawable/ic_msg_action_edit"
+            android:tint="@color/conversation_primary_text"
+            android:visibility="gone" />
 
-        <TextView
-            android:id="@+id/tv_group_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="@color/white"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            style="?android:attr/textAppearanceSmall"
-            app:layout_constraintEnd_toEndOf="@+id/iv_group_avatar"
-            app:layout_constraintStart_toStartOf="@+id/iv_group_avatar"
-            app:layout_constraintTop_toBottomOf="@+id/iv_group_avatar"
-            tools:text="Group Name" />
-
-        <TextView
-            android:id="@+id/tv_member_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/white"
-            android:textSize="14sp"
-            app:layout_constraintEnd_toEndOf="@id/tv_group_name"
-            app:layout_constraintStart_toStartOf="@id/tv_group_name"
-            app:layout_constraintTop_toBottomOf="@id/tv_group_name"
-            tools:text="361 members" />
-
-        <LinearLayout
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="@id/tv_member_count"
-            app:layout_constraintStart_toStartOf="@id/tv_member_count"
-            app:layout_constraintTop_toBottomOf="@id/tv_member_count">
-
-            <TextView
-                android:id="@+id/btn_pin"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                style="?android:attr/textAppearanceSmall"
-                android:layout_margin="5dp"
-                android:background="@drawable/rectangle_primary_bg_5"
-                android:drawableTop="@drawable/ic_pin"
-                android:drawablePadding="4dp"
-                android:gravity="center"
-                android:padding="8dp"
-                android:text="置顶"
-                android:textColor="@color/white"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/btn_mute"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                style="?android:attr/textAppearanceSmall"
-                android:layout_margin="5dp"
-                android:background="@drawable/rectangle_primary_bg_5"
-                android:drawableTop="@drawable/ic_conv_mute"
-                android:drawablePadding="4dp"
-                android:gravity="center"
-                android:padding="8dp"
-                android:text="免打扰"
-                android:textColor="@color/white"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/btn_add"
-                android:layout_width="100dp"
-                android:layout_height="wrap_content"
-                android:layout_margin="5dp"
-                style="?android:attr/textAppearanceSmall"
-                android:background="@drawable/rectangle_primary_bg_5"
-                android:drawableTop="@drawable/ic_add_memb"
-                android:drawablePadding="4dp"
-                android:gravity="center"
-                android:padding="8dp"
-                android:text="添加成员"
-                android:textColor="@color/white"
-                android:textSize="14sp" />
-        </LinearLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+            android:layout_height="0.5dp"
+            android:layout_alignParentBottom="true"
+            android:background="@color/conversation_item_divider" />
+    </RelativeLayout>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never">
 
         <LinearLayout
-            android:id="@+id/group_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="24dp">
 
             <LinearLayout
-                android:id="@+id/ll_group_members"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                tools:visibility="visible">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="群组成员"
-                    android:textSize="16sp" />
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_right" />
-            </LinearLayout>
-
-            <View
-                android:id="@+id/divider_group_members"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                tools:visibility="visible" />
-
-            <LinearLayout
-                android:id="@+id/ll_group_nickname"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                tools:visibility="visible">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="我在本群昵称"
-                    android:textSize="16sp" />
-
-                <TextView
-                    android:id="@+id/tv_my_nickname"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:textColor="@color/gray"
-                    android:textSize="16sp"
-                    tools:text="gogogo" />
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_right" />
-            </LinearLayout>
-
-            <View
-                android:id="@+id/divider_group_nickname"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:visibility="gone"
-                tools:visibility="visible" />
-
-            <LinearLayout
-                android:id="@+id/ll_group_qrcode"
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:visibility="gone"
-                tools:visibility="visible">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="群组二维码"
-                    android:textSize="16sp" />
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_arrow_right" />
-            </LinearLayout>
-
-            <View
-                android:id="@+id/divider_qrcode"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider"
-                android:visibility="gone"
-                tools:visibility="visible" />
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/divider" />
-
-            <LinearLayout
+                android:id="@+id/header_group_overview"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:gravity="center_horizontal"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:paddingTop="8dp"
+                android:paddingBottom="14dp">
 
-                <Button
-                    android:id="@+id/btn_clear_chat"
+                <ImageView
+                    android:id="@+id/iv_group_avatar"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:contentDescription="avatar"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/icon_default_avatar" />
+
+                <TextView
+                    android:id="@+id/tv_group_name"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:background="@drawable/bg_primary_button"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:ellipsize="end"
                     android:gravity="center"
-                    android:text="@string/msg_clear"
-                    android:textColor="@color/white" />
+                    android:maxLines="1"
+                    android:textColor="@color/conversation_primary_text"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
-
-                <Button
-                    android:id="@+id/btn_leave_group"
+                <TextView
+                    android:id="@+id/tv_group_meta"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:layout_marginTop="20dp"
-                    android:background="@drawable/bg_red_button"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:ellipsize="end"
                     android:gravity="center"
-                    android:text="@string/msg_quite_conversation"
-                    android:textColor="@color/white" />
+                    android:maxLines="1"
+                    android:textColor="@color/search_secondary_text"
+                    android:textSize="14sp" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:overScrollMode="never"
+                    android:scrollbars="none"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:id="@+id/layout_member_preview"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_quick_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_group_setting_card"
+                android:orientation="horizontal"
+                android:paddingStart="6dp"
+                android:paddingTop="6dp"
+                android:paddingEnd="6dp"
+                android:paddingBottom="6dp">
+
+                <include
+                    android:id="@+id/tool_top"
+                    layout="@layout/item_group_tool" />
+
+                <include
+                    android:id="@+id/tool_translate"
+                    layout="@layout/item_group_tool" />
+
+                <include
+                    android:id="@+id/tool_mute"
+                    layout="@layout/item_group_tool" />
+
+                <include
+                    android:id="@+id/tool_clear"
+                    layout="@layout/item_group_tool" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_announcement"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_group_setting_card"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/row_group_announcement"
+                    layout="@layout/item_group_setting_row" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_group_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_group_setting_card"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/row_add_member"
+                    layout="@layout/item_group_setting_row" />
+
+                <include
+                    android:id="@+id/row_group_members"
+                    layout="@layout/item_group_setting_row" />
+
+                <include
+                    android:id="@+id/row_group_display_name"
+                    layout="@layout/item_group_setting_row" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_group_manage"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_group_setting_card"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/row_group_management"
+                    layout="@layout/item_group_setting_row" />
+
+                <include
+                    android:id="@+id/row_group_qrcode"
+                    layout="@layout/item_group_setting_row" />
+
+                <include
+                    android:id="@+id/row_group_info"
+                    layout="@layout/item_group_setting_row"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_common_actions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_group_setting_card"
+                android:orientation="vertical">
+
+                <include
+                    android:id="@+id/row_report"
+                    layout="@layout/item_group_setting_row" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/btn_quit_group"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_group_setting_danger_button"
+                android:gravity="center"
+                android:text="退出群组"
+                android:textColor="@color/red"
+                android:textSize="14sp" />
+
         </LinearLayout>
     </ScrollView>
 

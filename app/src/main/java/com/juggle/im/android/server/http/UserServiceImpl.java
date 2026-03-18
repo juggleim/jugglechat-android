@@ -3,10 +3,10 @@ package com.juggle.im.android.server.http;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.juggle.im.android.server.beans.GroupAnnouncementBean;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupListData;
+import com.juggle.im.android.server.beans.GroupMembersData;
 import com.juggle.im.android.server.beans.BlockUsersData;
 import com.juggle.im.android.server.beans.LoginRequest;
 import com.juggle.im.android.server.beans.LoginResult;
@@ -16,8 +16,7 @@ import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.beans.UserInfoRequest;
 import com.juggle.im.android.server.beans.QRCodeBean;
 import com.juggle.im.android.server.beans.FriendsListData;
-import com.qiniu.android.utils.MD5;
-
+import java.util.ArrayList;
 import java.util.List;
 import okhttp3.OkHttpClient;
 
@@ -140,12 +139,130 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
-    public void inviteJoinGroup(String groupId, List<String> userIds, ApiCallback<Void> callback) {
-        StringBuilder sb = new StringBuilder("/jim/groups/invite");
+    public void getGroupAnnouncement(String groupId, ApiCallback<GroupAnnouncementBean> callback) {
+        StringBuilder sb = new StringBuilder("/jim/groups/getgrpannouncement?group_id");
+        sb.append("=").append(groupId);
+        enqueueGet(sb.toString(), GroupAnnouncementBean.class, callback);
+    }
+
+    @Override
+    public void getGroupQRCode(String groupId, ApiCallback<QRCodeBean> callback) {
+        StringBuilder sb = new StringBuilder("/jim/groups/qrcode?group_id");
+        sb.append("=").append(groupId);
+        enqueueGet(sb.toString(), QRCodeBean.class, callback);
+    }
+
+    @Override
+    public void setGroupAnnouncement(String groupId, String content, ApiCallback<Void> callback) {
         java.util.Map<String, Object> body = new java.util.HashMap<>();
         body.put("group_id", groupId);
-        body.put("member_ids", userIds);
-        enqueueJson(sb.toString(), body, Void.class, callback);
+        body.put("content", content == null ? "" : content);
+        enqueueJson("/jim/groups/setgrpannouncement", body, Void.class, callback);
+    }
+
+    @Override
+    public void inviteJoinGroup(String groupId, List<String> userIds, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("member_ids", userIds == null ? new ArrayList<>() : userIds);
+        enqueueJson("/jim/groups/invite", body, Void.class, callback);
+    }
+
+    @Override
+    public void removeGroupMembers(String groupId, List<String> userIds, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("member_ids", userIds == null ? new ArrayList<>() : userIds);
+        enqueueJson("/jim/groups/members/del", body, Void.class, callback);
+    }
+
+    @Override
+    public void setGroupMemberMute(String groupId, List<String> userIds, boolean isMute, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("member_ids", userIds == null ? new ArrayList<>() : userIds);
+        body.put("is_mute", isMute ? 1 : 0);
+        enqueueJson("/jim/groups/management/setgrpmembersmute", body, Void.class, callback);
+    }
+
+    @Override
+    public void setGroupHistoryMessageVisible(String groupId, boolean visible, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("group_his_msg_visible", visible ? 1 : 0);
+        enqueueJson("/jim/groups/management/sethismsgvisible", body, Void.class, callback);
+    }
+
+    @Override
+    public void setGroupManagement(String groupId, String managementType, int value, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        if (managementType != null && !managementType.trim().isEmpty()) {
+            body.put(managementType, value);
+        }
+        enqueueJson("/jim/groups/management/set", body, Void.class, callback);
+    }
+
+    @Override
+    public void getGroupAdmins(String groupId, ApiCallback<GroupMembersData> callback) {
+        StringBuilder sb = new StringBuilder("/jim/groups/management/administrators/list?group_id");
+        sb.append("=").append(groupId);
+        enqueueGet(sb.toString(), GroupMembersData.class, callback);
+    }
+
+    @Override
+    public void addGroupAdmins(String groupId, List<String> adminIds, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("admin_ids", adminIds == null ? new ArrayList<>() : adminIds);
+        enqueueJson("/jim/groups/management/administrators/add", body, Void.class, callback);
+    }
+
+    @Override
+    public void removeGroupAdmins(String groupId, List<String> adminIds, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("admin_ids", adminIds == null ? new ArrayList<>() : adminIds);
+        enqueueJson("/jim/groups/management/administrators/del", body, Void.class, callback);
+    }
+
+    @Override
+    public void changeGroupOwner(String groupId, String ownerId, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("owner_id", ownerId == null ? "" : ownerId);
+        enqueueJson("/jim/groups/management/chgowner", body, Void.class, callback);
+    }
+
+    @Override
+    public void updateGroupInfo(String groupId, String groupName, String groupPortrait, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("group_name", groupName == null ? "" : groupName);
+        body.put("group_portrait", groupPortrait == null ? "" : groupPortrait);
+        enqueueJson("/jim/groups/update", body, Void.class, callback);
+    }
+
+    @Override
+    public void setGroupDisplayName(String groupId, String displayName, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        body.put("grp_display_name", displayName == null ? "" : displayName);
+        enqueueJson("/jim/groups/setdisplayname", body, Void.class, callback);
+    }
+
+    @Override
+    public void quitGroup(String groupId, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        enqueueJson("/jim/groups/quit", body, Void.class, callback);
+    }
+
+    @Override
+    public void dissolveGroup(String groupId, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("group_id", groupId);
+        enqueueJson("/jim/groups/dissolve", body, Void.class, callback);
     }
 
     @Override
@@ -165,6 +282,16 @@ public class UserServiceImpl extends BaseService implements UserService {
             sb.append("&offset=").append(offset);
         }
         enqueueGet(sb.toString(), BlockUsersData.class, callback);
+    }
+
+    @Override
+    public void submitFeedback(String category, String text, List<String> images, List<String> videos, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("category", category == null ? "" : category);
+        body.put("text", text == null ? "" : text);
+        body.put("images", images == null ? new ArrayList<>() : images);
+        body.put("videos", videos == null ? new ArrayList<>() : videos);
+        enqueueJson("/jim/feedbacks/add", body, Void.class, callback);
     }
 
     private void dispatchProfileValidationError(ApiCallback<Void> callback, String message) {

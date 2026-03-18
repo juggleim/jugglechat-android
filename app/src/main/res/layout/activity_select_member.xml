@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/white"
+    android:background="@color/group_bg_page"
     tools:context=".chat.SelectMemberActivity">
 
     <RelativeLayout
@@ -54,6 +54,16 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/rl_title"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="8dp"
+        android:layout_toStartOf="@+id/index_bar" />
+
+    <com.juggle.im.android.chat.widget.IndexBar
+        android:id="@+id/index_bar"
+        android:layout_width="24dp"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/rl_title"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp" />
 
 </RelativeLayout>

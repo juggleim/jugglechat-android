@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 文本样式 -->
+    <style name="GroupTextTitle">
+        <item name="android:textSize">@dimen/group_text_title</item>
+        <item name="android:textColor">@color/group_text_title</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="GroupTextPrimary">
+        <item name="android:textSize">@dimen/group_text_primary</item>
+        <item name="android:textColor">@color/group_text_primary</item>
+    </style>
+
+    <style name="GroupTextSecondary">
+        <item name="android:textSize">@dimen/group_text_secondary</item>
+        <item name="android:textColor">@color/group_text_secondary</item>
+    </style>
+
+    <style name="GroupTextHint">
+        <item name="android:textSize">@dimen/group_text_secondary</item>
+        <item name="android:textColor">@color/group_text_hint</item>
+    </style>
+
+    <!-- 卡片样式 -->
+    <style name="GroupCard">
+        <item name="android:background">@drawable/bg_group_setting_card</item>
+        <item name="android:padding">@dimen/group_card_padding</item>
+    </style>
+
+    <!-- 列表项样式 -->
+    <style name="GroupListItem">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/group_item_height</item>
+        <item name="android:background">?selectableItemBackground</item>
+        <item name="android:paddingStart">@dimen/group_page_margin</item>
+        <item name="android:paddingEnd">@dimen/group_page_margin</item>
+        <item name="android:gravity">center_vertical</item>
+    </style>
+
+    <!-- 工具按钮样式 -->
+    <style name="GroupToolButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:padding">8dp</item>
+    </style>
+
+    <!-- 危险按钮样式 -->
+    <style name="GroupDangerButton">
+        <item name="android:background">@drawable/bg_group_setting_danger_button</item>
+        <item name="android:textColor">@color/group_danger</item>
+        <item name="android:textSize">@dimen/group_text_primary</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- 角色标签样式 -->
+    <style name="GroupRoleTag">
+        <item name="android:background">@drawable/bg_role_tag</item>
+        <item name="android:textColor">@color/group_text_link</item>
+        <item name="android:textSize">@dimen/group_text_auxiliary</item>
+        <item name="android:paddingStart">8dp</item>
+        <item name="android:paddingEnd">8dp</item>
+        <item name="android:paddingTop">2dp</item>
+        <item name="android:paddingBottom">2dp</item>
+    </style>
+</resources>

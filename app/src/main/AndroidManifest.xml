@@ -119,6 +119,24 @@
             android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity android:name=".chat.ConversationSettingsActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupMembersActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupManagementActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupAnnouncementActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupInfoActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupQrcodeActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.GroupAdminsActivity"
+            android:screenOrientation="portrait" />
         <activity android:name=".app.CreateGroupActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".chat.MergeMessageActivity"

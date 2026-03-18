@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 群组设置专用颜色 -->
+    <color name="group_bg_page">#F5F7F9</color>
+    <color name="group_bg_card">#FFFFFF</color>
+    <color name="group_bg_divider">#E5E7EB</color>
+
+    <!-- 文本颜色 -->
+    <color name="group_text_title">#141414</color>
+    <color name="group_text_primary">#212121</color>
+    <color name="group_text_secondary">#858585</color>
+    <color name="group_text_hint">#5D5D5D</color>
+    <color name="group_text_auxiliary">#999999</color>
+
+    <!-- 状态颜色 -->
+    <color name="group_text_link">#2465FF</color>
+    <color name="group_primary">#2465FF</color>
+    <color name="group_danger">#EF4444</color>
+    <color name="group_role_tag_bg">#E8F0FF</color>
+</resources>

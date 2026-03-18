@@ -51,6 +51,12 @@ public interface UserService {
 
     public void getGroupInfo(String groupId, ApiCallback<GroupDetailBean> callback);
 
+    void getGroupAnnouncement(String groupId, ApiCallback<GroupAnnouncementBean> callback);
+
+    void getGroupQRCode(String groupId, ApiCallback<QRCodeBean> callback);
+
+    void setGroupAnnouncement(String groupId, String content, ApiCallback<Void> callback);
+
     /**
      * 加群
      * 
@@ -59,6 +65,30 @@ public interface UserService {
      * @param callback
      */
     public void inviteJoinGroup(String groupId, List<String> userIds, ApiCallback<Void> callback);
+
+    void removeGroupMembers(String groupId, List<String> userIds, ApiCallback<Void> callback);
+
+    void setGroupMemberMute(String groupId, List<String> userIds, boolean isMute, ApiCallback<Void> callback);
+
+    void setGroupHistoryMessageVisible(String groupId, boolean visible, ApiCallback<Void> callback);
+
+    void setGroupManagement(String groupId, String managementType, int value, ApiCallback<Void> callback);
+
+    void getGroupAdmins(String groupId, ApiCallback<GroupMembersData> callback);
+
+    void addGroupAdmins(String groupId, List<String> adminIds, ApiCallback<Void> callback);
+
+    void removeGroupAdmins(String groupId, List<String> adminIds, ApiCallback<Void> callback);
+
+    void changeGroupOwner(String groupId, String ownerId, ApiCallback<Void> callback);
+
+    void updateGroupInfo(String groupId, String groupName, String groupPortrait, ApiCallback<Void> callback);
+
+    void setGroupDisplayName(String groupId, String displayName, ApiCallback<Void> callback);
+
+    void quitGroup(String groupId, ApiCallback<Void> callback);
+
+    void dissolveGroup(String groupId, ApiCallback<Void> callback);
 
     /**
      * Get friend applications list. GET /jim/friends/applications
@@ -72,4 +102,6 @@ public interface UserService {
      * Query block users list. GET /jim/users/blockusers/list
      */
     void getBlockUsers(int count, String offset, ApiCallback<BlockUsersData> callback);
+
+    void submitFeedback(String category, String text, List<String> images, List<String> videos, ApiCallback<Void> callback);
 }
