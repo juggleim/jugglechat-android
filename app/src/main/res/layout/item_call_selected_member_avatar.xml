@@ -8,6 +8,6 @@
         android:id="@+id/iv_selected_avatar"
         android:layout_width="45dp"
         android:layout_height="45dp"
-        android:src="@drawable/default_avatar" />
+        android:src="@drawable/icon_default_avatar" />
 
 </LinearLayout>

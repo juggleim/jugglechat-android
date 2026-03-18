@@ -40,6 +40,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.gson.Gson;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
+import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.ImageBean;
 import com.juggle.im.android.server.beans.PostBean;
@@ -62,7 +63,7 @@ import java.util.Map;
  * Moments page. Collapsing cover image fills status bar area. When scrolled past cover, title bar shows.
  * Simple RecyclerView feed and a comment input anchored above keyboard.
  */
-public class MomentsActivity extends AppCompatActivity {
+public class MomentsActivity extends AbsAppActivity {
 
     private AppBarLayout appBarLayout;
     private Toolbar toolbar;

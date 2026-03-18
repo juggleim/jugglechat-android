@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
+import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.server.beans.FriendApplicationBean;
 import com.juggle.im.android.server.beans.FriendApplicationsData;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -26,7 +27,7 @@ import com.juggle.im.model.Conversation;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FriendApplicationsActivity extends AppCompatActivity {
+public class FriendApplicationsActivity extends AbsAppActivity {
     private static final String FRIEND_APPLY = "friend_apply";
     private RecyclerView rvApplications;
     private ProgressBar progressBar;

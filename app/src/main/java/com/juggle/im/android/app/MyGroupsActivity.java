@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.ConversationActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.server.beans.GroupBean;
 import com.juggle.im.android.server.beans.GroupListData;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class MyGroupsActivity extends AppCompatActivity {
+public class MyGroupsActivity extends AbsAppActivity {
     private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
 
     private RecyclerView recyclerView;

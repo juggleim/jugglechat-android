@@ -303,7 +303,7 @@ public class ConversationSettingsActivity extends AppCompatActivity {
 
         AvatarUtils.loadAvatar(ivAvatar, portrait, displayName, conversationId);
         tvName.setText(displayName);
-        tvMeta.setText("私聊会话");
+        tvMeta.setText("私信");
         previewMembers.setVisibility(View.GONE);
         findViewById(R.id.iv_edit_group).setVisibility(View.GONE);
     }

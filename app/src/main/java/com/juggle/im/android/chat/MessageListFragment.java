@@ -739,7 +739,30 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 this.recallMessage(message);
                 break;
             case MessageListAdapter.Action.FAVORITE:
-                ToastUtils.show(requireContext(), R.string.msg_action_favorited);
+                String messageId = message.getMessageId();
+                if (messageId == null || messageId.trim().isEmpty()) {
+                    ToastUtils.show(requireContext(), R.string.operation_failed);
+                    return;
+                }
+                List<String> messageIds = new ArrayList<>();
+                messageIds.add(messageId);
+                JIM.getInstance().getMessageManager().addFavorite(messageIds, new IMessageManager.ISimpleCallback() {
+                    @Override
+                    public void onSuccess() {
+                        if (getActivity() == null) {
+                            return;
+                        }
+                        getActivity().runOnUiThread(() -> ToastUtils.show(requireContext(), R.string.msg_action_favorited));
+                    }
+
+                    @Override
+                    public void onError(int i) {
+                        if (getActivity() == null) {
+                            return;
+                        }
+                        getActivity().runOnUiThread(() -> ToastUtils.show(requireContext(), R.string.operation_failed));
+                    }
+                });
                 break;
             case MessageListAdapter.Action.FORWARD:
                 if (!selectionMode) {

@@ -23,6 +23,7 @@
             android:layout_width="match_parent"
             android:layout_height="22dp"
             android:gravity="center"
+            android:layout_gravity="center"
             android:text="@string/add_friend_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />

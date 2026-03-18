@@ -11,7 +11,7 @@
         android:id="@+id/img_member_avatar"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:src="@drawable/default_avatar"/>
+        android:src="@drawable/icon_default_avatar"/>
 
     <TextView
         android:id="@+id/tv_member_name"

@@ -9,7 +9,6 @@
         android:id="@+id/row_content"
         android:layout_width="match_parent"
         android:layout_height="54dp"
-        android:background="@android:color/white"
         android:foreground="?attr/selectableItemBackground"
         android:paddingStart="16dp"
         android:paddingEnd="16dp">
@@ -23,8 +22,8 @@
 
             <ImageView
                 android:id="@+id/iv_row_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="icon" />
 
             <TextView
@@ -73,7 +72,8 @@
         android:id="@+id/row_divider"
         android:layout_width="match_parent"
         android:layout_height="0.5dp"
-        android:layout_marginStart="46dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:background="@color/conversation_item_divider" />
 
 </LinearLayout>

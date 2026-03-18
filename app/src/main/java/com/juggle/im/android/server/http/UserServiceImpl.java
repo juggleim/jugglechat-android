@@ -69,6 +69,13 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
+    public void setAccount(String account, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("account", account == null ? "" : account.trim());
+        enqueueJson("/jim/users/setaccount", body, Void.class, callback);
+    }
+
+    @Override
     public void getUserInfo(String userId, ApiCallback<UserInfoBean> callback) {
         enqueueGet("/jim/users/info?user_id=" + userId, UserInfoBean.class, callback);
     }

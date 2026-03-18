@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.server.beans.BlockUsersData;
 import com.juggle.im.android.server.beans.FriendBean;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -27,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class BlockUsersActivity extends AppCompatActivity {
+public class BlockUsersActivity extends AbsAppActivity {
     private static final int PAGE_SIZE = 50;
 
     private final Collator nameCollator = Collator.getInstance(Locale.CHINA);

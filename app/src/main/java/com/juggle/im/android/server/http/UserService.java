@@ -19,6 +19,8 @@ public interface UserService {
 
     void updateUserInfo(UserInfoRequest userInfo, ApiCallback<Void> callback);
 
+    void setAccount(String account, ApiCallback<Void> callback);
+
     void getUserInfo(String userId, ApiCallback<UserInfoBean> callback);
 
     void getQRCode(ApiCallback<QRCodeBean> callback);

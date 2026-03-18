@@ -1,131 +1,211 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:background="@color/group_bg_page"
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="5dp">
+        android:orientation="vertical">
 
-        <!-- 头像 -->
-        <LinearLayout
-            android:id="@+id/ll_avatar_container"
+        <!-- 顶部Header背景 -->
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical"
-            android:background="?android:attr/selectableItemBackground">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="头像"
-                android:textSize="16sp"
-                android:textColor="@android:color/black" />
+            android:layout_height="150dp">
 
             <ImageView
-                android:id="@+id/iv_avatar"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:src="@drawable/default_avatar" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/bg_profile_header" />
 
-            <ImageView
-                android:layout_width="wrap_content"
+            <!-- 用户信息区域 -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_arrow_right" />
-        </LinearLayout>
+                android:layout_gravity="bottom"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="25dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:background="@color/divider"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp" />
+                <!-- 头像外边框 -->
+                <FrameLayout
+                    android:layout_width="68dp"
+                    android:layout_height="68dp"
+                    android:background="@drawable/bg_avatar_white_border">
 
-        <!-- 昵称 -->
-        <LinearLayout
-            android:id="@+id/ll_nickname_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical"
-            android:background="?android:attr/selectableItemBackground">
+                    <ImageView
+                        android:id="@+id/iv_avatar"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_gravity="center"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/icon_default_avatar" />
+                </FrameLayout>
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="昵称"
-                android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="16dp"
+                    android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tv_nickname"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="未设置"
-                android:textSize="16sp"
-                android:textColor="@android:color/darker_gray" />
+                    <TextView
+                        android:id="@+id/tv_nickname"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/group_text_title"
+                        android:text="用户名" />
 
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_arrow_right" />
-        </LinearLayout>
+                    <TextView
+                        android:id="@+id/tv_user_id"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textSize="16sp"
+                        android:textColor="@color/group_text_secondary"
+                        android:text="账号：@xxx" />
+                </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0.5dp"
-            android:background="@color/divider"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="12dp" />
+                <ImageView
+                    android:id="@+id/iv_qrcode"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_qrcode"
+                    android:background="?attr/selectableItemBackground" />
+            </LinearLayout>
+        </FrameLayout>
 
-        <!-- 用户ID -->
+        <!-- 设置列表分组1 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="12dp"
-            android:gravity="center_vertical">
+            android:layout_marginBottom="12dp"
+            android:elevation="0dp"
+            android:background="@drawable/bg_group_setting_card">
 
-            <TextView
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="用户ID"
-                android:textSize="16sp"
-                android:textColor="@android:color/black" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tv_user_id"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="16sp"
-                android:textColor="@android:color/darker_gray" />
+                <!-- 个人设置 -->
+                <include
+                    android:id="@+id/row_personal_settings"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
         </LinearLayout>
+
+        <!-- 设置列表分组2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="0dp"
+            android:background="@drawable/bg_group_setting_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 通用设置 -->
+                <include
+                    android:id="@+id/row_general_settings"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/group_bg_divider" />
+
+                <!-- 我的收藏 -->
+                <include
+                    android:id="@+id/row_favorites"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 设置列表分组3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:elevation="0dp"
+            android:background="@drawable/bg_group_setting_card">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 用户协议 -->
+                <include
+                    android:id="@+id/row_user_agreement"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/group_bg_divider" />
+
+                <!-- 隐私协议 -->
+                <include
+                    android:id="@+id/row_privacy_policy"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/group_bg_divider" />
+
+                <!-- 意见反馈 -->
+                <include
+                    android:id="@+id/row_feedback"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.5dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/group_bg_divider" />
+
+                <!-- 版本信息 -->
+                <include
+                    android:id="@+id/row_version"
+                    layout="@layout/item_group_setting_row"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+
+
     </LinearLayout>
-
-    <!-- 退出登录按钮 -->
-    <Button
-        android:id="@+id/btn_logout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:text="退出登录"
-        android:textSize="16sp"
-        android:textColor="@android:color/white"
-        android:background="@drawable/shape_logout_button"
-        android:textStyle="bold" />
-
-</LinearLayout>
+</ScrollView>

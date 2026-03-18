@@ -61,7 +61,6 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:background="@color/primary_bg_light"
                 android:gravity="center"
                 app:layout_collapseMode="pin"
                 app:title="朋友圈"

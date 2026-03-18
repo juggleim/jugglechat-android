@@ -19,7 +19,7 @@
         android:layout_height="48dp"
         android:layout_toEndOf="@+id/checkbox_select"
         android:layout_marginStart="16dp"
-        android:src="@drawable/default_avatar" />
+        android:src="@drawable/icon_default_avatar" />
 
     <TextView
         android:id="@+id/tv_nickname"

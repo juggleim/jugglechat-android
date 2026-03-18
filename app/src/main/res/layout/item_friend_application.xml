@@ -18,7 +18,7 @@
             android:layout_marginStart="16dp"
             android:contentDescription="@string/contact"
             android:scaleType="centerCrop"
-            android:src="@drawable/default_avatar" />
+            android:src="@drawable/icon_default_avatar" />
 
         <LinearLayout
             android:id="@+id/ll_user_info"
