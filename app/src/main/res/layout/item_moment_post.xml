@@ -74,18 +74,19 @@
                 tools:text="20:10" />
 
             <ImageView
-                android:layout_marginStart="50dp"
+                android:layout_marginEnd="40dp"
                 android:layout_width="35dp"
                 android:layout_height="35dp"
-                android:padding="10dp"
-                android:src="@drawable/ic_delete_msg"
+                android:padding="5dp"
+                android:layout_gravity="end|center_vertical"
+                android:src="@drawable/ic_moment_del"
                 android:id="@+id/delete_moment"/>
 
             <ImageView
                 android:id="@+id/btn_more"
                 android:layout_width="35dp"
                 android:layout_height="25dp"
-                android:layout_gravity="end"
+                android:layout_gravity="end|center_vertical"
                 android:background="@drawable/rectangle_bg_5"
                 android:src="@drawable/ic_more" />
 
