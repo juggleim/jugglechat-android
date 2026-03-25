@@ -41,6 +41,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     private static final int PAGE_SIZE = 20;
 
     private RecyclerView conversationListView;
+    private View conversationFocusOverlay;
     private ConversationListAdapter conversationListAdapter;
     private PopupWindow popupWindow;
     private ConversationRepository conversationRepository;
@@ -64,6 +65,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         reducer = new ConversationListReducer(conversationRepository);
 
         conversationListView = view.findViewById(R.id.rv_conversation_list);
+        conversationFocusOverlay = view.findViewById(R.id.v_conversation_focus_overlay);
         conversationListAdapter = new ConversationListAdapter();
         conversationListAdapter.setOnConversationClickListener(this);
 
@@ -199,6 +201,11 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     public void onConversationClick(UiConversation uiConversation) {
         int unreadCount = uiConversation.getUnreadCount();
         conversationRepository.clearUnread(uiConversation);
+        if (unreadCount > 0) {
+            UiConversation updated = copyConversation(uiConversation);
+            updated.setUnreadCount(0);
+            dispatch(new ConversationListReducer.ConversationsMerged(Collections.singletonList(updated)));
+        }
 
         Conversation.ConversationType conversationType = uiConversation.getConversationType();
         String conversationId = uiConversation.getId();
@@ -233,15 +240,17 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         popupWindow.setElevation(10);
 
         // 设置PopupWindow消失监听器，用于清除选中状态
-        popupWindow.setOnDismissListener(() -> conversationListAdapter.clearSelectedPosition());
+        popupWindow.setOnDismissListener(this::exitConversationContextMode);
 
         // Get references to menu items
         TextView deleteItem = menuView.findViewById(R.id.menu_delete);
         TextView topItem = menuView.findViewById(R.id.menu_top);
+        TextView unreadItem = menuView.findViewById(R.id.menu_unread);
         TextView muteItem = menuView.findViewById(R.id.menu_mute);
 
         // Set dynamic text based on conversation state
         topItem.setText(uiConversation.isTop() ? "取消置顶" : "置顶");
+        unreadItem.setText(uiConversation.getUnreadCount() > 0 ? "标为已读" : "标为未读");
         muteItem.setText(uiConversation.isMuted() ? "取消免打扰" : "免打扰");
 
         // Set click listeners
@@ -252,6 +261,11 @@ public class ConversationListFragment extends Fragment implements ConversationLi
 
         topItem.setOnClickListener(v -> {
             toggleTopConversation(uiConversation);
+            popupWindow.dismiss();
+        });
+
+        unreadItem.setOnClickListener(v -> {
+            toggleUnreadConversation(uiConversation);
             popupWindow.dismiss();
         });
 
@@ -266,7 +280,8 @@ public class ConversationListFragment extends Fragment implements ConversationLi
             View anchorView = viewHolder.itemView;
 
             // 设置选中状态
-            conversationListAdapter.setSelectedPosition(conversationListAdapter.getPosition(uiConversation));
+            int selectedPosition = conversationListAdapter.getPosition(uiConversation);
+            enterConversationContextMode(selectedPosition);
 
             int[] location = new int[2];
             anchorView.getLocationOnScreen(location); // 获取 item 在屏幕中的绝对坐标
@@ -291,6 +306,22 @@ public class ConversationListFragment extends Fragment implements ConversationLi
 
             // 注意：Gravity.NO_GRAVITY 才能让 x、y 生效
             popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+        } else {
+            exitConversationContextMode();
+        }
+    }
+
+    private void enterConversationContextMode(int selectedPosition) {
+        conversationListAdapter.setSelectedPosition(selectedPosition);
+        if (conversationFocusOverlay != null) {
+            conversationFocusOverlay.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void exitConversationContextMode() {
+        conversationListAdapter.clearSelectedPosition();
+        if (conversationFocusOverlay != null) {
+            conversationFocusOverlay.setVisibility(View.GONE);
         }
     }
 
@@ -308,6 +339,17 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         if (updated.getConversationInfo() != null) {
             updated.getConversationInfo().setTop(newTopStatus);
         }
+        dispatch(new ConversationListReducer.ConversationsMerged(Collections.singletonList(updated)));
+    }
+
+    private void toggleUnreadConversation(UiConversation uiConversation) {
+        boolean hasUnread = uiConversation.getUnreadCount() > 0;
+        if (hasUnread) {
+            conversationRepository.clearUnread(uiConversation);
+        }
+
+        UiConversation updated = copyConversation(uiConversation);
+        updated.setUnreadCount(hasUnread ? 0 : 1);
         dispatch(new ConversationListReducer.ConversationsMerged(Collections.singletonList(updated)));
     }
 

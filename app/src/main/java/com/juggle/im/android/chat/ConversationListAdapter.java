@@ -4,6 +4,9 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
 import android.annotation.SuppressLint;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
+import android.os.Build;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
@@ -265,11 +268,44 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         UiConversation uiConversation = uiConversations.get(position);
         holder.bind(uiConversation);
 
-        // 设置选中状态
-        if (position == selectedPosition) {
-            holder.itemView.setBackgroundResource(R.color.conversation_page_bg);
+        // 长按弹窗打开时：被选中会话保持清晰，其它会话弱化并虚化。
+        if (selectedPosition >= 0) {
+            boolean isSelected = position == selectedPosition;
+            holder.itemView.setAlpha(isSelected ? 1f : 0.35f);
+            applyCardMargins(holder.itemView, isSelected);
+            holder.itemView.setBackgroundResource(isSelected
+                    ? R.drawable.bg_conversation_item_floating
+                    : R.color.white);
+            holder.itemView.setScaleX(isSelected ? 1.02f : 1f);
+            holder.itemView.setScaleY(isSelected ? 1.02f : 1f);
+            holder.itemView.setTranslationY(isSelected ? -dpToPx(holder.itemView, 3f) : 0f);
+            holder.setDividerVisible(!isSelected);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                holder.itemView.setElevation(isSelected ? dpToPx(holder.itemView, 18f) : 0f);
+                holder.itemView.setTranslationZ(isSelected ? dpToPx(holder.itemView, 10f) : 0f);
+                holder.itemView.setClipToOutline(isSelected);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                holder.itemView.setRenderEffect(isSelected
+                        ? null
+                        : RenderEffect.createBlurEffect(6f, 6f, Shader.TileMode.CLAMP));
+            }
         } else {
-            holder.itemView.setBackgroundResource(android.R.color.transparent);
+            holder.itemView.setAlpha(1f);
+            applyCardMargins(holder.itemView, false);
+            holder.itemView.setBackgroundResource(R.color.white);
+            holder.itemView.setScaleX(1f);
+            holder.itemView.setScaleY(1f);
+            holder.itemView.setTranslationY(0f);
+            holder.setDividerVisible(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                holder.itemView.setElevation(0f);
+                holder.itemView.setTranslationZ(0f);
+                holder.itemView.setClipToOutline(false);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                holder.itemView.setRenderEffect(null);
+            }
         }
     }
 
@@ -281,25 +317,17 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     // 添加方法来清除选中状态
     public void clearSelectedPosition() {
         if (selectedPosition >= 0) {
-            int previousPosition = selectedPosition;
             selectedPosition = -1;
-            notifyItemChanged(previousPosition);
+            notifyDataSetChanged();
         }
     }
     
     // 添加方法来设置选中状态
     public void setSelectedPosition(int position) {
-        // 清除之前的选中状态
-        if (selectedPosition >= 0) {
-            int previousPosition = selectedPosition;
-            selectedPosition = -1;
-            notifyItemChanged(previousPosition);
-        }
-        
-        // 设置新的选中状态
-        if (position >= 0) {
-            selectedPosition = position;
-            notifyItemChanged(position);
+        int target = position >= 0 ? position : -1;
+        if (selectedPosition != target) {
+            selectedPosition = target;
+            notifyDataSetChanged();
         }
     }
 
@@ -313,6 +341,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         private View mutedUnreadDotView;
         private ProgressBar progressBar;
         private ImageView ivMsgStatus;
+        private View itemDivider;
 
 
 
@@ -327,6 +356,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             mutedUnreadDotView = itemView.findViewById(R.id.v_muted_unread_dot);
             progressBar = itemView.findViewById(R.id.msg_progress);
             ivMsgStatus = itemView.findViewById(R.id.iv_msg_status);
+            itemDivider = itemView.findViewById(R.id.item_divider);
 
 
             itemView.setOnClickListener(v -> {
@@ -418,6 +448,33 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             float density = itemView.getResources().getDisplayMetrics().density;
             return Math.round(dp * density);
         }
+
+        void setDividerVisible(boolean visible) {
+            itemDivider.setVisibility(visible ? VISIBLE : GONE);
+        }
+    }
+
+    private float dpToPx(@NonNull View view, float dp) {
+        float density = view.getResources().getDisplayMetrics().density;
+        return dp * density;
+    }
+
+    private void applyCardMargins(@NonNull View itemView, boolean isCardStyle) {
+        ViewGroup.LayoutParams params = itemView.getLayoutParams();
+        if (!(params instanceof RecyclerView.LayoutParams)) {
+            return;
+        }
+        RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) params;
+        int horizontal = Math.round(dpToPx(itemView, isCardStyle ? 10f : 0f));
+        int vertical = Math.round(dpToPx(itemView, isCardStyle ? 4f : 0f));
+        if (layoutParams.leftMargin == horizontal
+                && layoutParams.rightMargin == horizontal
+                && layoutParams.topMargin == vertical
+                && layoutParams.bottomMargin == vertical) {
+            return;
+        }
+        layoutParams.setMargins(horizontal, vertical, horizontal, vertical);
+        itemView.setLayoutParams(layoutParams);
     }
 
     /**
