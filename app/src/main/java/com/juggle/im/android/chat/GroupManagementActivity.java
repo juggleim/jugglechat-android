@@ -15,7 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
@@ -28,7 +28,7 @@ import com.juggle.im.android.server.http.ServiceManager;
 
 import java.util.ArrayList;
 
-public class GroupManagementActivity extends AppCompatActivity {
+public class GroupManagementActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final int REQ_CHANGE_OWNER = 2001;
 

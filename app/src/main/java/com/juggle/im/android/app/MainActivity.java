@@ -28,6 +28,7 @@ import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthGuard;
 import com.juggle.im.android.auth.MultiDevicePolicy;
+import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
@@ -406,15 +407,40 @@ public class MainActivity extends AppCompatActivity {
         if (tvHeaderName == null || tvHeaderUserId == null || ivHeaderAvatar == null) {
             return;
         }
+        UserProfileStore.UserProfile cachedProfile = UserProfileStore.read(this);
+
         String displayName = trimToEmpty(ConfigUtils.myName);
+        if (displayName.isEmpty()) {
+            displayName = trimToEmpty(cachedProfile.getNickname());
+        }
         if (displayName.isEmpty()) {
             displayName = getString(R.string.main_default_user_name);
         }
         tvHeaderName.setText(displayName);
 
         String userId = trimToEmpty(JIM.getInstance().getCurrentUserId());
+        if (userId.isEmpty()) {
+            userId = trimToEmpty(cachedProfile.getUserId());
+        }
         tvHeaderUserId.setText(userId.isEmpty() ? "" : "@" + userId);
-        AvatarUtils.loadAvatar(ivHeaderAvatar, ConfigUtils.myAvatarUrl, displayName);
+        String avatarUrl = trimToEmpty(ConfigUtils.myAvatarUrl);
+        if (avatarUrl.isEmpty()) {
+            avatarUrl = trimToEmpty(cachedProfile.getAvatar());
+        }
+        if (ConfigUtils.myName == null || ConfigUtils.myName.trim().isEmpty()) {
+            ConfigUtils.myName = cachedProfile.getNickname();
+        }
+        if (ConfigUtils.myAvatarUrl == null || ConfigUtils.myAvatarUrl.trim().isEmpty()) {
+            ConfigUtils.myAvatarUrl = cachedProfile.getAvatar();
+        }
+        String nameForCache = trimToEmpty(ConfigUtils.myName);
+        if (nameForCache.isEmpty()) {
+            nameForCache = trimToEmpty(cachedProfile.getNickname());
+        }
+        if (!userId.isEmpty()) {
+            UserProfileStore.save(this, userId, nameForCache, avatarUrl);
+        }
+        AvatarUtils.loadAvatar(ivHeaderAvatar, avatarUrl, displayName, userId);
     }
 
     /**

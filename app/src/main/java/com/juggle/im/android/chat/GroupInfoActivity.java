@@ -10,7 +10,7 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.JIM;
@@ -24,7 +24,7 @@ import com.juggle.im.android.utils.AvatarUtils;
 
 import java.util.ArrayList;
 
-public class GroupInfoActivity extends AppCompatActivity {
+public class GroupInfoActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final int REQ_PICK_GROUP_AVATAR = 3201;
 

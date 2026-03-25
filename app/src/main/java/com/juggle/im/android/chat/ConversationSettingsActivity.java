@@ -23,7 +23,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
@@ -45,7 +45,7 @@ import java.util.List;
 /**
  * 群组设置主页（对应设计稿：群组详情）。
  */
-public class ConversationSettingsActivity extends AppCompatActivity {
+public class ConversationSettingsActivity extends AbsAppActivity {
     private static final int REQ_ADD_MEMBER = 1000;
     private static final int ROLE_OWNER = 1;
     private static final int ROLE_ADMIN = 2;

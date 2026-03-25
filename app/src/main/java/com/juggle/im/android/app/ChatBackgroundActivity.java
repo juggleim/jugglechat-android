@@ -7,13 +7,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
 
-public class ChatBackgroundActivity extends AppCompatActivity {
+public class ChatBackgroundActivity extends AbsAppActivity {
     private int selectedIndex;
     private BackgroundAdapter adapter;
 

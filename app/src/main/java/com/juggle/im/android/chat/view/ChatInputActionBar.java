@@ -844,13 +844,14 @@ public class ChatInputActionBar extends LinearLayout {
 
             GridLayout.LayoutParams itemLp = new GridLayout.LayoutParams(
                     GridLayout.spec(row),
-                    GridLayout.spec(col)
+                    GridLayout.spec(col, 1f)
             );
-            itemLp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+            // 四列等分剩余宽度（扣除 panel_more 左右 padding），每列内部内容居中
+            itemLp.width = 0;
             itemLp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            itemLp.setGravity(Gravity.FILL_HORIZONTAL);
             int topMargin = row == 0 ? 0 : dp(30);
-            int rightMargin = col == columns - 1 ? 0 : dp(34);
-            itemLp.setMargins(0, topMargin, rightMargin, 0);
+            itemLp.setMargins(0, topMargin, 0, 0);
             item.setLayoutParams(itemLp);
 
             FrameLayout iconContainer = new FrameLayout(getContext());

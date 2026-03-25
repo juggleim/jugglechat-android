@@ -71,6 +71,7 @@ public final class AuthGuard {
                                   @NonNull String reason,
                                   boolean remoteKickOut) {
         sessionRepository.clearSession();
+        UserProfileStore.clear(activity);
         ConfigUtils.appToken = null;
         ConfigUtils.imToken = null;
         LogUtils.e(TAG, traceId, FEATURE, "auth.guard.blocked", "fail",

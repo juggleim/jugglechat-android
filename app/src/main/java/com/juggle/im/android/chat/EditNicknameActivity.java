@@ -10,11 +10,11 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 
 import com.juggle.im.android.R;
 
-public class EditNicknameActivity extends AppCompatActivity {
+public class EditNicknameActivity extends AbsAppActivity {
 
     private EditText etNickname;
     private TextView tvSave;

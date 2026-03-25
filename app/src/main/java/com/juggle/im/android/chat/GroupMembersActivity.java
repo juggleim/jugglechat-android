@@ -17,7 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class GroupMembersActivity extends AppCompatActivity {
+public class GroupMembersActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final String EXTRA_GROUP_NAME = "extra_group_name";
     private static final String EXTRA_MY_ROLE = "extra_my_role";

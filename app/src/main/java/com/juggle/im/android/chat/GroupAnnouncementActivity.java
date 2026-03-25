@@ -10,14 +10,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 
-public class GroupAnnouncementActivity extends AppCompatActivity {
+public class GroupAnnouncementActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final String EXTRA_CONTENT = "extra_content";
     private static final String EXTRA_EDITABLE = "extra_editable";

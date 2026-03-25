@@ -27,6 +27,7 @@ import com.juggle.im.android.app.UserAgreementActivity;
 import com.juggle.im.android.app.PrivacyPolicyActivity;
 import com.juggle.im.android.app.FeedbackActivity;
 import com.juggle.im.android.auth.SessionRepository;
+import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.beans.UserInfoRequest;
@@ -142,6 +143,16 @@ public class MyProfileFragment extends Fragment {
 
                 getActivity().runOnUiThread(() -> {
                     currentUserInfo = data;
+                    if (data != null) {
+                        ConfigUtils.myName = data.getNickname();
+                        ConfigUtils.myAvatarUrl = data.getAvatar();
+                        if (getContext() != null) {
+                            UserProfileStore.save(getContext(),
+                                    data.getUserId(),
+                                    data.getNickname(),
+                                    data.getAvatar());
+                        }
+                    }
                     updateUI();
                 });
             }
@@ -259,6 +270,10 @@ public class MyProfileFragment extends Fragment {
                 currentUserInfo.setAvatar(avatar);
             }
         }
+        String userId = currentUserInfo == null ? JIM.getInstance().getCurrentUserId() : currentUserInfo.getUserId();
+        String cachedName = currentUserInfo == null ? ConfigUtils.myName : currentUserInfo.getNickname();
+        String cachedAvatar = currentUserInfo == null ? ConfigUtils.myAvatarUrl : currentUserInfo.getAvatar();
+        UserProfileStore.save(requireContext(), userId, cachedName, cachedAvatar);
         updateUI();
     }
 
@@ -290,6 +305,7 @@ public class MyProfileFragment extends Fragment {
                     ConfigUtils.myName = null;
                     ConfigUtils.myAvatarUrl = null;
                     SessionRepository.create(requireContext()).clearSession();
+                    UserProfileStore.clear(requireContext());
                     JIM.getInstance().getConnectionManager().disconnect(false);
 
                     // 跳转到登录页面

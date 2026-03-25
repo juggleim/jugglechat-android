@@ -14,7 +14,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.android.R;
@@ -23,7 +23,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 
-public class GroupQrcodeActivity extends AppCompatActivity {
+public class GroupQrcodeActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final String EXTRA_GROUP_NAME = "extra_group_name";
     private static final String EXTRA_GROUP_AVATAR = "extra_group_avatar";

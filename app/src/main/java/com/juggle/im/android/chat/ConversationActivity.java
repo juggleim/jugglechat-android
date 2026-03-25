@@ -17,7 +17,7 @@ import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
@@ -73,7 +73,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class ConversationActivity extends AppCompatActivity {
+public class ConversationActivity extends AbsAppActivity {
     public static final String EXTRA_CONVERSATION_ID = "extra_conversation_id";
     public static final String EXTRA_IS_GROUP = "extra_is_group";
     public static final String EXTRA_TITLE = "extra_title";
@@ -291,7 +291,7 @@ public class ConversationActivity extends AppCompatActivity {
     private void applySystemBarStyle() {
         Window window = getWindow();
         window.setStatusBarColor(getColor(R.color.white));
-        window.setNavigationBarColor(getColor(R.color.white));
+        window.setNavigationBarColor(getColor(R.color.input_bg_light));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowInsetsController controller = window.getInsetsController();
             if (controller != null) {

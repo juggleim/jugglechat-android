@@ -13,7 +13,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.utils.ToastUtils;
@@ -21,7 +21,7 @@ import com.juggle.im.android.utils.ToastUtils;
 /**
  * 通用 Web 页面承载页，用于展示协议类静态页面。
  */
-public class WebViewPageActivity extends AppCompatActivity {
+public class WebViewPageActivity extends AbsAppActivity {
     private static final String EXTRA_URL = "extra_url";
     private static final String EXTRA_TITLE = "extra_title";
 

@@ -8,7 +8,7 @@ import android.os.Bundle;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SelectMemberActivity extends AppCompatActivity {
+public class SelectMemberActivity extends AbsAppActivity {
     public final static String GROUP_ID = "GROUP_ID";
     public final static String SELECTED_MEMBERS = "SELECTED_MEMBERS";
     public final static String SELECTED_MEMBERS_NAME = "SELECTED_MEMBERS_NAME";

@@ -7,14 +7,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 
 import com.juggle.im.android.R;
 
 /**
  * 用户协议页面
  */
-public class UserAgreementActivity extends AppCompatActivity {
+public class UserAgreementActivity extends AbsAppActivity {
 
     public static void start(@NonNull Context context) {
         Intent intent = new Intent(context, UserAgreementActivity.class);

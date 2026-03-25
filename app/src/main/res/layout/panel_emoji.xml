@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="@dimen/input_panel_height"
-    android:background="@color/emoji_bg"
+    android:background="@android:color/transparent"
     android:orientation="vertical">
 
     <View
@@ -14,6 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:fillViewport="true"
+        android:visibility="gone"
         android:overScrollMode="never"
         android:background="#F5F7F9"
         android:scrollbars="none">
@@ -35,22 +36,17 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="180dp">
+        android:layout_height="match_parent">
 
         <GridView
             android:id="@+id/emoji_grid"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:columnWidth="40dp"
-            android:gravity="start"
-            android:horizontalSpacing="10dp"
+            android:gravity="center"
             android:numColumns="7"
-            android:paddingStart="16dp"
-            android:paddingTop="8dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp"
-            android:stretchMode="none"
+            android:padding="16dp"
+            android:stretchMode="columnWidth"
             android:verticalSpacing="10dp" />
 
         <LinearLayout

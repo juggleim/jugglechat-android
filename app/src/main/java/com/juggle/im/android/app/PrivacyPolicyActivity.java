@@ -7,14 +7,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 
 import com.juggle.im.android.R;
 
 /**
  * 隐私协议页面
  */
-public class PrivacyPolicyActivity extends AppCompatActivity {
+public class PrivacyPolicyActivity extends AbsAppActivity {
 
     public static void start(@NonNull Context context) {
         Intent intent = new Intent(context, PrivacyPolicyActivity.class);

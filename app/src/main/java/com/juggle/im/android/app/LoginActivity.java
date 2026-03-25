@@ -20,7 +20,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -29,6 +28,8 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthInputValidator;
 import com.juggle.im.android.auth.AuthRequestFactory;
 import com.juggle.im.android.auth.SessionRepository;
+import com.juggle.im.android.auth.UserProfileStore;
+import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.CodeRequest;
@@ -37,7 +38,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.ToastUtils;
 
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AbsAppActivity {
     private static final String TAG = "LoginActivity";
     private static final long TOKEN_VALIDITY_DURATION = 2L * 24 * 60 * 60 * 1000;
 
@@ -293,6 +294,7 @@ public class LoginActivity extends AppCompatActivity {
         ConfigUtils.appToken = data.getAuthorization();
         ConfigUtils.myName = data.getNickname();
         ConfigUtils.myAvatarUrl = data.getAvatar();
+        UserProfileStore.save(this, data.getUser_id(), data.getNickname(), data.getAvatar());
 
         if (!persistSession(data.getAuthorization(), data.getIm_token())) {
             showLoading(false);

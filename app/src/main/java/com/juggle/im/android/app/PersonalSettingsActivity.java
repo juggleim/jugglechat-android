@@ -13,7 +13,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.bumptech.glide.Glide;
@@ -22,6 +21,7 @@ import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.SessionRepository;
+import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.server.beans.UserInfoBean;
@@ -120,6 +120,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
                 originalAccount = safeText(data.getUserId(), "");
                 originalAvatarUrl = safeText(data.getAvatar(), "");
                 avatarUrl = originalAvatarUrl;
+                UserProfileStore.save(PersonalSettingsActivity.this, originalAccount, originalName, originalAvatarUrl);
                 bindUserData(originalName, originalAccount, avatarUrl);
             }
 
@@ -274,6 +275,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         avatarUrl = avatar;
         ConfigUtils.myName = name;
         ConfigUtils.myAvatarUrl = avatar;
+        UserProfileStore.save(this, account, name, avatar);
         Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
         finish();
     }
@@ -300,6 +302,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
                     ConfigUtils.myName = null;
                     ConfigUtils.myAvatarUrl = null;
                     SessionRepository.create(this).clearSession();
+                    UserProfileStore.clear(this);
                     JIM.getInstance().getConnectionManager().disconnect(false);
 
                     Intent intent = new Intent(this, LoginActivity.class);

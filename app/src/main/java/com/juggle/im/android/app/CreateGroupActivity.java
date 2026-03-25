@@ -19,7 +19,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class CreateGroupActivity extends AppCompatActivity {
+public class CreateGroupActivity extends AbsAppActivity {
 
     private static final int PAGE_SIZE = 50;
     private static final Transliterator HAN_TO_LATIN = Transliterator.getInstance(

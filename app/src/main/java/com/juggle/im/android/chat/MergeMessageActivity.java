@@ -10,7 +10,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MergeMessageActivity extends AppCompatActivity {
+public class MergeMessageActivity extends AbsAppActivity {
     public static final String EXTRA_MESSAGE_ID = "mergeMsg";
 
     public static void start(Context ctx, String mergeMsgId) {

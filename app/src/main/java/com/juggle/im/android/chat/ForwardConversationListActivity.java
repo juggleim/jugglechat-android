@@ -5,7 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 
 import com.juggle.im.android.R;
 
@@ -13,7 +13,7 @@ import com.juggle.im.android.R;
  * Activity host for the forward-conversation list. Shows a toolbar with title and close button
  * and hosts {@link ForwardConversationListFragment}.
  */
-public class ForwardConversationListActivity extends AppCompatActivity {
+public class ForwardConversationListActivity extends AbsAppActivity {
     public static final String EXTRA_CONVERSATION_ID = "extra_conversation_id";
     public static final String EXTRA_CONVERSATION_NAME = "extra_conversation_name";
     public static final String EXTRA_IS_GROUP = "extra_is_group";

@@ -20,7 +20,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,7 +36,7 @@ import com.juggle.im.android.utils.AvatarUtils;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GroupAdminsActivity extends AppCompatActivity {
+public class GroupAdminsActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final String EXTRA_OWNER_ID = "extra_owner_id";
     private static final int REQ_ADD_ADMINS = 3001;

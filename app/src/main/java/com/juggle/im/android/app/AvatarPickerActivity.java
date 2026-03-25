@@ -19,7 +19,7 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,7 +31,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AvatarPickerActivity extends AppCompatActivity {
+public class AvatarPickerActivity extends AbsAppActivity {
     public static final String EXTRA_SELECTED_PATH = "extra_selected_path";
 
     private final List<String> imagePaths = new ArrayList<>();

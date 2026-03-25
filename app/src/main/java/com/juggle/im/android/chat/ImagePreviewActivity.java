@@ -23,7 +23,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 
@@ -46,7 +46,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Full-screen image preview. Supports pinch-to-zoom (PhotoView), share (forward), and save to gallery.
  */
-public class ImagePreviewActivity extends AppCompatActivity {
+public class ImagePreviewActivity extends AbsAppActivity {
 
     public static final String EXTRA_IMAGE_URL = "image_url";
     public static final String EXTRA_IMAGE_URLS = "image_urls";

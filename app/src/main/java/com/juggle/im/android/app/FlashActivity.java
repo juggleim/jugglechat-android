@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.SessionRepository;
 import com.juggle.im.android.auth.StartupRouteUseCase;
+import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.model.ConfigUtils;
 
 public class FlashActivity extends AppCompatActivity {
@@ -38,6 +39,11 @@ public class FlashActivity extends AppCompatActivity {
         }
         ConfigUtils.appToken = sessionState.getAppToken();
         ConfigUtils.imToken = sessionState.getImToken();
+        UserProfileStore.UserProfile userProfile = UserProfileStore.read(this);
+        if (!userProfile.isEmpty()) {
+            ConfigUtils.myName = userProfile.getNickname();
+            ConfigUtils.myAvatarUrl = userProfile.getAvatar();
+        }
     }
 
     private void autoLogin() {

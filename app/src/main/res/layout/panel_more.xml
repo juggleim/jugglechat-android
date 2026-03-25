@@ -11,7 +11,11 @@
         android:columnCount="4"
         android:rowCount="2"
         android:alignmentMode="alignMargins"
-        android:padding="15dp"
-        android:useDefaultMargins="true" />
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:useDefaultMargins="false" />
+
 
 </FrameLayout>

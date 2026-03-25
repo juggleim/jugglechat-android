@@ -17,7 +17,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -30,7 +30,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.ToastUtils;
 
-public class RegisterActivity extends AppCompatActivity {
+public class RegisterActivity extends AbsAppActivity {
     private EditText registerAccountInput;
     private EditText registerPasswordInput;
     private EditText registerConfirmPasswordInput;

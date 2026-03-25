@@ -5,14 +5,14 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.ImageView;
 
-import androidx.appcompat.app.AppCompatActivity;
+import com.juggle.im.android.component.AbsAppActivity;
 
 import com.bumptech.glide.Glide;
 import com.juggle.im.android.R;
 
 import java.io.File;
 
-public class AvatarPreviewActivity extends AppCompatActivity {
+public class AvatarPreviewActivity extends AbsAppActivity {
     public static final String EXTRA_IMAGE_PATH = "extra_image_path";
 
     @Override
