@@ -12,12 +12,16 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 import android.graphics.Color;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -46,7 +50,7 @@ import java.util.concurrent.ExecutionException;
 /**
  * Full-screen image preview. Supports pinch-to-zoom (PhotoView), share (forward), and save to gallery.
  */
-public class ImagePreviewActivity extends AbsAppActivity {
+public class ImagePreviewActivity extends AppCompatActivity {
 
     public static final String EXTRA_IMAGE_URL = "image_url";
     public static final String EXTRA_IMAGE_URLS = "image_urls";
@@ -84,6 +88,7 @@ public class ImagePreviewActivity extends AbsAppActivity {
         btnSave = findViewById(R.id.preview_btn_save);
         progressBar = findViewById(R.id.preview_progress);
         indicatorText = findViewById(R.id.preview_indicator);
+        applyBottomActionInsets();
 
 
         // Get image URLs from intent
@@ -194,6 +199,34 @@ public class ImagePreviewActivity extends AbsAppActivity {
         }
     }
 
+    private void applyBottomActionInsets() {
+        View actions = findViewById(R.id.preview_bottom_actions);
+        if (actions == null) {
+            return;
+        }
+        ViewGroup.LayoutParams params = actions.getLayoutParams();
+        if (!(params instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        final int baseBottomMargin = ((ViewGroup.MarginLayoutParams) params).bottomMargin;
+        ViewCompat.setOnApplyWindowInsetsListener(actions, (v, insets) -> {
+            int navigationBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+            int gestureBottom = insets.getInsets(WindowInsetsCompat.Type.systemGestures()).bottom;
+            int safeBottom = Math.max(navigationBottom, gestureBottom);
+            ViewGroup.LayoutParams lp = v.getLayoutParams();
+            if (lp instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                int targetBottom = baseBottomMargin + safeBottom;
+                if (mlp.bottomMargin != targetBottom) {
+                    mlp.bottomMargin = targetBottom;
+                    v.setLayoutParams(mlp);
+                }
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(actions);
+    }
+
     /**
      * Enable full screen mode and draw behind the status bar.
      * Uses modern WindowInsetsController on newer Android versions and
@@ -224,6 +257,15 @@ public class ImagePreviewActivity extends AbsAppActivity {
                 window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             }
         }
+
+        // 与页面黑色背景保持一致，避免底部手势区域出现色差。
+        window.setNavigationBarColor(Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+        controller.setAppearanceLightStatusBars(false);
+        controller.setAppearanceLightNavigationBars(false);
     }
 
     private boolean saveBitmapToGallery(Bitmap bitmap) {

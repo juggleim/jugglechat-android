@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="horizontal"
     android:padding="6dp">
 
     <!-- selection checkbox, hidden by default -->
-    <ImageView
-        android:id="@+id/image_select_box"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+    <com.juggle.im.android.widget.JuggleCheckBox
+        android:id="@+id/checkbox"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_gravity="start|center_vertical"
         android:layout_marginEnd="8dp"
-        android:contentDescription="select"
-        android:padding="8dp"
-        android:src="@drawable/ic_checkbox_unselect" />
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"

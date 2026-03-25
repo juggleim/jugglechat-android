@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -39,6 +41,7 @@ public class AlbumActivity extends AppCompatActivity {
     private ImageView mCancelButton;
     private Button mPreviewButton;
     private Button mSendButton;
+    private View mBottomBar;
     private AlbumImageAdapter mAdapter;
     private List<String> mSelectedImages = new ArrayList<>();
     private static final String TAG = "AlbumActivity";
@@ -55,6 +58,7 @@ public class AlbumActivity extends AppCompatActivity {
         }
 
         initViews();
+        applyBottomBarInsets();
         setupRecyclerView();
         setupEventListeners();
         
@@ -91,6 +95,12 @@ public class AlbumActivity extends AppCompatActivity {
             }
         }
         window.setNavigationBarColor(getColor(R.color.black));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setNavigationBarContrastEnforced(false);
+        }
+        WindowInsetsControllerCompat controller = new WindowInsetsControllerCompat(window, window.getDecorView());
+        controller.setAppearanceLightStatusBars(false);
+        controller.setAppearanceLightNavigationBars(false);
 
     }
 
@@ -99,6 +109,34 @@ public class AlbumActivity extends AppCompatActivity {
         mCancelButton = findViewById(R.id.album_cancel_button);
         mPreviewButton = findViewById(R.id.album_preview_button);
         mSendButton = findViewById(R.id.album_send_button);
+        mBottomBar = findViewById(R.id.album_bottom_bar);
+    }
+
+    private void applyBottomBarInsets() {
+        if (mBottomBar == null) {
+            return;
+        }
+        ViewGroup.LayoutParams params = mBottomBar.getLayoutParams();
+        if (!(params instanceof ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        final int baseBottomMargin = ((ViewGroup.MarginLayoutParams) params).bottomMargin;
+        ViewCompat.setOnApplyWindowInsetsListener(mBottomBar, (v, insets) -> {
+            int navigationBottom = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+            int gestureBottom = insets.getInsets(WindowInsetsCompat.Type.systemGestures()).bottom;
+            int safeBottom = Math.max(navigationBottom, gestureBottom);
+            ViewGroup.LayoutParams lp = v.getLayoutParams();
+            if (lp instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams mlp = (ViewGroup.MarginLayoutParams) lp;
+                int targetBottom = baseBottomMargin + safeBottom;
+                if (mlp.bottomMargin != targetBottom) {
+                    mlp.bottomMargin = targetBottom;
+                    v.setLayoutParams(mlp);
+                }
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(mBottomBar);
     }
 
     private void setupRecyclerView() {

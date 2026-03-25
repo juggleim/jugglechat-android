@@ -7,10 +7,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.JuggleCheckBox;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +24,7 @@ import java.util.Set;
 
 /**
  * 创建群聊成员列表适配器。
- * 对外通过 {@link #submit(List, Set)} 提交“分组头 + 成员行”混合数据，
+ * 对外通过 {@link #submit(List, Set, Set)} 提交”分组头 + 成员行”混合数据，
  * 并提供 {@link #findSectionPosition(String)} 供字母索引快速定位。
  */
 public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -31,6 +34,7 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
     private final List<RowItem> rows = new ArrayList<>();
     private final Set<String> selectedUserIds = new HashSet<>();
+    private final Set<String> disabledUserIds = new HashSet<>();
     private final Map<String, Integer> sectionPositionMap = new HashMap<>();
     private final OnMemberClickListener onMemberClickListener;
 
@@ -43,8 +47,9 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
      *
      * @param newRows          混合行数据（分组头 + 成员行）
      * @param newSelectedIds   当前选中的成员 userId 集合
+     * @param newDisabledIds   禁用选择的成员 userId 集合
      */
-    public void submit(List<RowItem> newRows, Set<String> newSelectedIds) {
+    public void submit(List<RowItem> newRows, Set<String> newSelectedIds, Set<String> newDisabledIds) {
         rows.clear();
         if (newRows != null) {
             rows.addAll(newRows);
@@ -55,6 +60,11 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             selectedUserIds.addAll(newSelectedIds);
         }
 
+        disabledUserIds.clear();
+        if (newDisabledIds != null) {
+            disabledUserIds.addAll(newDisabledIds);
+        }
+
         sectionPositionMap.clear();
         for (int i = 0; i < rows.size(); i++) {
             RowItem row = rows.get(i);
@@ -63,6 +73,25 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
             }
         }
         notifyDataSetChanged();
+    }
+
+    /**
+     * 更新单个成员的选中状态（避免整个列表重绘导致的闪烁）
+     */
+    public void updateMemberSelection(String userId, boolean selected) {
+        if (selected) {
+            selectedUserIds.add(userId);
+        } else {
+            selectedUserIds.remove(userId);
+        }
+
+        for (int i = 0; i < rows.size(); i++) {
+            RowItem row = rows.get(i);
+            if (row instanceof MemberRow && ((MemberRow) row).userId.equals(userId)) {
+                notifyItemChanged(i, Boolean.valueOf(selected));
+                return;
+            }
+        }
     }
 
     /**
@@ -105,13 +134,40 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
 
         MemberRow item = (MemberRow) rowItem;
         MemberViewHolder vh = (MemberViewHolder) holder;
+        bindMemberViewHolder(vh, item, selectedUserIds.contains(item.userId));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position);
+            return;
+        }
+
+        RowItem rowItem = rows.get(position);
+        if (rowItem instanceof MemberRow && holder instanceof MemberViewHolder) {
+            MemberRow item = (MemberRow) rowItem;
+            MemberViewHolder vh = (MemberViewHolder) holder;
+            boolean selected = payloads.get(0) instanceof Boolean && (Boolean) payloads.get(0);
+            bindMemberViewHolder(vh, item, selected);
+        }
+    }
+
+    private void bindMemberViewHolder(MemberViewHolder vh, MemberRow item, boolean selected) {
         vh.tvName.setText(item.displayName);
         AvatarUtils.loadAvatar(vh.ivAvatar, item.avatar, item.displayName);
         vh.vDivider.setVisibility(item.showDivider ? View.VISIBLE : View.GONE);
 
-        boolean selected = selectedUserIds.contains(item.userId);
-        vh.ivSelect.setImageResource(selected ? R.drawable.ic_checkbox_selected : R.drawable.ic_checkbox_unselect);
+        boolean disabled = disabledUserIds.contains(item.userId);
+        vh.checkBox.setChecked(selected);
+        vh.checkBox.setDisabled(disabled);
+        vh.ivAvatar.setAlpha(disabled ? 0.3f : 1f);
+        vh.tvName.setAlpha(disabled ? 0.3f : 1f);
+
         vh.itemView.setOnClickListener(v -> {
+            if (disabled) {
+                return;
+            }
             if (onMemberClickListener != null) {
                 onMemberClickListener.onMemberClick(item);
             }
@@ -167,14 +223,14 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     }
 
     static class MemberViewHolder extends RecyclerView.ViewHolder {
-        final ImageView ivSelect;
+        final JuggleCheckBox checkBox;
         final ImageView ivAvatar;
         final TextView tvName;
         final View vDivider;
 
         MemberViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivSelect = itemView.findViewById(R.id.iv_select);
+            checkBox = itemView.findViewById(R.id.checkbox);
             ivAvatar = itemView.findViewById(R.id.iv_avatar);
             tvName = itemView.findViewById(R.id.tv_name);
             vDivider = itemView.findViewById(R.id.v_divider);

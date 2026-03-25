@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="6dp">
 
-    <ImageView
-        android:id="@+id/image_select_box"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+    <com.juggle.im.android.widget.JuggleCheckBox
+        android:id="@+id/checkbox"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
         android:layout_marginEnd="8dp"
         android:layout_gravity="start|center_vertical"
-        android:padding="8dp"
-        android:visibility="gone"
-        android:src="@drawable/ic_checkbox_unselect"
-        android:contentDescription="select" />
+        android:visibility="gone" />
 
     <ImageView
         android:id="@+id/image_avatar"

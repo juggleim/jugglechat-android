@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.android.R;
 import com.juggle.im.android.server.beans.FriendBean;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.JuggleCheckBox;
 import com.juggle.im.JIM;
 import com.juggle.im.model.Conversation;
 
@@ -74,9 +75,10 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
                 if (selectionChanged != null) selectionChanged.onSelectionChanged(f, !cur);
             });
             // indicate selection state by overlaying a small check image on the right
-            View overlay = holder.itemView.findViewById(R.id.iv_checkbox);
-            if (overlay != null)
-                overlay.setVisibility(selectedMap.containsKey(f.getUser_id()) ? View.VISIBLE : View.GONE);
+            if (holder.checkBox != null) {
+                holder.checkBox.setVisibility(View.VISIBLE);
+                holder.checkBox.setChecked(selectedMap.containsKey(f.getUser_id()));
+            }
         } else {
             holder.itemView.setOnClickListener(v -> {
                 Conversation convo = new Conversation(Conversation.ConversationType.PRIVATE, f.getUser_id());
@@ -84,6 +86,9 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
                 Intent intent = ConversationActivity.intentFor(v.getContext(), f.getUser_id(), false, f.getNickname());
                 v.getContext().startActivity(intent);
             });
+            if (holder.checkBox != null) {
+                holder.checkBox.setVisibility(View.GONE);
+            }
         }
     }
 
@@ -95,11 +100,13 @@ public class FriendsListAdapter extends RecyclerView.Adapter<FriendsListAdapter.
     static class VH extends RecyclerView.ViewHolder {
         ImageView iv;
         TextView tv;
+        JuggleCheckBox checkBox;
 
         VH(@NonNull View itemView) {
             super(itemView);
             iv = itemView.findViewById(R.id.iv_avatar);
             tv = itemView.findViewById(R.id.tv_nickname);
+            checkBox = itemView.findViewById(R.id.checkbox);
         }
     }
 }

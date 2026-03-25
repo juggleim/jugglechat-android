@@ -27,6 +27,7 @@ import com.juggle.im.android.chat.provider.MessageView;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ResourceUtils;
+import com.juggle.im.android.widget.JuggleCheckBox;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.ImageMessage;
@@ -174,7 +175,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private final ViewGroup container;
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
-        private final ImageView selectBox;
+        private final JuggleCheckBox checkBox;
         private String lastBoundStableKey = "";
         private Class<?> lastBoundContentClass = null;
         private boolean lastBoundHasReply = false;
@@ -183,7 +184,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             super(itemView);
             this.container = itemView.findViewById(R.id.message_content_container);
             this.actionListener = listener;
-            this.selectBox = itemView.findViewById(R.id.image_select_box);
+            this.checkBox = itemView.findViewById(R.id.checkbox);
         }
 
         void bind(UiMessage m, boolean isGroup, boolean isSend, boolean inSelectionMode, boolean selected) {
@@ -255,14 +256,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             });
 
             // configure select box visibility and state
-            if (selectBox != null) {
+            if (checkBox != null) {
                 if (inSelectionMode) {
-                    selectBox.setVisibility(VISIBLE);
-                    selectBox.setImageResource(selected ? R.drawable.ic_checkbox_selected : R.drawable.ic_checkbox_unselect);
+                    checkBox.setVisibility(VISIBLE);
+                    checkBox.setChecked(selected);
                 } else {
-                    selectBox.setVisibility(GONE);
+                    checkBox.setVisibility(GONE);
                 }
-                selectBox.setOnClickListener(v -> {
+                checkBox.setOnClickListener(v -> {
                     if (actionListener != null) {
                         actionListener.onMessageAction(m, "toggle_select");
                     }

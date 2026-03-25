@@ -1,5 +1,7 @@
 package com.juggle.im.android.app;
 
+import android.content.Context;
+import android.content.Intent;
 import android.icu.text.Transliterator;
 import android.os.Bundle;
 import android.text.Editable;
@@ -38,12 +40,22 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class CreateGroupActivity extends AbsAppActivity {
+
+    public static final String EXTRA_MODE = "extra_mode";
+    public static final String EXTRA_GROUP_ID = "extra_group_id";
+    public static final String EXTRA_DISABLE_USER_IDS = "extra_disable_user_ids";
+    public static final String EXTRA_SELECTED_USER_IDS = "extra_selected_user_ids";
+
+    public static final int MODE_CREATE_GROUP = 1;
+    public static final int MODE_ADD_MEMBER = 2;
 
     private static final int PAGE_SIZE = 50;
     private static final Transliterator HAN_TO_LATIN = Transliterator.getInstance(
@@ -57,9 +69,11 @@ public class CreateGroupActivity extends AbsAppActivity {
     private final List<CreateGroupListAdapter.RowItem> currentRows = new ArrayList<>();
     private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
     private final Map<String, TextView> indexViewMap = new HashMap<>();
+    private final Set<String> disabledUserIds = new HashSet<>();
 
     private EditText searchInput;
     private TextView btnConfirm;
+    private TextView tvPageTitle;
     private ImageView searchIcon;
     private HorizontalScrollView searchContentScroll;
     private LinearLayout selectedChipsContainer;
@@ -69,11 +83,22 @@ public class CreateGroupActivity extends AbsAppActivity {
 
     private boolean creating;
     private String activeIndexLetter = "A";
+    private int mode = MODE_CREATE_GROUP;
+    private String groupId;
+
+    public static Intent newIntent(Context context, int mode, String groupId, ArrayList<String> disableUserIds) {
+        Intent intent = new Intent(context, CreateGroupActivity.class);
+        intent.putExtra(EXTRA_MODE, mode);
+        intent.putExtra(EXTRA_GROUP_ID, groupId);
+        intent.putStringArrayListExtra(EXTRA_DISABLE_USER_IDS, disableUserIds);
+        return intent;
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_group);
+        parseIntent();
         setupWindowStyle();
         initViews();
         initList();
@@ -81,6 +106,15 @@ public class CreateGroupActivity extends AbsAppActivity {
         bindEvents();
         refreshSelectedChips();
         loadFriendsRecursively(1, new ArrayList<>());
+    }
+
+    private void parseIntent() {
+        mode = getIntent().getIntExtra(EXTRA_MODE, MODE_CREATE_GROUP);
+        groupId = getIntent().getStringExtra(EXTRA_GROUP_ID);
+        ArrayList<String> disableList = getIntent().getStringArrayListExtra(EXTRA_DISABLE_USER_IDS);
+        if (disableList != null) {
+            disabledUserIds.addAll(disableList);
+        }
     }
 
     private void setupWindowStyle() {
@@ -98,7 +132,15 @@ public class CreateGroupActivity extends AbsAppActivity {
         searchContentScroll = findViewById(R.id.hsv_search_content);
         selectedChipsContainer = findViewById(R.id.ll_selected_chips);
         indexBar = findViewById(R.id.ll_index_bar);
+        tvPageTitle = findViewById(R.id.tv_page_title);
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+
+        // 根据模式更新标题
+        if (mode == MODE_ADD_MEMBER) {
+            tvPageTitle.setText("添加成员");
+        } else {
+            tvPageTitle.setText(R.string.create_group_page_title);
+        }
         updateConfirmButtonState();
     }
 
@@ -118,7 +160,13 @@ public class CreateGroupActivity extends AbsAppActivity {
     }
 
     private void bindEvents() {
-        btnConfirm.setOnClickListener(v -> doCreateGroup());
+        btnConfirm.setOnClickListener(v -> {
+            if (mode == MODE_ADD_MEMBER) {
+                doAddMember();
+            } else {
+                doCreateGroup();
+            }
+        });
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -305,7 +353,7 @@ public class CreateGroupActivity extends AbsAppActivity {
     private void renderRows(List<CreateGroupListAdapter.RowItem> rows) {
         currentRows.clear();
         currentRows.addAll(rows);
-        adapter.submit(currentRows, selectedMap.keySet());
+        adapter.submit(currentRows, selectedMap.keySet(), disabledUserIds);
 
         if (adapter.findSectionPosition(activeIndexLetter) < 0) {
             String firstSection = findFirstSectionLetter();
@@ -330,15 +378,21 @@ public class CreateGroupActivity extends AbsAppActivity {
         if (row == null || TextUtils.isEmpty(row.userId)) {
             return;
         }
-        if (selectedMap.containsKey(row.userId)) {
-            selectedMap.remove(row.userId);
-        } else {
+        // 禁用成员不可选择
+        if (disabledUserIds.contains(row.userId)) {
+            return;
+        }
+        boolean willSelect = !selectedMap.containsKey(row.userId);
+        if (willSelect) {
             FriendEntry entry = findFriendByUserId(row.userId);
             if (entry != null) {
                 selectedMap.put(row.userId, entry);
             }
+        } else {
+            selectedMap.remove(row.userId);
         }
-        adapter.submit(currentRows, selectedMap.keySet());
+        // 使用局部更新避免闪烁
+        adapter.updateMemberSelection(row.userId, willSelect);
         refreshSelectedChips();
         updateConfirmButtonState();
     }
@@ -514,6 +568,35 @@ public class CreateGroupActivity extends AbsAppActivity {
                 Toast.makeText(CreateGroupActivity.this,
                         getString(R.string.create_group_create_failed, String.valueOf(message)),
                         Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void doAddMember() {
+        if (selectedMap.isEmpty()) {
+            Toast.makeText(this, R.string.create_group_select_required, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        List<String> memberIds = new ArrayList<>(selectedMap.keySet());
+
+        creating = true;
+        updateConfirmButtonState();
+        ServiceManager.getUserService().inviteJoinGroup(groupId, memberIds, new ApiCallback<Void>() {
+            @Override
+            public void onSuccess(Void data) {
+                creating = false;
+                updateConfirmButtonState();
+                Toast.makeText(CreateGroupActivity.this, "邀请成功", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
+                finish();
+            }
+
+            @Override
+            public void onError(int code, String message) {
+                creating = false;
+                updateConfirmButtonState();
+                Toast.makeText(CreateGroupActivity.this, "邀请失败：" + message, Toast.LENGTH_SHORT).show();
             }
         });
     }

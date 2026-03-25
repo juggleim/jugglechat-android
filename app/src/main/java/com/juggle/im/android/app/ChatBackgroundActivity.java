@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.widget.JuggleCheckBox;
 
 public class ChatBackgroundActivity extends AbsAppActivity {
     private int selectedIndex;
@@ -54,7 +55,8 @@ public class ChatBackgroundActivity extends AbsAppActivity {
         @Override
         public void onBindViewHolder(@NonNull Holder holder, int position) {
             holder.preview.setImageResource(backgrounds[position]);
-            holder.selected.setVisibility(selectedIndex == position ? View.VISIBLE : View.GONE);
+            holder.checkBox.setVisibility(selectedIndex == position ? View.VISIBLE : View.GONE);
+            holder.checkBox.setChecked(selectedIndex == position);
             holder.itemView.setOnClickListener(v -> {
                 int old = selectedIndex;
                 selectedIndex = holder.getBindingAdapterPosition();
@@ -72,12 +74,12 @@ public class ChatBackgroundActivity extends AbsAppActivity {
 
         private final class Holder extends RecyclerView.ViewHolder {
             private final ImageView preview;
-            private final ImageView selected;
+            private final JuggleCheckBox checkBox;
 
             private Holder(@NonNull View itemView) {
                 super(itemView);
                 preview = itemView.findViewById(R.id.iv_background);
-                selected = itemView.findViewById(R.id.iv_selected);
+                checkBox = itemView.findViewById(R.id.checkbox);
             }
         }
     }

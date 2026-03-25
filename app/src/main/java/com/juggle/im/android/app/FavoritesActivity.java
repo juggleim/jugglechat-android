@@ -18,6 +18,7 @@ import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
+import com.juggle.im.android.widget.JuggleCheckBox;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.FavoriteMessage;
 import com.juggle.im.model.GetFavoriteMessageOption;
@@ -233,8 +234,8 @@ public class FavoritesActivity extends AbsAppActivity {
             holder.conversation.setText(TextUtils.isEmpty(row.conversationName) ? "会话" : row.conversationName);
             holder.time.setText(row.favorite == null ? "" : formatTime(row.favorite.getCreatedTime()));
 
-            holder.selected.setVisibility(multiMode ? View.VISIBLE : View.GONE);
-            holder.selected.setImageResource(row.selected ? R.drawable.ic_checkbox_selected : R.drawable.ic_checkbox_unselect);
+            holder.checkBox.setVisibility(multiMode ? View.VISIBLE : View.GONE);
+            holder.checkBox.setChecked(row.selected);
 
             holder.itemView.setOnClickListener(v -> {
                 if (!multiMode) {
@@ -263,14 +264,14 @@ public class FavoritesActivity extends AbsAppActivity {
         }
 
         private final class Holder extends RecyclerView.ViewHolder {
-            private final ImageView selected;
+            private final JuggleCheckBox checkBox;
             private final TextView summary;
             private final TextView conversation;
             private final TextView time;
 
             private Holder(@NonNull View itemView) {
                 super(itemView);
-                selected = itemView.findViewById(R.id.iv_selected);
+                checkBox = itemView.findViewById(R.id.checkbox);
                 summary = itemView.findViewById(R.id.tv_summary);
                 conversation = itemView.findViewById(R.id.tv_conversation);
                 time = itemView.findViewById(R.id.tv_time);

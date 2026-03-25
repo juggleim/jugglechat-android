@@ -15,6 +15,7 @@ import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.ConversationActivity;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.JuggleCheckBox;
 import com.juggle.im.model.Conversation;
 
 import java.util.ArrayList;
@@ -104,10 +105,9 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
     public void onBindViewHolder(@NonNull VH holder, int position) {
         UserInfoObj f = items.get(position);
         holder.tv.setText(f.getName() != null ? f.getName() : f.getUserId());
-        ImageView checkbox = holder.itemView.findViewById(R.id.iv_checkbox);
         AvatarUtils.loadAvatar(holder.iv, f.getAvatar(), f.getName());
         if (mode.equals(LIST_MODE_SELECT_MEMBER)) {
-            checkbox.setVisibility(View.VISIBLE);
+            holder.checkBox.setVisibility(View.VISIBLE);
             if (!f.disabled) {
                 holder.itemView.setOnClickListener(v -> {
                     boolean cur = selectedMap.containsKey(f.getUserId());
@@ -116,20 +116,19 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
                     notifyItemChanged(position);
                     if (selectionChanged != null) selectionChanged.onSelectionChanged(f, !cur);
                 });
-                if (selectedMap.containsKey(f.getUserId())) {
-                    checkbox.setImageResource(R.drawable.ic_checkbox_selected);
-                } else {
-                    checkbox.setImageResource(R.drawable.ic_checkbox_unselect);
-                }
+                holder.checkBox.setChecked(selectedMap.containsKey(f.getUserId()));
+                holder.checkBox.setDisabled(false);
             } else {
-                checkbox.setImageResource(R.drawable.ic_checkbox_disabled);
+                holder.checkBox.setChecked(false);
+                holder.checkBox.setDisabled(true);
             }
         } else if (mode.equals(LIST_MODE_ADD_FRIENDS)) {
-            checkbox.setVisibility(View.VISIBLE);
-            checkbox.setImageResource(R.drawable.ic_add);
+            holder.checkBox.setVisibility(View.VISIBLE);
+            holder.checkBox.setBackground(null);
+            holder.checkBox.setBackgroundResource(R.drawable.ic_add);
         }
         else {
-            checkbox.setVisibility(View.GONE);
+            holder.checkBox.setVisibility(View.GONE);
             holder.itemView.setOnClickListener(v -> {
                 Conversation convo = new Conversation(Conversation.ConversationType.PRIVATE, f.getUserId());
                 JIM.getInstance().getConversationManager().clearUnreadCount(convo, null);
@@ -147,11 +146,13 @@ public class UserListAdapter extends RecyclerView.Adapter<UserListAdapter.VH> {
     static class VH extends RecyclerView.ViewHolder {
         ImageView iv;
         TextView tv;
+        JuggleCheckBox checkBox;
 
         VH(@NonNull View itemView) {
             super(itemView);
             iv = itemView.findViewById(R.id.iv_avatar);
             tv = itemView.findViewById(R.id.tv_nickname);
+            checkBox = itemView.findViewById(R.id.checkbox);
         }
     }
 }

@@ -29,6 +29,7 @@
 
     <!-- bottom-right controls -->
     <LinearLayout
+        android:id="@+id/preview_bottom_actions"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"

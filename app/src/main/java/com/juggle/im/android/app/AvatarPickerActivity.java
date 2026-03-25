@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.juggle.im.android.R;
+import com.juggle.im.android.widget.JuggleCheckBox;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -201,7 +202,8 @@ public class AvatarPickerActivity extends AbsAppActivity {
                     .into(holder.image);
             boolean selected = path.equals(selectedPath);
             holder.mask.setVisibility(selected ? View.VISIBLE : View.GONE);
-            holder.checked.setVisibility(selected ? View.VISIBLE : View.GONE);
+            holder.checkBox.setVisibility(selected ? View.VISIBLE : View.GONE);
+            holder.checkBox.setChecked(selected);
             holder.itemView.setOnClickListener(v -> {
                 selectedPath = path;
                 notifyDataSetChanged();
@@ -217,13 +219,13 @@ public class AvatarPickerActivity extends AbsAppActivity {
         private final class Holder extends RecyclerView.ViewHolder {
             private final ImageView image;
             private final View mask;
-            private final ImageView checked;
+            private final JuggleCheckBox checkBox;
 
             private Holder(@NonNull View itemView) {
                 super(itemView);
                 image = itemView.findViewById(R.id.iv_image);
                 mask = itemView.findViewById(R.id.view_mask);
-                checked = itemView.findViewById(R.id.iv_checked);
+                checkBox = itemView.findViewById(R.id.checkbox);
             }
         }
     }

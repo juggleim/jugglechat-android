@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="JuggleCheckBox">
+        <!-- 初始是否选中 -->
+        <attr name="checked" format="boolean" />
+        <!-- 是否禁用 -->
+        <attr name="disabled" format="boolean" />
+    </declare-styleable>
+</resources>

@@ -5,8 +5,6 @@ import static com.juggle.im.android.chat.ConversationActivity.EXTRA_IS_GROUP;
 import static com.juggle.im.android.chat.ConversationActivity.EXTRA_IS_MUTE;
 import static com.juggle.im.android.chat.ConversationActivity.EXTRA_IS_TOP;
 import static com.juggle.im.android.chat.ConversationActivity.EXTRA_TITLE;
-import static com.juggle.im.android.chat.SelectMemberActivity.DISABLE_MEMBERS;
-import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -29,7 +27,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
-import com.juggle.im.android.chat.component.UserListAdapter;
+import com.juggle.im.android.app.CreateGroupActivity;
 import com.juggle.im.android.server.beans.GroupAnnouncementBean;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupMemberBean;
@@ -232,9 +230,11 @@ public class ConversationSettingsActivity extends AbsAppActivity {
             if (!isGroup) {
                 return;
             }
-            Intent intent = new Intent(this, SelectMemberActivity.class);
-            intent.putExtra("mode", UserListAdapter.LIST_MODE_SELECT_MEMBER);
-            intent.putStringArrayListExtra(DISABLE_MEMBERS, groupMemberIds);
+            Intent intent = CreateGroupActivity.newIntent(
+                    this,
+                    CreateGroupActivity.MODE_ADD_MEMBER,
+                    conversationId,
+                    groupMemberIds);
             startActivityForResult(intent, REQ_ADD_MEMBER);
         });
 
@@ -596,25 +596,9 @@ public class ConversationSettingsActivity extends AbsAppActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQ_ADD_MEMBER && resultCode == RESULT_OK && data != null) {
-            ArrayList<String> selectedMemberIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
-            if (selectedMemberIds == null || selectedMemberIds.isEmpty()) {
-                return;
-            }
-            ServiceManager.getUserService().inviteJoinGroup(conversationId, selectedMemberIds, new ApiCallback<Void>() {
-                @Override
-                public void onSuccess(Void data) {
-                    Toast.makeText(ConversationSettingsActivity.this, "邀请成功", Toast.LENGTH_SHORT).show();
-                    loadGroupInfo();
-                }
-
-                @Override
-                public void onError(int code, String message) {
-                    Toast.makeText(ConversationSettingsActivity.this,
-                            "邀请失败：" + message,
-                            Toast.LENGTH_SHORT).show();
-                }
-            });
+        if (requestCode == REQ_ADD_MEMBER && resultCode == RESULT_OK) {
+            // CreateGroupActivity 已在内部处理邀请逻辑，这里只需刷新群组信息
+            loadGroupInfo();
         }
     }
 
