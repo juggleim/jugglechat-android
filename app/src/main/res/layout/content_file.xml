@@ -4,34 +4,49 @@
     android:layout_height="wrap_content">
 
     <LinearLayout
-        android:orientation="horizontal"
+        android:id="@+id/layout_file_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="8dp"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:minWidth="170dp"
+        android:orientation="horizontal"
+        android:paddingStart="6dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="6dp"
+        android:paddingBottom="4dp">
 
         <ImageView
             android:id="@+id/image_file_icon"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:src="@drawable/ic_file"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_msg_type_file"
             android:contentDescription="file" />
 
-        <TextView
-            android:id="@+id/text_file_name"
-            android:layout_width="wrap_content"
-            android:maxWidth="150dp"
-            android:textColor="@color/black"
+        <LinearLayout
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="file.ext" />
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/button_download_file"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginStart="8dp"
-            android:src="@drawable/ic_download" />
+            <TextView
+                android:id="@+id/text_file_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="@color/title"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_file_size"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:textColor="@color/conversation_secondary_text"
+                android:textSize="13sp" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>

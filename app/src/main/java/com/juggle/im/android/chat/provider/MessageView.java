@@ -152,6 +152,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         }
         if (statusView != null) {
             statusView.setVisibility(GONE);
+            statusView.clearColorFilter();
         }
         if (progressBar != null) {
             progressBar.setVisibility(GONE);
