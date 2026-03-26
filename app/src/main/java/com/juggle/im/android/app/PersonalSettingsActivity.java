@@ -12,7 +12,6 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.bumptech.glide.Glide;
@@ -29,6 +28,7 @@ import com.juggle.im.android.server.beans.UserInfoRequest;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.io.File;
 
@@ -301,11 +301,12 @@ public class PersonalSettingsActivity extends AbsAppActivity {
     }
 
     private void confirmLogout() {
-        new AlertDialog.Builder(this)
+        AppConfirmDialog.builder(this)
                 .setTitle("退出登录")
                 .setMessage("确定要退出登录吗？")
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                .setNegativeText(getString(R.string.txt_cancel))
+                .setPositiveText(getString(R.string.create_group_confirm))
+                .setOnPositiveClick(() -> {
                     ConfigUtils.appToken = null;
                     ConfigUtils.imToken = null;
                     ConfigUtils.myName = null;

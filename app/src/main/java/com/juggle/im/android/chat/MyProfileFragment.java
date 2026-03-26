@@ -34,6 +34,7 @@ import com.juggle.im.android.server.beans.UserInfoRequest;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.ToastUtils;
+import com.juggle.im.android.widget.AppConfirmDialog;
 
 public class MyProfileFragment extends Fragment {
 
@@ -294,11 +295,12 @@ public class MyProfileFragment extends Fragment {
     }
 
     private void logout() {
-        new AlertDialog.Builder(requireContext())
+        AppConfirmDialog.builder(requireContext())
                 .setTitle("退出登录")
                 .setMessage("确定要退出登录吗？")
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(android.R.string.ok, (dialog, which) -> {
+                .setNegativeText(getString(R.string.txt_cancel))
+                .setPositiveText(getString(R.string.create_group_confirm))
+                .setOnPositiveClick(() -> {
                     // 清除用户信息
                     ConfigUtils.appToken = null;
                     ConfigUtils.imToken = null;

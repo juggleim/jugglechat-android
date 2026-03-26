@@ -25,6 +25,7 @@ import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupManagementBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
 
@@ -139,10 +140,12 @@ public class GroupManagementActivity extends AbsAppActivity {
             startActivityForResult(intent, REQ_CHANGE_OWNER);
         });
 
-        dissolveButton.setOnClickListener(v -> new AlertDialog.Builder(this)
+        dissolveButton.setOnClickListener(v -> AppConfirmDialog.builder(this)
+                .setTitle("解散群组")
                 .setMessage("确认解散群组？")
-                .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton("确定", (dialog, which) -> ServiceManager.getUserService().dissolveGroup(groupId, new ApiCallback<Void>() {
+                .setNegativeText(getString(R.string.txt_cancel))
+                .setPositiveText(getString(R.string.create_group_confirm))
+                .setOnPositiveClick(() -> ServiceManager.getUserService().dissolveGroup(groupId, new ApiCallback<Void>() {
                     @Override
                     public void onSuccess(Void data) {
                         Toast.makeText(GroupManagementActivity.this, "群组已解散", Toast.LENGTH_SHORT).show();

@@ -34,6 +34,7 @@ import com.juggle.im.android.server.beans.GroupMemberBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.AppConfirmDialog;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.UserInfo;
 
@@ -483,10 +484,12 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         boolean isOwner = groupDetail != null && groupDetail.getMyRole() == ROLE_OWNER;
         String actionName = isOwner ? "解散群组" : "退出群组";
 
-        new AlertDialog.Builder(this)
+        AppConfirmDialog.builder(this)
+                .setTitle(actionName)
                 .setMessage("确认" + actionName + "？")
-                .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton("确定", (dialog, which) -> {
+                .setNegativeText(getString(R.string.txt_cancel))
+                .setPositiveText(getString(R.string.create_group_confirm))
+                .setOnPositiveClick(() -> {
                     ApiCallback<Void> callback = new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {

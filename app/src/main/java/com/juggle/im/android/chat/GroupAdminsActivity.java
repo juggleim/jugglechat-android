@@ -19,7 +19,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,6 +31,7 @@ import com.juggle.im.android.server.beans.GroupMembersData;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -157,10 +157,12 @@ public class GroupAdminsActivity extends AbsAppActivity {
             return;
         }
         String nickname = TextUtils.isEmpty(member.getNickname()) ? member.getUserId() : member.getNickname();
-        new AlertDialog.Builder(this)
+        AppConfirmDialog.builder(this)
+                .setTitle("移除管理员")
                 .setMessage("确定移除管理员 " + nickname + "？")
-                .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton("确定", (dialog, which) -> {
+                .setNegativeText(getString(R.string.txt_cancel))
+                .setPositiveText(getString(R.string.create_group_confirm))
+                .setOnPositiveClick(() -> {
                     ArrayList<String> ids = new ArrayList<>();
                     ids.add(member.getUserId());
                     ServiceManager.getUserService().removeGroupAdmins(groupId, ids, new ApiCallback<Void>() {

@@ -16,7 +16,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import com.juggle.im.android.component.AbsAppActivity;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -29,6 +28,7 @@ import com.juggle.im.android.server.beans.GroupMemberBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -192,10 +192,12 @@ public class GroupMembersActivity extends AbsAppActivity {
     }
 
     private void removeMember(GroupMemberBean member) {
-        new AlertDialog.Builder(this)
+        AppConfirmDialog.builder(this)
+                .setTitle("移除成员")
                 .setMessage("确定移除成员 " + safeName(member) + "？")
-                .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton("确定", (dialog, which) -> {
+                .setNegativeText(getString(R.string.txt_cancel))
+                .setPositiveText(getString(R.string.create_group_confirm))
+                .setOnPositiveClick(() -> {
                     List<String> memberIds = new ArrayList<>();
                     memberIds.add(member.getUserId());
                     ServiceManager.getUserService().removeGroupMembers(groupId, memberIds, new ApiCallback<Void>() {
