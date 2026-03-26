@@ -203,6 +203,9 @@
             android:screenOrientation="portrait" />
         <activity android:name=".chat.SearchActivity"
             android:screenOrientation="portrait"/>
+        <activity
+            android:name=".chat.SearchMoreResultsActivity"
+            android:screenOrientation="portrait" />
 
         <!-- IM前台服务：保持长连接，防止文件选择时被系统回收 -->
         <service

@@ -23,134 +23,74 @@ import com.juggle.im.model.GroupInfo;
 import com.juggle.im.model.UserInfo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
-public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder> {
+class SearchMoreResultAdapter extends RecyclerView.Adapter<SearchMoreResultAdapter.ViewHolder> {
 
-    public interface OnMoreClickListener {
-        void onMoreClick(String type);
-    }
-
-    private final LinkedHashMap<String, List<SearchResult>> resultsMap = new LinkedHashMap<>();
-    private static final List<String> TYPE_ORDER = Arrays.asList(
-            SearchActivity.SEARCH_TYPE_CONTACT,
-            SearchActivity.SEARCH_TYPE_GROUP,
-            SearchActivity.SEARCH_TYPE_RECORD);
-
-    private OnMoreClickListener onMoreClickListener;
+    private final List<SearchResult> items = new ArrayList<>();
     private String keyword = "";
 
-    public void setOnMoreClickListener(OnMoreClickListener onMoreClickListener) {
-        this.onMoreClickListener = onMoreClickListener;
+    void setKeyword(String keyword) {
+        this.keyword = keyword == null ? "" : keyword.trim();
     }
 
-    public void setKeyword(String keyword) {
-        this.keyword = keyword == null ? "" : keyword.trim();
+    void submit(List<SearchResult> newItems) {
+        items.clear();
+        if (newItems != null && !newItems.isEmpty()) {
+            items.addAll(newItems);
+        }
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_search_result_nav, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_member_extra, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        List<String> keys = getOrderedTypes();
-        String title = keys.get(position);
-        List<SearchResult> items = resultsMap.get(title);
-        holder.bind(title, items, keyword, onMoreClickListener);
+        holder.bind(items.get(position), keyword, position == items.size() - 1);
     }
 
     @Override
     public int getItemCount() {
-        return getOrderedTypes().size();
-    }
-
-    public void clear() {
-        resultsMap.clear();
-        notifyDataSetChanged();
-    }
-
-    public void addResults(List<SearchResult> results, String type) {
-        if (results == null || results.isEmpty()) {
-            return;
-        }
-        resultsMap.put(type, results);
-        notifyDataSetChanged();
-    }
-
-    private List<String> getOrderedTypes() {
-        List<String> ordered = new ArrayList<>();
-        for (String type : TYPE_ORDER) {
-            if (resultsMap.containsKey(type)) {
-                ordered.add(type);
-            }
-        }
-        for (String key : resultsMap.keySet()) {
-            if (!ordered.contains(key)) {
-                ordered.add(key);
-            }
-        }
-        return ordered;
+        return items.size();
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
+        private final ImageView avatarView;
+        private final TextView nameView;
+        private final TextView descView;
+        private final View dividerView;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
+            avatarView = itemView.findViewById(R.id.img_member_avatar);
+            nameView = itemView.findViewById(R.id.tv_member_name);
+            descView = itemView.findViewById(R.id.tv_member_content);
+            dividerView = itemView.findViewById(R.id.item_divider);
         }
 
-        void bind(String title, List<SearchResult> items, String keyword, OnMoreClickListener onMoreClickListener) {
-            TextView tvTitle = itemView.findViewById(R.id.search_header_title);
-            View moreLayout = itemView.findViewById(R.id.layout_more);
-            ViewGroup container = itemView.findViewById(R.id.search_result_container);
+        void bind(SearchResult item, String keyword, boolean lastItem) {
+            View rowView = itemView.findViewById(R.id.item_row);
+            DisplayMeta meta = resolveDisplayMeta(item);
+            AvatarUtils.loadAvatar(avatarView, meta.avatar, meta.name);
+            nameView.setText(highlightText(itemView, meta.name, keyword));
 
-            tvTitle.setText(title);
-            if (onMoreClickListener == null) {
-                moreLayout.setVisibility(View.GONE);
-                moreLayout.setOnClickListener(null);
+            if (TextUtils.isEmpty(item.getDescription())) {
+                descView.setVisibility(View.GONE);
             } else {
-                moreLayout.setVisibility(View.VISIBLE);
-                moreLayout.setOnClickListener(v -> onMoreClickListener.onMoreClick(title));
+                descView.setVisibility(View.VISIBLE);
+                descView.setText(styleDescription(itemView, item, keyword));
             }
 
-            container.removeAllViews();
-            if (items == null || items.isEmpty()) {
-                return;
-            }
-
-            LayoutInflater inflater = LayoutInflater.from(itemView.getContext());
-            for (int i = 0; i < items.size(); i++) {
-                SearchResult item = items.get(i);
-                View vItem = inflater.inflate(R.layout.item_member_extra, container, false);
-                View itemRow = vItem.findViewById(R.id.item_row);
-                ImageView memberImage = vItem.findViewById(R.id.img_member_avatar);
-                TextView memberTitle = vItem.findViewById(R.id.tv_member_name);
-                TextView memberContent = vItem.findViewById(R.id.tv_member_content);
-                View itemDivider = vItem.findViewById(R.id.item_divider);
-
-                DisplayMeta meta = resolveDisplayMeta(item);
-                AvatarUtils.loadAvatar(memberImage, meta.avatar, meta.name);
-                memberTitle.setText(highlightText(vItem, meta.name, keyword));
-
-                if (TextUtils.isEmpty(item.getDescription())) {
-                    memberContent.setVisibility(View.GONE);
-                } else {
-                    memberContent.setVisibility(View.VISIBLE);
-                    memberContent.setText(styleDescription(vItem, item, keyword));
-                }
-
-                String displayName = meta.name;
-                View clickTarget = itemRow == null ? vItem : itemRow;
-                clickTarget.setOnClickListener(v -> openResult(v, item, displayName));
-                itemDivider.setVisibility(i == items.size() - 1 ? View.GONE : View.VISIBLE);
-                container.addView(vItem);
-            }
+            String displayName = meta.name;
+            View clickTarget = rowView == null ? itemView : rowView;
+            clickTarget.setOnClickListener(v -> openResult(v, item, displayName));
+            dividerView.setVisibility(lastItem ? View.GONE : View.VISIBLE);
         }
 
         private DisplayMeta resolveDisplayMeta(SearchResult item) {

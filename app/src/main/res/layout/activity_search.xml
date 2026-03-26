@@ -40,10 +40,20 @@
                 android:inputType="text"
                 android:maxLines="1"
                 android:paddingStart="8dp"
-                android:paddingEnd="12dp"
+                android:paddingEnd="8dp"
                 android:textColor="@color/conversation_primary_text"
                 android:textColorHint="@color/conversation_primary_text"
                 android:textSize="14sp" />
+
+            <ImageView
+                android:id="@+id/iv_search_clear"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_marginEnd="12dp"
+                android:contentDescription="@string/search_clear_input"
+                android:src="@drawable/ic_delete"
+                android:tint="@color/conversation_secondary_text"
+                android:visibility="gone" />
         </LinearLayout>
 
         <TextView

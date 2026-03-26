@@ -5,6 +5,10 @@
     <string name="main_default_user_name">用户</string>
     <string name="back">返回</string>
     <string name="search">搜索</string>
+    <string name="search_clear_input">清空搜索关键词</string>
+    <string name="search_more">更多</string>
+    <string name="search_more_empty">暂无%1$s相关结果</string>
+    <string name="search_more_load_failed">加载失败：%1$s</string>
     <string name="input_msg">输入消息</string>
     <string name="input_msg_to">发送消息给 %1$s</string>
     <string name="send">发送</string>
