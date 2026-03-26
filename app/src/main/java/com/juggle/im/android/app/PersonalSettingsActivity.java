@@ -139,17 +139,26 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         } else {
             avatarView.setImageResource(R.drawable.icon_default_avatar);
         }
-        setupRow(rowCurrentUser, -1, "当前用户", name, true);
+        // 同步“当前用户”行，确保页面首次加载时头像与文案都与当前资料一致。
+        refreshCurrentUserRow(name, avatar);
     }
 
+    /**
+     * 刷新“当前用户”条目，统一处理头像、标题与副标题显示。
+     *
+     * @param name   用户名称
+     * @param avatar 用户头像地址
+     */
     private void refreshCurrentUserRow(String name, String avatar) {
         ImageView icon = rowCurrentUser.findViewById(R.id.iv_row_icon);
         TextView title = rowCurrentUser.findViewById(R.id.tv_row_title);
         TextView subtitle = rowCurrentUser.findViewById(R.id.tv_row_subtitle);
         ImageView arrow = rowCurrentUser.findViewById(R.id.iv_row_arrow);
-        title.setText(safeText(name, currentUserId));
+
+        // “当前用户”固定为标题，名称展示在副标题，避免语义混淆。
+        title.setText("当前用户");
         subtitle.setVisibility(View.VISIBLE);
-        subtitle.setText("当前用户");
+        subtitle.setText(safeText(name, currentUserId));
         arrow.setVisibility(View.GONE);
         AvatarUtils.loadAvatar(icon, avatar, name, currentUserId);
     }

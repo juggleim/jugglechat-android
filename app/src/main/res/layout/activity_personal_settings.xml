@@ -215,7 +215,7 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
-                android:background="@drawable/bg_group_setting_danger_button"
+                android:background="@drawable/rectangle_white_bg"
                 android:gravity="center"
                 android:text="退出登录"
                 android:textColor="@color/group_danger"

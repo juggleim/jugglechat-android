@@ -24,6 +24,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SimpleItemAnimator;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
@@ -86,6 +87,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private boolean hasMoreNewer = true;
     private MessageListAdapter adapter;
     private RecyclerView recyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
     // queue for incoming messages that haven't been applied to adapter yet
     private final List<UiMessage> pendingMessages = new ArrayList<>();
     // whether a submitList call is in progress
@@ -147,6 +149,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             unreadCount = getArguments().getInt(ARG_UNREAD_COUNT, 0);
         }
 
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_messages);
         recyclerView = view.findViewById(R.id.recycler_view_messages);
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
@@ -173,6 +176,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             }
         });
         recyclerView.setAdapter(adapter);
+        setupPullToRefresh();
 
         View unreadBubble = view.findViewById(R.id.layout_unread_bubble);
         TextView tvUnread = view.findViewById(R.id.tv_unread_count);
@@ -292,10 +296,6 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                         layoutNewMessageBubble.setVisibility(GONE);
                         newMessageCount = 0;
                     }
-                }
-                int first = layoutManager.findFirstVisibleItemPosition();
-                if (dy < 0 && first == 0) {
-                    loadOlderMessages(msgPageCount, false, null);
                 }
                 if (dy > 0 && itemCount > 0 && lastVisiblePos >= itemCount - 1) {
                     loadNewerMessages(msgPageCount, null);
@@ -535,6 +535,54 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 conversationId);
     }
 
+    /**
+     * 初始化下拉刷新。
+     *
+     * <p>简要描述：仅在消息列表滚动到顶部时允许触发刷新，刷新中保持 progress，并阻止重复触发。</p>
+     */
+    private void setupPullToRefresh() {
+        if (swipeRefreshLayout == null) {
+            return;
+        }
+        swipeRefreshLayout.setColorSchemeResources(R.color.app_primary);
+        swipeRefreshLayout.setProgressBackgroundColorSchemeResource(R.color.white);
+        swipeRefreshLayout.setOnChildScrollUpCallback((parent, child) -> recyclerView != null
+                && recyclerView.canScrollVertically(-1));
+        swipeRefreshLayout.setOnRefreshListener(this::onPullToRefresh);
+    }
+
+    /**
+     * 响应用户下拉刷新请求并加载历史消息。
+     *
+     * <p>简要描述：当刷新已在进行中时直接忽略本次触发，确保同一时刻只存在一个刷新任务。</p>
+     */
+    private void onPullToRefresh() {
+        if (swipeRefreshLayout == null) {
+            return;
+        }
+        if (isLoadingOlder) {
+            swipeRefreshLayout.setRefreshing(true);
+            return;
+        }
+        if (!hasMoreOlder) {
+            swipeRefreshLayout.setRefreshing(false);
+            return;
+        }
+        swipeRefreshLayout.setRefreshing(true);
+        loadOlderMessages(msgPageCount, false, () -> setPullRefreshing(false), false);
+    }
+
+    /**
+     * 更新下拉刷新 progress 状态。
+     *
+     * @param refreshing true 表示显示 progress，false 表示隐藏 progress
+     */
+    private void setPullRefreshing(boolean refreshing) {
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setRefreshing(refreshing);
+        }
+    }
+
     private void updateLoadingIndicator(@NonNull JIMConst.PullDirection direction, boolean loading) {
         View target = direction == JIMConst.PullDirection.OLDER ? layoutTopLoading : layoutBottomLoading;
         if (target == null) {
@@ -558,11 +606,23 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     }
 
     private void loadOlderMessages(int count, boolean scrollTop, @Nullable Runnable onDone) {
+        loadOlderMessages(count, scrollTop, onDone, true);
+    }
+
+    /**
+     * 加载更早历史消息。
+     *
+     * @param count 加载条数
+     * @param scrollTop 是否强制滚动到顶部
+     * @param onDone 加载结束回调
+     * @param showTopLoading 是否显示顶部浮层 loading（下拉刷新时由 SwipeRefreshLayout 承担 progress）
+     */
+    private void loadOlderMessages(int count, boolean scrollTop, @Nullable Runnable onDone, boolean showTopLoading) {
         long cursor = 0L;
         if (!uiMessages.isEmpty()) {
             cursor = uiMessages.get(uiMessages.size() - 1).getTimestamp();
         }
-        loadMessages(count, cursor, JIMConst.PullDirection.OLDER, scrollTop, onDone);
+        loadMessages(count, cursor, JIMConst.PullDirection.OLDER, scrollTop, showTopLoading, onDone);
     }
 
     private void loadNewerMessages(int count, @Nullable Runnable onDone) {
@@ -570,7 +630,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         if (!uiMessages.isEmpty()) {
             cursor = uiMessages.get(0).getTimestamp();
         }
-        loadMessages(count, cursor, JIMConst.PullDirection.NEWER, false, onDone);
+        loadMessages(count, cursor, JIMConst.PullDirection.NEWER, false, true, onDone);
     }
 
     private void loadAroundTimestamp(long targetTimestamp, @Nullable String targetMessageId) {
@@ -585,16 +645,18 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 targetTimestamp,
                 JIMConst.PullDirection.OLDER,
                 false,
+                true,
                 () -> loadMessages(
                         msgPageCount,
                         targetTimestamp,
                         JIMConst.PullDirection.NEWER,
                         false,
+                        true,
                         () -> scrollToTargetMessage(targetMessageId, targetTimestamp))));
     }
 
     private void loadMessages(int count, long cursor, JIMConst.PullDirection direction, boolean scrollTop,
-            @Nullable Runnable onDone) {
+            boolean showLoadingIndicator, @Nullable Runnable onDone) {
         if (count <= 0) {
             if (onDone != null) {
                 onDone.run();
@@ -624,7 +686,9 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             }
             isLoadingNewer = true;
         }
-        updateLoadingIndicator(direction, true);
+        if (showLoadingIndicator) {
+            updateLoadingIndicator(direction, true);
+        }
 
         ViewportAnchor anchor = captureViewportAnchor();
         GetMessageOptions options = new GetMessageOptions();
@@ -648,11 +712,17 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                         if (direction == JIMConst.PullDirection.OLDER) {
                             isLoadingOlder = false;
                             hasMoreOlder = hasMore;
+                            // 简要描述：兜底关闭非下拉场景残留的 SwipeRefresh progress，避免转圈常驻。
+                            if (onDone == null) {
+                                setPullRefreshing(false);
+                            }
                         } else {
                             isLoadingNewer = false;
                             hasMoreNewer = hasMore;
                         }
-                        updateLoadingIndicator(direction, false);
+                        if (showLoadingIndicator) {
+                            updateLoadingIndicator(direction, false);
+                        }
 
                         List<UiMessage> incoming = mapToUiMessages(list);
                         if (!incoming.isEmpty()) {
