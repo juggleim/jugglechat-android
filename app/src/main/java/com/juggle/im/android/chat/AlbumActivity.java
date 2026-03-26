@@ -3,7 +3,6 @@ package com.juggle.im.android.chat;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -20,8 +19,6 @@ import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -30,6 +27,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.utils.PermissionComponent;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,36 +190,28 @@ public class AlbumActivity extends AppCompatActivity {
     }
 
     private boolean checkPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 (API 33) and above
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) 
-                    == PackageManager.PERMISSION_GRANTED;
-        } else {
-            // Below Android 13
-            return ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) 
-                    == PackageManager.PERMISSION_GRANTED;
-        }
+        return PermissionComponent.hasAllPermissions(this, requiredPermissions());
     }
 
     private void requestPermissions() {
+        PermissionComponent.requestPermissions(this, PERMISSION_REQUEST_CODE, requiredPermissions());
+    }
+
+    /**
+     * 获取相册读取所需权限集合。
+     */
+    private String[] requiredPermissions() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13 (API 33) and above
-            ActivityCompat.requestPermissions(this, 
-                    new String[]{Manifest.permission.READ_MEDIA_IMAGES}, 
-                    PERMISSION_REQUEST_CODE);
-        } else {
-            // Below Android 13
-            ActivityCompat.requestPermissions(this, 
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 
-                    PERMISSION_REQUEST_CODE);
+            return new String[]{Manifest.permission.READ_MEDIA_IMAGES};
         }
+        return new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (PermissionComponent.areGrantResultsGranted(grantResults)) {
                 loadImages();
             } else {
                 Toast.makeText(this, "Permission denied. Cannot load images.", Toast.LENGTH_SHORT).show();

@@ -37,4 +37,6 @@
     <dimen name="group_text_primary">16sp</dimen>
     <dimen name="group_text_secondary">14sp</dimen>
     <dimen name="group_text_auxiliary">12sp</dimen>
+
+    <dimen name="call_incoming_floating">76dp</dimen>
 </resources>

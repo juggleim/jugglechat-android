@@ -40,8 +40,7 @@ import com.juggle.im.android.chat.plugin.MorePlugin;
 import com.juggle.im.android.chat.plugin.TimedDeletePlugin;
 import com.juggle.im.android.chat.plugin.VideoCallPlugin;
 import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
-
-import androidx.core.app.ActivityCompat;
+import com.juggle.im.android.utils.PermissionComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -193,7 +192,7 @@ public class ChatInputActionBar extends LinearLayout {
             public void requestPermissions(String[] permissions, int reqCode, String pid) {
                 pluginPermissionDispatcher.registerPendingRequest(reqCode, pid, permissions);
                 if (getContext() instanceof Activity) {
-                    ActivityCompat.requestPermissions((Activity) getContext(), permissions, reqCode);
+                    PermissionComponent.requestPermissions((Activity) getContext(), reqCode, permissions);
                 }
             }
 
@@ -997,15 +996,7 @@ public class ChatInputActionBar extends LinearLayout {
         }
 
         private static boolean areAllPermissionsGranted(int[] grantResults) {
-            if (grantResults == null || grantResults.length == 0) {
-                return false;
-            }
-            for (int grantResult : grantResults) {
-                if (grantResult != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    return false;
-                }
-            }
-            return true;
+            return PermissionComponent.areGrantResultsGranted(grantResults);
         }
 
         private static final class PendingPermissionRequest {

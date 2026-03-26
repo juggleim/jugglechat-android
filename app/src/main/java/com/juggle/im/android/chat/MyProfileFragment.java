@@ -33,6 +33,7 @@ import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.beans.UserInfoRequest;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ToastUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
 
@@ -175,14 +176,7 @@ public class MyProfileFragment extends Fragment {
         if (currentUserInfo == null) return;
 
         // 加载头像
-        if (!TextUtils.isEmpty(currentUserInfo.getAvatar())) {
-            Glide.with(this)
-                    .load(currentUserInfo.getAvatar())
-                    .placeholder(R.drawable.icon_default_avatar)
-                    .into(ivAvatar);
-        } else {
-            ivAvatar.setImageResource(R.drawable.icon_default_avatar);
-        }
+        AvatarUtils.loadAvatar(ivAvatar, currentUserInfo.getAvatar(), currentUserInfo.getNickname());
 
         // 显示昵称
         if (!TextUtils.isEmpty(currentUserInfo.getNickname())) {

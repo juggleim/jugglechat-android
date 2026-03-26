@@ -43,8 +43,7 @@
                         android:layout_width="64dp"
                         android:layout_height="64dp"
                         android:layout_gravity="center"
-                        android:scaleType="centerCrop"
-                        android:src="@drawable/icon_default_avatar" />
+                        android:scaleType="centerCrop" />
                 </FrameLayout>
 
                 <LinearLayout

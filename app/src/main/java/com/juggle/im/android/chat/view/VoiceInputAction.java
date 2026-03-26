@@ -3,7 +3,6 @@ package com.juggle.im.android.chat.view;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,9 +16,9 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.utils.PermissionComponent;
 
 import java.io.File;
 import java.io.IOException;
@@ -152,7 +151,7 @@ public class VoiceInputAction extends FrameLayout {
     }
 
     private boolean checkAudioPermission() {
-        return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        return PermissionComponent.hasAllPermissions(getContext(), Manifest.permission.RECORD_AUDIO);
     }
 
     private void startRecording() {
@@ -292,7 +291,7 @@ public class VoiceInputAction extends FrameLayout {
     private static class ActivityCompatWrapper {
         static void requestAudioPermission(Activity activity) {
             try {
-                androidx.core.app.ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.RECORD_AUDIO}, 1002);
+                PermissionComponent.requestPermissions(activity, 1002, Manifest.permission.RECORD_AUDIO);
             } catch (Throwable t) {
                 // ignore
             }

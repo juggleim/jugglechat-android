@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ongoing_float_root"
+    android:layout_width="69dp"
+    android:layout_height="93dp"
+    android:background="@drawable/bg_call_ongoing_float"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <ImageView
+        android:id="@+id/iv_float_avatar"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:src="@drawable/icon_default_avatar" />
+
+    <TextView
+        android:id="@+id/tv_float_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="6dp"
+        android:maxLines="1"
+        android:visibility="gone"
+        android:text="通话中"
+        android:textColor="@android:color/white"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tv_float_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:layout_marginTop="6dp"
+        android:textColor="#B3FFFFFF"
+        android:textSize="12sp" />
+</LinearLayout>

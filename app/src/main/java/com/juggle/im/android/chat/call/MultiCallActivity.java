@@ -2,13 +2,13 @@ package com.juggle.im.android.chat.call;
 
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
-
 import static com.juggle.im.android.chat.SelectMemberActivity.DISABLE_MEMBERS;
 import static com.juggle.im.android.chat.SelectMemberActivity.GROUP_ID;
 import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.SurfaceView;
@@ -31,183 +31,310 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * 多人音视频通话页面。
+ */
 public class MultiCallActivity extends BaseCallActivity {
     private static final int REQUEST_SELECT_MEMBERS = 1000;
+
     private GridLayout gridParticipants;
     private TextView tvCallTime;
-    private View btnHangup, btnInvite, btnAccept;
-    private ImageView btnMicMute, btnSpeakerMute;
-    private boolean isSpeakerMute, isMicMute;
+    private TextView tvCallStatus;
+    private View btnHangup;
+    private View btnInvite;
+    private View btnAccept;
+    private View btnMinimize;
+    private ImageView btnMicMute;
+    private ImageView btnSpeakerMute;
+
+    private boolean isSpeakerMute;
+    private boolean isMicMute;
+    private boolean timerStarted;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_multi_call);
 
-        gridParticipants = findViewById(R.id.grid_participants);
-        tvCallTime = findViewById(R.id.tv_call_time);
-        btnInvite = findViewById(R.id.btn_invite);
-        btnHangup = findViewById(R.id.btn_hangup);
-        btnMicMute = findViewById(R.id.iv_mic);
-        btnSpeakerMute = findViewById(R.id.iv_speaker);
-        btnAccept = findViewById(R.id.btn_accept);
+        bindViews();
+        initActions();
 
-        btnInvite.setOnClickListener(v -> {
-            Intent it = new Intent(this, SelectMemberActivity.class);
-            it.putExtra("is_video_call", isVideoCall);
-            it.putExtra(GROUP_ID, conversationId);
-            it.putStringArrayListExtra(DISABLE_MEMBERS, targetUserIds);
-            startActivityForResult(it, REQUEST_SELECT_MEMBERS);
-        });
-        btnHangup.setOnClickListener(v -> hangupCall());
-        btnMicMute.setOnClickListener(v -> toggleMic());
-        btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        if (targetUserIds == null) {
+            targetUserIds = new ArrayList<>();
+        }
+        targetUserIds.remove(currentUserId);
 
-        btnAccept.setOnClickListener(v -> {
-            acceptCall();
-        });
-        setupView();
-
-        // 不能包含自己
-        targetUserIds.remove(JIM.getInstance().getCurrentUserId());
-        updateParticipantView(Arrays.asList(JIM.getInstance().getCurrentUserId()));
+        updateParticipantView(Arrays.asList(currentUserId));
         updateParticipantView(targetUserIds);
-    }
 
-    private void startPreview() {
-        // preview self video
-        View view = gridParticipants.findViewWithTag(JIM.getInstance().getCurrentUserId());
-        if (view != null && callSession != null) {
-            SurfaceView surfaceView = view.findViewById(R.id.surface_view);
-            callSession.startPreview(surfaceView);
+        btnInvite.setVisibility(isGroupCall ? VISIBLE : GONE);
+
+        if (!connected && isIncoming(direction)) {
+            playCallRing();
+        }
+
+        updateCallUiState();
+
+        if (connected) {
+            startPreview();
+            ensureTimerStarted();
+        }
+
+        if (!connected && autoAccept && isIncoming(direction)) {
+            acceptCall();
         }
     }
 
-    private void updateParticipantView(List<String> users) {
-        if (users == null || users.isEmpty()) return;
-        for (String userId : users) {
-            UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(userId);
-            if (isVideoCall) {
-                addVideoParticipant(userInfo);
-            } else {
-                addAudioParticipant(userInfo);
-            }
-        }
-    }
-
+    /**
+     * 发起多人呼叫（主叫场景）。
+     */
     @Override
     protected void onStartCall() {
         startMultiCall(targetUserIds, isVideoCall ? CallConst.CallMediaType.VIDEO : CallConst.CallMediaType.VOICE);
     }
 
+    /**
+     * 通话建立后刷新网格和计时。
+     */
     @Override
     public void onCallConnected() {
         super.onCallConnected();
+        stopAndRelease();
         startPreview();
-        setupTimer(tvCallTime);
-        setupView();
+        ensureTimerStarted();
+        updateCallUiState();
     }
 
-    private void setupView() {
-        if (!connected) {
-            if (direction.equals("outgoing")) {
-                btnAccept.setVisibility(GONE);
-            } else {
-                btnAccept.setVisibility(VISIBLE);
-            }
-        } else {
-            btnAccept.setVisibility(GONE);
-        }
-    }
-
+    /**
+     * 远端用户加入回调。
+     *
+     * @param remoteUserIds 新加入用户ID列表
+     */
     @Override
     public void onRemoteUserJoin(List<String> remoteUserIds) {
+        if (remoteUserIds == null || remoteUserIds.isEmpty()) {
+            return;
+        }
+
         ArrayList<String> newUsers = new ArrayList<>();
         for (String userId : remoteUserIds) {
             if (!targetUserIds.contains(userId)) {
                 targetUserIds.add(userId);
                 newUsers.add(userId);
             }
-            if (isVideoCall) {
-                View view = gridParticipants.findViewWithTag(userId);
-                SurfaceView surfaceView = view.findViewById(R.id.surface_view);
-                if (surfaceView != null) {
-                    callSession.setVideoView(userId, surfaceView);
-                }
-            }
         }
+
         updateParticipantView(newUsers);
+        bindRemoteVideoViews(remoteUserIds);
     }
 
+    /**
+     * 远端用户离开回调。
+     *
+     * @param remoteUserIds 离开用户ID列表
+     */
     @Override
     public void onRemoteUserLeave(List<String> remoteUserIds) {
-        super.onRemoteUserLeave(remoteUserIds);
+        if (remoteUserIds == null || remoteUserIds.isEmpty()) {
+            return;
+        }
+
         for (String userId : remoteUserIds) {
-            View u = gridParticipants.findViewWithTag(userId);
-            gridParticipants.removeView(u);
+            View participantView = gridParticipants.findViewWithTag(userId);
+            if (participantView != null) {
+                gridParticipants.removeView(participantView);
+            }
             targetUserIds.remove(userId);
         }
 
         if (gridParticipants.getChildCount() <= 1) {
-            Toast.makeText(this, "通话结束", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.call_status_finished, Toast.LENGTH_SHORT).show();
             finish();
-        } else {
-            gridParticipants.requestLayout();
+            return;
+        }
+        gridParticipants.requestLayout();
+    }
+
+    private void bindViews() {
+        gridParticipants = findViewById(R.id.grid_participants);
+        tvCallTime = findViewById(R.id.tv_call_time);
+        tvCallStatus = findViewById(R.id.tv_call_status);
+        btnInvite = findViewById(R.id.btn_invite);
+        btnHangup = findViewById(R.id.btn_hangup);
+        btnMicMute = findViewById(R.id.iv_mic);
+        btnSpeakerMute = findViewById(R.id.iv_speaker);
+        btnAccept = findViewById(R.id.btn_accept);
+        btnMinimize = findViewById(R.id.btn_minimize);
+    }
+
+    private void initActions() {
+        btnMinimize.setOnClickListener(v -> minimizeToFloating(true));
+
+        btnInvite.setOnClickListener(v -> {
+            if (!isGroupCall) {
+                Toast.makeText(this, R.string.call_invite_only_group, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent it = new Intent(this, SelectMemberActivity.class);
+            it.putExtra(EXTRA_IS_VIDEO_CALL, isVideoCall);
+            it.putExtra(GROUP_ID, conversationId);
+            it.putStringArrayListExtra(DISABLE_MEMBERS, targetUserIds);
+            startActivityForResult(it, REQUEST_SELECT_MEMBERS);
+        });
+
+        btnHangup.setOnClickListener(v -> {
+            hangupCall();
+            finish();
+        });
+
+        btnMicMute.setOnClickListener(v -> toggleMic());
+        btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
+        btnAccept.setOnClickListener(v -> acceptCall());
+    }
+
+    /**
+     * 刷新多人通话整体状态栏。
+     *
+     * 简要描述：
+     * 通话状态仅由 connected 和 direction 决定，避免“接听按钮/计时/文案”出现互相覆盖。
+     */
+    private void updateCallUiState() {
+        if (!connected) {
+            tvCallTime.setVisibility(GONE);
+            if ("outgoing".equals(direction)) {
+                btnAccept.setVisibility(GONE);
+                tvCallStatus.setText(R.string.call_status_waiting_answer);
+            } else {
+                btnAccept.setVisibility(VISIBLE);
+                tvCallStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
+            }
+            return;
+        }
+
+        btnAccept.setVisibility(GONE);
+        tvCallStatus.setText(R.string.call_status_connected);
+        ensureTimerStarted();
+    }
+
+    private void ensureTimerStarted() {
+        if (timerStarted) {
+            return;
+        }
+        timerStarted = true;
+        setupTimer(tvCallTime);
+    }
+
+    private void startPreview() {
+        if (!isVideoCall || callSession == null) {
+            return;
+        }
+
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        View selfView = gridParticipants.findViewWithTag(currentUserId);
+        if (selfView != null) {
+            SurfaceView surfaceView = selfView.findViewById(R.id.surface_view);
+            if (surfaceView != null) {
+                callSession.startPreview(surfaceView);
+            }
+        }
+
+        bindRemoteVideoViews(targetUserIds);
+    }
+
+    private void bindRemoteVideoViews(List<String> userIds) {
+        if (!isVideoCall || callSession == null || userIds == null) {
+            return;
+        }
+
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        for (String userId : userIds) {
+            if (TextUtils.equals(userId, currentUserId)) {
+                continue;
+            }
+            View participantView = gridParticipants.findViewWithTag(userId);
+            if (participantView == null) {
+                continue;
+            }
+            SurfaceView surfaceView = participantView.findViewById(R.id.surface_view);
+            if (surfaceView != null) {
+                callSession.setVideoView(userId, surfaceView);
+            }
         }
     }
 
-    @Override
-    public void onCallFinished(CallConst.CallFinishReason callFinishReason) {
-        super.onCallFinished(callFinishReason);
+    private void updateParticipantView(List<String> users) {
+        if (users == null || users.isEmpty()) {
+            return;
+        }
+        for (String userId : users) {
+            if (TextUtils.isEmpty(userId)) {
+                continue;
+            }
+            if (gridParticipants.findViewWithTag(userId) != null) {
+                continue;
+            }
+            UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(userId);
+            if (isVideoCall) {
+                addVideoParticipant(userId, userInfo);
+            } else {
+                addAudioParticipant(userId, userInfo);
+            }
+        }
     }
 
-    private void addAudioParticipant(UserInfo userInfo) {
+    private void addAudioParticipant(String userId, UserInfo userInfo) {
         View memberView = LayoutInflater.from(this).inflate(R.layout.item_voice_participant, gridParticipants, false);
         ImageView imgAvatar = memberView.findViewById(R.id.img_member_avatar);
         TextView tvName = memberView.findViewById(R.id.tv_member_name);
-        memberView.setTag(userInfo.getUserId());
-        tvName.setText(userInfo.getUserName());
-        AvatarUtils.loadAvatar(imgAvatar, userInfo.getPortrait(), userInfo.getUserName());
+        memberView.setTag(userId);
 
-        int heightPx = (int) TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                200,
-                getResources().getDisplayMetrics()
-        );
-        GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = 0; // 让宽度依旧按权重分配
-        params.height = heightPx; // 固定高度 200dp
-        params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
-        gridParticipants.addView(memberView, params);
+        String userName = userInfo == null ? getString(R.string.main_default_user_name) : userInfo.getUserName();
+        String portrait = userInfo == null ? "" : userInfo.getPortrait();
+        tvName.setText(userName);
+        AvatarUtils.loadAvatar(imgAvatar, portrait, userName, userId);
+
+        gridParticipants.addView(memberView, buildParticipantLayoutParams());
     }
 
-    private void addVideoParticipant(UserInfo userInfo) {
+    private void addVideoParticipant(String userId, UserInfo userInfo) {
         View memberView = LayoutInflater.from(this).inflate(R.layout.item_video_participant, gridParticipants, false);
-        memberView.setTag(userInfo.getUserId());
-        TextView tvName = memberView.findViewById(R.id.tv_name);
-        tvName.setText(userInfo.getUserName());
+        memberView.setTag(userId);
 
+        TextView tvName = memberView.findViewById(R.id.tv_name);
+        String userName = userInfo == null ? getString(R.string.main_default_user_name) : userInfo.getUserName();
+        tvName.setText(userName);
+
+        gridParticipants.addView(memberView, buildParticipantLayoutParams());
+    }
+
+    private GridLayout.LayoutParams buildParticipantLayoutParams() {
         int heightPx = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                200,
-                getResources().getDisplayMetrics()
-        );
+                190,
+                getResources().getDisplayMetrics());
+
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
-        params.width = 0; // 让宽度依旧按权重分配
-        params.height = heightPx; // 固定高度 200dp
+        params.width = 0;
+        params.height = heightPx;
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
         params.rowSpec = GridLayout.spec(GridLayout.UNDEFINED);
-        gridParticipants.addView(memberView, params);
+        return params;
     }
 
     private void toggleMic() {
+        if (callSession == null) {
+            return;
+        }
         callSession.muteMicrophone(!isMicMute);
         isMicMute = !isMicMute;
         btnMicMute.setImageResource(isMicMute ? R.drawable.ic_mic_off : R.drawable.ic_mic_on);
     }
 
     private void toggleSpeaker() {
+        if (callSession == null) {
+            return;
+        }
         callSession.muteSpeaker(!isSpeakerMute);
         isSpeakerMute = !isSpeakerMute;
         btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.ic_speaker_off : R.drawable.ic_speaker_on);
@@ -216,11 +343,25 @@ public class MultiCallActivity extends BaseCallActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_SELECT_MEMBERS && resultCode == RESULT_OK) {
-            ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
-            updateParticipantView(newIds);
-            targetUserIds.addAll(newIds);
-            callSession.inviteUsers(newIds);
+        if (requestCode != REQUEST_SELECT_MEMBERS || resultCode != RESULT_OK || data == null) {
+            return;
+        }
+        ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
+        if (newIds == null || newIds.isEmpty()) {
+            return;
+        }
+
+        ArrayList<String> inviteIds = new ArrayList<>();
+        for (String userId : newIds) {
+            if (!targetUserIds.contains(userId)) {
+                targetUserIds.add(userId);
+                inviteIds.add(userId);
+            }
+        }
+
+        updateParticipantView(inviteIds);
+        if (!inviteIds.isEmpty() && callSession != null) {
+            callSession.inviteUsers(inviteIds);
         }
     }
 }

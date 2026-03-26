@@ -3,7 +3,6 @@ package com.juggle.im.android.app;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.Build;
 import android.os.Bundle;
@@ -20,12 +19,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import com.juggle.im.android.component.AbsAppActivity;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.juggle.im.android.R;
+import com.juggle.im.android.utils.PermissionComponent;
 import com.juggle.im.android.widget.JuggleCheckBox;
 
 import java.io.File;
@@ -172,7 +171,7 @@ public class AvatarPickerActivity extends AbsAppActivity {
     }
 
     private boolean hasImagePermission() {
-        return ContextCompat.checkSelfPermission(this, requiredPermission()) == PackageManager.PERMISSION_GRANTED;
+        return PermissionComponent.hasAllPermissions(this, requiredPermission());
     }
 
     private String requiredPermission() {

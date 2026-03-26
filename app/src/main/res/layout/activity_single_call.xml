@@ -1,23 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#2C2C2E">
+    android:background="@color/call_gb">
+
+    <SurfaceView
+        android:id="@+id/remote_surface_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#33000000" />
+
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="20dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp">
+
+        <TextView
+            android:layout_width="32dp"
+            android:layout_height="32dp" />
+
+        <TextView
+            android:id="@+id/tv_call_duration"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="00:00"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <ImageView
+            android:id="@+id/btn_minimize"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_call_top_action"
+            android:padding="7dp"
+            android:src="@drawable/ic_call_minimize"
+            android:contentDescription="@string/call_action_minimize" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/call_user_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="130dp"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
         <ImageView
             android:id="@+id/img_avatar"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="112dp"
+            android:layout_height="112dp"
             android:background="@drawable/gray_circle_bg"
             android:src="@drawable/icon_default_avatar" />
 
@@ -25,39 +71,36 @@
             android:id="@+id/tv_nickname"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="张小明"
+            android:layout_marginTop="20dp"
+            android:text="用户"
             android:textColor="@android:color/white"
             android:textSize="24sp" />
 
         <TextView
-            android:id="@+id/tv_call_duration"
+            android:id="@+id/tv_call_status"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="00:01"
-            android:textColor="@android:color/white"
-            android:textSize="16sp" />
+            android:text="等待对方接听..."
+            android:textColor="#E6FFFFFF"
+            android:textSize="15sp" />
     </LinearLayout>
 
     <SurfaceView
-        android:visibility="gone"
         android:id="@+id/local_surface_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-    <SurfaceView
-        android:visibility="gone"
-        android:id="@+id/remote_surface_view"
+        android:layout_width="112dp"
+        android:layout_height="166dp"
         android:layout_alignParentEnd="true"
-        android:layout_width="160dp"
-        android:layout_height="250dp"/>
+        android:layout_marginTop="90dp"
+        android:layout_marginEnd="16dp"
+        android:background="#1AFFFFFF"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="60dp"
+        android:layout_marginBottom="50dp"
         android:gravity="center_horizontal"
         android:orientation="vertical">
 
@@ -66,11 +109,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:visibility="gone">
 
             <LinearLayout
-                android:id="@+id/btn_mic"
-                android:layout_width="80dp"
+                android:layout_width="84dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="60dp"
                 android:gravity="center"
@@ -78,10 +121,10 @@
 
                 <ImageView
                     android:id="@+id/iv_mic"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
                     android:background="@drawable/gray_circle_bg"
-                    android:padding="16dp"
+                    android:padding="14dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_mic_on" />
 
@@ -91,22 +134,21 @@
                     android:layout_marginTop="8dp"
                     android:text="麦克风"
                     android:textColor="@android:color/white"
-                    android:textSize="14sp" />
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <LinearLayout
-                android:id="@+id/btn_speaker"
-                android:layout_width="80dp"
+                android:layout_width="84dp"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
 
                 <ImageView
                     android:id="@+id/iv_speaker"
-                    android:layout_width="64dp"
-                    android:layout_height="64dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
                     android:background="@drawable/gray_circle_bg"
-                    android:padding="16dp"
+                    android:padding="14dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_speaker_on" />
 
@@ -116,65 +158,67 @@
                     android:layout_marginTop="8dp"
                     android:text="扬声器"
                     android:textColor="@android:color/white"
-                    android:textSize="14sp" />
+                    android:textSize="13sp" />
             </LinearLayout>
         </LinearLayout>
 
-    <LinearLayout
-        android:id="@+id/connecting_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:gravity="center"
-        android:orientation="horizontal">
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/connecting_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:id="@+id/btn_hangup"
+            android:layout_marginTop="34dp"
             android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
-            <ImageView
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:background="@drawable/red_circle_bg"
-                android:padding="20dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_hangup" />
-
-            <TextView
+            <LinearLayout
+                android:id="@+id/btn_hangup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="挂断"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-        </LinearLayout>
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="60dp"
-            android:id="@+id/btn_accept"
-            android:gravity="center"
-            android:orientation="vertical">
+                android:gravity="center"
+                android:orientation="vertical">
 
-            <ImageView
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:background="@drawable/green_circle_bg"
-                android:padding="20dp"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_answer" />
+                <ImageView
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:background="@drawable/red_circle_bg"
+                    android:padding="19dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_hangup" />
 
-            <TextView
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="挂断"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_accept"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="接听"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
+                android:layout_marginStart="64dp"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:background="@drawable/green_circle_bg"
+                    android:padding="19dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_answer" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="接听"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
     </LinearLayout>
 
 </RelativeLayout>

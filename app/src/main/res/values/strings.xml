@@ -19,6 +19,15 @@
     <string name="location">位置</string>
     <string name="call_video">视频通话</string>
     <string name="call_voice">语音通话</string>
+    <string name="call_action_minimize">最小化通话</string>
+    <string name="call_action_invite">邀请成员</string>
+    <string name="call_status_waiting_answer">等待对方接听...</string>
+    <string name="call_status_incoming_voice">邀请你语音通话</string>
+    <string name="call_status_incoming_video">邀请你视频通话</string>
+    <string name="call_status_connected">通话中</string>
+    <string name="call_status_finished">通话结束</string>
+    <string name="call_status_float_ongoing">通话中</string>
+    <string name="call_invite_only_group">仅群组通话支持拉人</string>
     <string name="timed_delete">定时删除</string>
     <string name="timed_delete_selected">已设置定时删除：%1$s</string>
     <string name="contact">联系人</string>

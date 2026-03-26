@@ -3,7 +3,8 @@ package com.juggle.im.android.chat.plugin;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+
+import com.juggle.im.android.utils.PermissionComponent;
 
 /**
  * Interface describing a "more" panel plugin item.
@@ -89,14 +90,6 @@ public abstract class MorePlugin {
      * Helper for plugin implementations to evaluate runtime permission grant state.
      */
     protected final boolean arePermissionsGranted(int[] grantResults) {
-        if (grantResults == null || grantResults.length == 0) {
-            return false;
-        }
-        for (int grantResult : grantResults) {
-            if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
+        return PermissionComponent.areGrantResultsGranted(grantResults);
     }
 }

@@ -7,11 +7,15 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
@@ -34,8 +38,8 @@ import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
 import com.juggle.im.android.chat.MyProfileFragment;
 import com.juggle.im.android.chat.SearchActivity;
-import com.juggle.im.android.chat.call.MultiCallActivity;
-import com.juggle.im.android.chat.call.SingleCallActivity;
+import com.juggle.im.android.chat.call.BaseCallActivity;
+import com.juggle.im.android.chat.call.CallUiStateStore;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.ConversationUpdatedEvent;
@@ -45,6 +49,7 @@ import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.call.CallConst;
+import com.juggle.im.call.ICallSession;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.GroupInfo;
@@ -54,12 +59,11 @@ import com.qiniu.android.utils.StringUtils;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private ConversationListFragment conversationListFragment;
@@ -76,6 +80,70 @@ public class MainActivity extends AppCompatActivity {
     private ImageView btnMore, btnSearch;
     private AuthGuard authGuard;
     private PopupWindow mainAddActionPopup;
+    private FrameLayout callFloatContainer;
+    private View ongoingCallFloatView;
+    private TextView tvOngoingCallFloatTimer;
+    private final Handler callFloatHandler = new Handler(Looper.getMainLooper());
+    private Runnable ongoingTimerRunnable;
+    private ICallSession floatingCallSession;
+    private static final String MAIN_FLOATING_CALL_LISTENER = "MainOngoingCallFloat";
+
+    private final ICallSession.ICallSessionListener floatingCallListener = new ICallSession.ICallSessionListener() {
+        @Override
+        public void onCallConnect() {
+            runOnUiThread(() -> {
+                CallUiStateStore.FloatingCallInfo info = CallUiStateStore.getFloatingCallInfo();
+                if (info != null) {
+                    info.connected = true;
+                    if (info.connectedStartAt <= 0L) {
+                        info.connectedStartAt = System.currentTimeMillis();
+                    }
+                    CallUiStateStore.saveFloatingCallInfo(info);
+                    renderOngoingCallFloating();
+                }
+            });
+        }
+
+        @Override
+        public void onCallFinish(CallConst.CallFinishReason callFinishReason) {
+            runOnUiThread(() -> {
+                CallUiStateStore.clearFloatingCallInfo();
+                dismissOngoingCallFloating();
+            });
+        }
+
+        @Override
+        public void onErrorOccur(CallConst.CallErrorCode callErrorCode) {
+        }
+
+        @Override
+        public void onUsersInvite(String s, List<String> list) {
+        }
+
+        @Override
+        public void onUsersConnect(List<String> list) {
+        }
+
+        @Override
+        public void onUsersLeave(List<String> list) {
+        }
+
+        @Override
+        public void onUserCameraEnable(String s, boolean b) {
+        }
+
+        @Override
+        public void onUserMicrophoneEnable(String s, boolean b) {
+        }
+
+        @Override
+        public void onSoundLevelUpdate(HashMap<String, Float> hashMap) {
+        }
+
+        @Override
+        public void onVideoFirstFrameRender(String s) {
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,6 +177,7 @@ public class MainActivity extends AppCompatActivity {
         tvHeaderStatus = findViewById(R.id.tv_header_status);
         ivHeaderAvatar = findViewById(R.id.iv_header_avatar);
         headerProfileArea = findViewById(R.id.header_profile_area);
+        callFloatContainer = findViewById(R.id.call_float_container);
         if (bottomNav != null) {
             bottomNav.setOnTabClickListener(index -> onTabSelected(index));
             bottomNav.setSelectedTab(0);
@@ -127,40 +196,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         EventBus.getDefault().register(this);
-
-        JIM.getInstance().getCallManager().addReceiveListener("CallReceive", iCallSession -> {
-            Log.d("MainActivity", "receive call: " + iCallSession.getCallId());
-            int members = iCallSession.getMembers().size();
-            Intent it = members == 2
-                    ? new Intent(this, SingleCallActivity.class)
-                    : new Intent(this, MultiCallActivity.class);
-            it.putExtra("inviter", iCallSession.getInviter());
-            it.putExtra("is_video_call", iCallSession.getMediaType() == CallConst.CallMediaType.VIDEO);
-            List<String> ids = iCallSession.getMembers().stream()
-                    .map(member -> member.getUserInfo().getUserId())
-                    .collect(Collectors.toList());
-            it.putStringArrayListExtra("targetUserIds", (ArrayList<String>)ids);
-            it.putExtra("direction", "incoming");
-            it.putExtra("callId", iCallSession.getCallId());
-            String extra = iCallSession.getExtra();
-            if (!StringUtils.isBlank(extra)) {
-                try {
-                    JSONObject jsonObject = new JSONObject(extra);
-                    String conversationId = jsonObject.getString("conversationId");
-                    it.putExtra("conversationId", conversationId);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            startActivity(it);
-        });
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         updateHeaderProfile();
+        renderOngoingCallFloating();
     }
 
 
@@ -329,6 +371,7 @@ public class MainActivity extends AppCompatActivity {
     public void onDestroy() {
         super.onDestroy();
         dismissMainAddActionsPopupIfNeeded();
+        dismissOngoingCallFloating();
         if (EventBus.getDefault().isRegistered(this)) {
             EventBus.getDefault().unregister(this);
         }
@@ -397,6 +440,143 @@ public class MainActivity extends AppCompatActivity {
 
     private int dp(int value) {
         return Math.round(getResources().getDisplayMetrics().density * value);
+    }
+
+    /**
+     * 展示最小化通话浮窗（含计时）。
+     */
+    private void renderOngoingCallFloating() {
+        CallUiStateStore.FloatingCallInfo info = CallUiStateStore.getFloatingCallInfo();
+        if (info == null || StringUtils.isNullOrEmpty(info.callId)) {
+            dismissOngoingCallFloating();
+            return;
+        }
+        if (callFloatContainer == null) {
+            return;
+        }
+
+        if (ongoingCallFloatView == null) {
+            ongoingCallFloatView = LayoutInflater.from(this).inflate(R.layout.layout_call_ongoing_floating, callFloatContainer, false);
+            tvOngoingCallFloatTimer = ongoingCallFloatView.findViewById(R.id.tv_float_time);
+            ongoingCallFloatView.setOnClickListener(v -> {
+                CallUiStateStore.FloatingCallInfo current = CallUiStateStore.getFloatingCallInfo();
+                if (current == null) {
+                    return;
+                }
+                startActivity(BaseCallActivity.buildRestoreIntent(this, current));
+                CallUiStateStore.clearFloatingCallInfo();
+                dismissOngoingCallFloating();
+            });
+        }
+
+        if (ongoingCallFloatView.getParent() == null) {
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT);
+            params.gravity = Gravity.TOP | Gravity.END;
+            params.setMargins(dp(12), dp(90), dp(12), 0);
+            callFloatContainer.addView(ongoingCallFloatView, params);
+        }
+
+        ImageView ivAvatar = ongoingCallFloatView.findViewById(R.id.iv_float_avatar);
+        TextView tvName = ongoingCallFloatView.findViewById(R.id.tv_float_name);
+        String displayUserId = resolveFloatingDisplayUserId(info);
+        UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(displayUserId);
+        String displayName = userInfo == null || StringUtils.isNullOrEmpty(userInfo.getUserName())
+                ? getString(R.string.call_status_float_ongoing)
+                : userInfo.getUserName();
+        String displayAvatar = userInfo == null ? "" : userInfo.getPortrait();
+        tvName.setText(displayName);
+        AvatarUtils.loadAvatar(ivAvatar, displayAvatar, displayName, displayUserId);
+
+        long startAt = info.connectedStartAt > 0L ? info.connectedStartAt : System.currentTimeMillis();
+        startOngoingCallTimer(startAt);
+        bindFloatingCallSession(info.callId);
+    }
+
+    /**
+     * 关闭最小化通话浮窗并解绑监听。
+     */
+    private void dismissOngoingCallFloating() {
+        stopOngoingCallTimer();
+        if (floatingCallSession != null) {
+            floatingCallSession.removeListener(MAIN_FLOATING_CALL_LISTENER);
+            floatingCallSession = null;
+        }
+        if (ongoingCallFloatView != null && callFloatContainer != null) {
+            callFloatContainer.removeView(ongoingCallFloatView);
+            ongoingCallFloatView = null;
+            tvOngoingCallFloatTimer = null;
+        }
+    }
+
+    /**
+     * 绑定最小化通话会话监听，用于自动清理浮窗。
+     */
+    private void bindFloatingCallSession(String callId) {
+        if (floatingCallSession != null) {
+            floatingCallSession.removeListener(MAIN_FLOATING_CALL_LISTENER);
+            floatingCallSession = null;
+        }
+        if (StringUtils.isNullOrEmpty(callId)) {
+            return;
+        }
+        floatingCallSession = JIM.getInstance().getCallManager().getCallSession(callId);
+        if (floatingCallSession != null) {
+            floatingCallSession.addListener(MAIN_FLOATING_CALL_LISTENER, floatingCallListener);
+        }
+    }
+
+    /**
+     * 启动最小化浮窗计时器。
+     */
+    private void startOngoingCallTimer(long startAt) {
+        if (tvOngoingCallFloatTimer == null) {
+            return;
+        }
+        stopOngoingCallTimer();
+        tvOngoingCallFloatTimer.setText(formatDuration(startAt));
+        ongoingTimerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (tvOngoingCallFloatTimer == null) {
+                    return;
+                }
+                tvOngoingCallFloatTimer.setText(formatDuration(startAt));
+                callFloatHandler.postDelayed(this, 1000L);
+            }
+        };
+        callFloatHandler.post(ongoingTimerRunnable);
+    }
+
+    /**
+     * 停止最小化浮窗计时器。
+     */
+    private void stopOngoingCallTimer() {
+        if (ongoingTimerRunnable != null) {
+            callFloatHandler.removeCallbacks(ongoingTimerRunnable);
+            ongoingTimerRunnable = null;
+        }
+    }
+
+    private String formatDuration(long startAt) {
+        long elapsedMillis = Math.max(0L, System.currentTimeMillis() - startAt);
+        int seconds = (int) (elapsedMillis / 1000L);
+        int minutes = seconds / 60;
+        seconds = seconds % 60;
+        return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+    }
+
+    private String resolveFloatingDisplayUserId(CallUiStateStore.FloatingCallInfo info) {
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        if (info.targetUserIds != null) {
+            for (String userId : info.targetUserIds) {
+                if (!StringUtils.isNullOrEmpty(userId) && !userId.equals(currentUserId)) {
+                    return userId;
+                }
+            }
+        }
+        return info.inviterUserId;
     }
 
     /**

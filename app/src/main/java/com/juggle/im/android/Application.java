@@ -1,6 +1,7 @@
 package com.juggle.im.android;
 import androidx.multidex.MultiDexApplication;
 
+import com.juggle.im.android.chat.call.CallIncomingFloatingManager;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.ConfigUtils;
 
@@ -12,6 +13,7 @@ public class Application extends MultiDexApplication {
     public void onCreate() {
         super.onCreate();
         JIMChatCore.getInstance().init(this, Collections.singletonList(ConfigUtils.imServer), ConfigUtils.appKey);
+        CallIncomingFloatingManager.getInstance().init(this);
 
     }
 }

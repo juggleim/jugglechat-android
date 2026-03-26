@@ -11,10 +11,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
 
-import androidx.core.content.ContextCompat;
-
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.FileUtils;
+import com.juggle.im.android.utils.PermissionComponent;
 
 public class CameraPlugin extends MorePlugin {
     public static final String ID = "camera";
@@ -52,11 +51,10 @@ public class CameraPlugin extends MorePlugin {
     public void onClick(Activity activity) {
         Activity act = activity != null ? activity : host;
         if (act == null) return;
-        boolean ok = true;
-        for (String p : getRequiredPermissions()) {
-            if (ContextCompat.checkSelfPermission(act, p) != PackageManager.PERMISSION_GRANTED) { ok = false; break; }
+        if (!PermissionComponent.hasAllPermissions(act, getRequiredPermissions())) {
+            callback.requestPermissions(getRequiredPermissions(), REQ, getId());
+            return;
         }
-        if (!ok) { callback.requestPermissions(getRequiredPermissions(), REQ, getId()); return; }
         Intent take = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
         // create tmp file using the actual Activity we will start from
         Uri photoURI = FileUtils.createTmpImageFile(act);

@@ -6,7 +6,6 @@ import static android.view.View.VISIBLE;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -29,7 +28,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
-import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -47,6 +45,7 @@ import com.juggle.im.android.server.beans.PostsListData;
 import com.juggle.im.android.server.beans.TopCommentBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.utils.PermissionComponent;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.chat.utils.FileUtils;
 
@@ -340,7 +339,7 @@ public class MomentsActivity extends AbsAppActivity {
     }
 
     private void takePhoto() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (!PermissionComponent.hasAllPermissions(this, Manifest.permission.CAMERA)) {
             Toast.makeText(this, "请授予相机权限", Toast.LENGTH_SHORT).show();
             return;
         }
