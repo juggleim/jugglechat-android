@@ -1,17 +1,12 @@
 package com.juggle.im.android.chat;
 
-import static android.view.View.VISIBLE;
-
 import android.content.Intent;
 import android.icu.text.Transliterator;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -25,6 +20,7 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.app.BlockUsersActivity;
 import com.juggle.im.android.app.FriendApplicationsActivity;
 import com.juggle.im.android.app.MyGroupsActivity;
+import com.juggle.im.android.chat.widget.IndexBar;
 import com.juggle.im.android.server.beans.FriendBean;
 import com.juggle.im.android.server.beans.FriendsListData;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -36,10 +32,9 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class FriendsFragment extends Fragment {
     private static final String FRIEND_APPLY = "friend_apply";
@@ -53,13 +48,13 @@ public class FriendsFragment extends Fragment {
     private final List<ContactEntry> allFriends = new ArrayList<>();
     private final List<ContactListAdapter.RowItem> currentRows = new ArrayList<>();
     private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
-    private final Map<String, TextView> indexViewMap = new HashMap<>();
 
     private RecyclerView recyclerView;
-    private LinearLayout indexBar;
+    private IndexBar indexBar;
     private LinearLayoutManager layoutManager;
     private ContactListAdapter adapter;
-    private String activeIndexLetter = "A";
+    private String activeIndexLetter;
+    private boolean hasNewFriendUnread;
 
     @Nullable
     @Override
@@ -73,26 +68,23 @@ public class FriendsFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         recyclerView = view.findViewById(R.id.rv_friends_list);
         indexBar = view.findViewById(R.id.ll_contact_index_bar);
+
+        refreshNewFriendBadge();
         setupRecyclerView();
         initIndexBar();
-        bindActionEntries(view);
         loadFriendsRecursively(1, new ArrayList<>());
-        checkNewFriend(view);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        View view = getView();
-        if (view != null) {
-            checkNewFriend(view);
-        }
+        refreshNewFriendBadge();
     }
 
     private void setupRecyclerView() {
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
-        adapter = new ContactListAdapter(this::openFriendConversation);
+        adapter = new ContactListAdapter(this::openFriendConversation, this::onActionEntryClick);
         recyclerView.setAdapter(adapter);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -103,19 +95,34 @@ public class FriendsFragment extends Fragment {
         });
     }
 
-    private void bindActionEntries(@NonNull View view) {
-        View groupsItem = view.findViewById(R.id.contact_action_groups);
-        View newFriendsItem = view.findViewById(R.id.new_friends_item);
-        View blacklistItem = view.findViewById(R.id.contact_action_blacklist);
+    private void initIndexBar() {
+        indexBar.setOnIndexSelectedListener(letter -> {
+            activeIndexLetter = letter;
+            indexBar.setActiveLetter(letter);
+            scrollToSection(letter);
+        });
+    }
 
-        groupsItem.setOnClickListener(v ->
-                startActivity(new Intent(requireContext(), MyGroupsActivity.class)));
-
-        newFriendsItem.setOnClickListener(v ->
-                startActivity(new Intent(requireContext(), FriendApplicationsActivity.class)));
-
-        blacklistItem.setOnClickListener(v ->
-                startActivity(new Intent(requireContext(), BlockUsersActivity.class)));
+    /**
+     * 功能入口点击分发。
+     *
+     * @param actionType 功能入口类型，见 ContactListAdapter.ACTION_* 常量
+     */
+    private void onActionEntryClick(int actionType) {
+        if (getContext() == null) {
+            return;
+        }
+        if (actionType == ContactListAdapter.ACTION_GROUPS) {
+            startActivity(new Intent(requireContext(), MyGroupsActivity.class));
+            return;
+        }
+        if (actionType == ContactListAdapter.ACTION_NEW_FRIENDS) {
+            startActivity(new Intent(requireContext(), FriendApplicationsActivity.class));
+            return;
+        }
+        if (actionType == ContactListAdapter.ACTION_BLACKLIST) {
+            startActivity(new Intent(requireContext(), BlockUsersActivity.class));
+        }
     }
 
     private void openFriendConversation(@NonNull ContactListAdapter.FriendRow row) {
@@ -201,6 +208,10 @@ public class FriendsFragment extends Fragment {
     @NonNull
     private List<ContactListAdapter.RowItem> buildRows(@NonNull List<ContactEntry> sorted) {
         List<ContactListAdapter.RowItem> rows = new ArrayList<>();
+
+        // 关键逻辑：三个功能入口也作为 RecyclerView 行渲染，保证它们与好友列表一起滚动。
+        rows.addAll(buildActionRows());
+
         String currentSection = null;
         for (int i = 0; i < sorted.size(); i++) {
             ContactEntry item = sorted.get(i);
@@ -220,98 +231,71 @@ public class FriendsFragment extends Fragment {
         return rows;
     }
 
+    @NonNull
+    private List<ContactListAdapter.RowItem> buildActionRows() {
+        List<ContactListAdapter.RowItem> rows = new ArrayList<>(3);
+        rows.add(new ContactListAdapter.ActionRow(
+                ContactListAdapter.ACTION_GROUPS,
+                R.drawable.icon_group,
+                getString(R.string.contact_groups),
+                true,
+                false));
+        rows.add(new ContactListAdapter.ActionRow(
+                ContactListAdapter.ACTION_NEW_FRIENDS,
+                R.drawable.icon_new_friend,
+                getString(R.string.contact_new_friends),
+                true,
+                hasNewFriendUnread));
+        rows.add(new ContactListAdapter.ActionRow(
+                ContactListAdapter.ACTION_BLACKLIST,
+                R.drawable.icon_black_user,
+                getString(R.string.contact_blacklist),
+                false,
+                false));
+        return rows;
+    }
+
     private void renderRows(@NonNull List<ContactListAdapter.RowItem> rows) {
         currentRows.clear();
         currentRows.addAll(rows);
         adapter.submit(currentRows);
 
-        if (adapter.findSectionPosition(activeIndexLetter) < 0) {
-            String firstSection = findFirstSectionLetter();
-            activeIndexLetter = firstSection == null ? "A" : firstSection;
-            renderIndexHighlight();
+        List<String> letters = collectSectionLetters(currentRows);
+        indexBar.setLetters(letters);
+        indexBar.setVisibility(letters.isEmpty() ? View.GONE : View.VISIBLE);
+
+        if (letters.isEmpty()) {
+            activeIndexLetter = null;
+            indexBar.setActiveLetter(null);
+            return;
         }
+
+        if (TextUtils.isEmpty(activeIndexLetter) || !letters.contains(activeIndexLetter)) {
+            activeIndexLetter = letters.get(0);
+        }
+        indexBar.setActiveLetter(activeIndexLetter);
         syncIndexByFirstVisibleSection();
     }
 
-    @Nullable
-    private String findFirstSectionLetter() {
-        for (ContactListAdapter.RowItem row : currentRows) {
+    @NonNull
+    private List<String> collectSectionLetters(@NonNull List<ContactListAdapter.RowItem> rows) {
+        LinkedHashSet<String> letters = new LinkedHashSet<>();
+        for (ContactListAdapter.RowItem row : rows) {
             if (row instanceof ContactListAdapter.SectionRow) {
-                return ((ContactListAdapter.SectionRow) row).section;
+                letters.add(((ContactListAdapter.SectionRow) row).section);
             }
         }
-        return null;
+        return new ArrayList<>(letters);
     }
 
-    private void initIndexBar() {
-        indexBar.removeAllViews();
-        indexViewMap.clear();
-        for (String letter : INDEX_LETTERS) {
-            TextView tv = new TextView(requireContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dpToPx(11), dpToPx(16));
-            if (indexBar.getChildCount() > 0) {
-                lp.topMargin = dpToPx(2);
-            }
-            tv.setLayoutParams(lp);
-            tv.setGravity(android.view.Gravity.CENTER);
-            tv.setText(letter);
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11);
-            tv.setOnClickListener(v -> {
-                activeIndexLetter = letter;
-                renderIndexHighlight();
-                scrollToSection(letter);
-            });
-            indexBar.addView(tv);
-            indexViewMap.put(letter, tv);
+    private void scrollToSection(@Nullable String letter) {
+        if (TextUtils.isEmpty(letter)) {
+            return;
         }
-        renderIndexHighlight();
-    }
-
-    private void renderIndexHighlight() {
-        for (String letter : INDEX_LETTERS) {
-            TextView tv = indexViewMap.get(letter);
-            if (tv == null) {
-                continue;
-            }
-            boolean active = TextUtils.equals(letter, activeIndexLetter);
-            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) tv.getLayoutParams();
-            lp.width = dpToPx(active ? 16 : 11);
-            lp.height = dpToPx(16);
-            tv.setLayoutParams(lp);
-            tv.setTextColor(requireContext().getColor(active ? R.color.white : R.color.conversation_primary_text));
-            tv.setBackgroundResource(active ? R.drawable.bg_create_group_index_active : android.R.color.transparent);
-        }
-    }
-
-    private void scrollToSection(@NonNull String letter) {
-        int position = findNearestSectionPosition(letter);
+        int position = adapter.findSectionPosition(letter);
         if (position >= 0) {
             layoutManager.scrollToPositionWithOffset(position, 0);
         }
-    }
-
-    private int findNearestSectionPosition(@NonNull String letter) {
-        int exact = adapter.findSectionPosition(letter);
-        if (exact >= 0) {
-            return exact;
-        }
-        int start = INDEX_LETTERS.indexOf(letter);
-        if (start < 0) {
-            return -1;
-        }
-        for (int i = start + 1; i < INDEX_LETTERS.size(); i++) {
-            int candidate = adapter.findSectionPosition(INDEX_LETTERS.get(i));
-            if (candidate >= 0) {
-                return candidate;
-            }
-        }
-        for (int i = start - 1; i >= 0; i--) {
-            int candidate = adapter.findSectionPosition(INDEX_LETTERS.get(i));
-            if (candidate >= 0) {
-                return candidate;
-            }
-        }
-        return -1;
     }
 
     private void syncIndexByFirstVisibleSection() {
@@ -328,10 +312,19 @@ public class FriendsFragment extends Fragment {
                 String section = ((ContactListAdapter.SectionRow) row).section;
                 if (!TextUtils.equals(activeIndexLetter, section)) {
                     activeIndexLetter = section;
-                    renderIndexHighlight();
+                    indexBar.setActiveLetter(section);
                 }
                 return;
             }
+        }
+    }
+
+    private void refreshNewFriendBadge() {
+        Conversation conversation = new Conversation(Conversation.ConversationType.SYSTEM, FRIEND_APPLY);
+        ConversationInfo info = JIM.getInstance().getConversationManager().getConversationInfo(conversation);
+        hasNewFriendUnread = info != null && info.getUnreadCount() > 0;
+        if (adapter != null) {
+            adapter.updateActionTip(ContactListAdapter.ACTION_NEW_FRIENDS, hasNewFriendUnread);
         }
     }
 
@@ -370,21 +363,6 @@ public class FriendsFragment extends Fragment {
     private int sectionOrder(@Nullable String section) {
         int index = INDEX_LETTERS.indexOf(section);
         return index >= 0 ? index : INDEX_LETTERS.size() - 1;
-    }
-
-    private void checkNewFriend(@NonNull View view) {
-        Conversation conversation = new Conversation(Conversation.ConversationType.SYSTEM, FRIEND_APPLY);
-        ConversationInfo info = JIM.getInstance().getConversationManager().getConversationInfo(conversation);
-        if (info != null && info.getUnreadCount() > 0) {
-            view.findViewById(R.id.new_friend_tip).setVisibility(VISIBLE);
-        } else {
-            view.findViewById(R.id.new_friend_tip).setVisibility(View.GONE);
-        }
-    }
-
-    private int dpToPx(int dp) {
-        float density = getResources().getDisplayMetrics().density;
-        return Math.round(dp * density);
     }
 
     private static final class ContactEntry {
