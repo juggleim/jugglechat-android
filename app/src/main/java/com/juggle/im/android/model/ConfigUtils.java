@@ -4,9 +4,9 @@ public class ConfigUtils {
     /**
      * 申请新的key进行替换
      */
-    public static String appKey = "nsw3sue72begyv7y";
-    public static String appServerUrl = "https://ws.juggleim.com";
-    public static String imServer = "wss://ws.juggleim.com";
+    public static String appKey = "nwm6fxqt2aeebhb7";
+    public static String appServerUrl = "https://ws.snailchat.im";
+    public static String imServer = "wss://ws.snailchat.im";
 
     /**
      * 音视频ID

@@ -65,6 +65,12 @@
     <string name="add_friend_search_failed">搜索失败：%1$s</string>
     <string name="add_friend_request_sent">请求已发送</string>
     <string name="add_friend_request_failed">添加失败：%1$s</string>
+    <string name="mention_sheet_title">选择提醒的人</string>
+    <string name="mention_sheet_multi_select">多选</string>
+    <string name="mention_sheet_done">完成</string>
+    <string name="mention_sheet_search_hint">搜索成员</string>
+    <string name="mention_sheet_empty">暂无匹配成员</string>
+    <string name="mention_sheet_close">关闭</string>
     <string name="contact_groups">群组</string>
     <string name="contact_new_friends">新朋友</string>
     <string name="contact_blacklist">黑名单</string>

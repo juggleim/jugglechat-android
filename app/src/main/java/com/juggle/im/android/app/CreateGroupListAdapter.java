@@ -37,6 +37,7 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
     private final Set<String> disabledUserIds = new HashSet<>();
     private final Map<String, Integer> sectionPositionMap = new HashMap<>();
     private final OnMemberClickListener onMemberClickListener;
+    private boolean showCheckBox = true;
 
     public CreateGroupListAdapter(OnMemberClickListener onMemberClickListener) {
         this.onMemberClickListener = onMemberClickListener;
@@ -92,6 +93,14 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
                 return;
             }
         }
+    }
+
+    public void setShowCheckBox(boolean showCheckBox) {
+        if (this.showCheckBox == showCheckBox) {
+            return;
+        }
+        this.showCheckBox = showCheckBox;
+        notifyDataSetChanged();
     }
 
     /**
@@ -159,10 +168,18 @@ public class CreateGroupListAdapter extends RecyclerView.Adapter<RecyclerView.Vi
         vh.vDivider.setVisibility(item.showDivider ? View.VISIBLE : View.GONE);
 
         boolean disabled = disabledUserIds.contains(item.userId);
-        vh.checkBox.setChecked(selected);
-        vh.checkBox.setDisabled(disabled);
-        vh.ivAvatar.setAlpha(disabled ? 0.3f : 1f);
-        vh.tvName.setAlpha(disabled ? 0.3f : 1f);
+        vh.checkBox.setVisibility(showCheckBox ? View.VISIBLE : View.GONE);
+        if (showCheckBox) {
+            vh.checkBox.setChecked(selected);
+            vh.checkBox.setDisabled(disabled);
+            vh.ivAvatar.setAlpha(disabled ? 0.3f : 1f);
+            vh.tvName.setAlpha(disabled ? 0.3f : 1f);
+        } else {
+            vh.checkBox.setChecked(false);
+            vh.checkBox.setDisabled(false);
+            vh.ivAvatar.setAlpha(1f);
+            vh.tvName.setAlpha(1f);
+        }
 
         vh.itemView.setOnClickListener(v -> {
             if (disabled) {

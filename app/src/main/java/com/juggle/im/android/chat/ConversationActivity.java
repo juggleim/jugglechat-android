@@ -7,7 +7,6 @@ import static com.juggle.im.android.chat.MessageListFragment.ARG_MENTION;
 import static com.juggle.im.android.chat.SelectMemberActivity.DISABLE_MEMBERS;
 import static com.juggle.im.android.chat.SelectMemberActivity.GROUP_ID;
 import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
-import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS_NAME;
 
 import android.content.Context;
 import android.content.Intent;
@@ -142,9 +141,11 @@ public class ConversationActivity extends AbsAppActivity {
             });
         }
 
+        conversationId = getIntent().getStringExtra(EXTRA_CONVERSATION_ID);
+        isGroup = getIntent().getBooleanExtra(EXTRA_IS_GROUP, false);
+        registerMentionResultListener();
+
         if (savedInstanceState == null) {
-            conversationId = getIntent().getStringExtra(EXTRA_CONVERSATION_ID);
-            isGroup = getIntent().getBooleanExtra(EXTRA_IS_GROUP, false);
             boolean isMention = getIntent().getBooleanExtra(ARG_MENTION, false);
             int unreadCount = getIntent().getIntExtra(EXTRA_UNREAD_COUNT, 0);
             conversation = new Conversation(
@@ -181,9 +182,7 @@ public class ConversationActivity extends AbsAppActivity {
 
                 @Override
                 public void onMentionTrigger(MentionManager mentionManager) {
-                    Intent it = new Intent(ConversationActivity.this, SelectMemberActivity.class);
-                    it.putExtra(GROUP_ID, conversationId);
-                    startActivityForResult(it, REQ_MENTION);
+                    showMentionMemberSheet();
                 }
 
                 @Override
@@ -268,6 +267,38 @@ public class ConversationActivity extends AbsAppActivity {
         mentionInfo.setType(MessageMentionInfo.MentionType.SOMEONE);
         mentionInfo.setTargetUsers(messageMentionInfoList);
         return mentionInfo;
+    }
+
+    private void registerMentionResultListener() {
+        getSupportFragmentManager().setFragmentResultListener(
+                MentionMemberSheetDialog.REQUEST_KEY,
+                this,
+                (requestKey, result) -> {
+                    MessageStreamSink streamSink = findMessageStreamSink();
+                    if (streamSink == null) {
+                        return;
+                    }
+                    String resultType = result.getString(
+                            MentionMemberSheetDialog.RESULT_TYPE,
+                            MentionMemberSheetDialog.RESULT_TYPE_CANCELLED);
+                    if (MentionMemberSheetDialog.RESULT_TYPE_SELECTED.equals(resultType)) {
+                        ArrayList<String> ids = result.getStringArrayList(MentionMemberSheetDialog.RESULT_SELECTED_IDS);
+                        ArrayList<String> names = result.getStringArrayList(MentionMemberSheetDialog.RESULT_SELECTED_NAMES);
+                        if (ids != null && names != null && !ids.isEmpty() && ids.size() == names.size()) {
+                            streamSink.insertMention(ids, names);
+                            return;
+                        }
+                    }
+                    streamSink.showKeyboardIfNeed();
+                });
+    }
+
+    private void showMentionMemberSheet() {
+        if (getSupportFragmentManager().findFragmentByTag(MentionMemberSheetDialog.TAG) != null) {
+            return;
+        }
+        MentionMemberSheetDialog.newInstance(conversationId, isGroup)
+                .show(getSupportFragmentManager(), MentionMemberSheetDialog.TAG);
     }
 
     private void handleTopMessage(Message message, UserInfo userInfo) {
@@ -384,17 +415,6 @@ public class ConversationActivity extends AbsAppActivity {
                 }
                 // clear selection state in fragment after forwarding
                 frag.clearSelectionAfterForward();
-            }
-        } else if (requestCode == REQ_MENTION) {
-            MessageStreamSink streamSink = findMessageStreamSink();
-            if (resultCode == RESULT_OK && data != null) {
-                ArrayList<String> newIds = data.getStringArrayListExtra(SELECTED_MEMBERS);
-                ArrayList<String> newNames = data.getStringArrayListExtra(SELECTED_MEMBERS_NAME);
-                if (streamSink != null) {
-                    streamSink.insertMention(newIds, newNames);
-                }
-            } else if (streamSink != null) {
-                streamSink.showKeyboardIfNeed();
             }
         } else if ((requestCode == REQ_MULTI_CALL_VOICE || requestCode == REQ_MULTI_CALL_VIDEO)
                 && resultCode == RESULT_OK) {
