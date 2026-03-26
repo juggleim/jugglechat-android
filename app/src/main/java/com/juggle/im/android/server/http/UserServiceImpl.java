@@ -125,6 +125,11 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
+    public void myGroups(ApiCallback<GroupListData> callback) {
+        enqueueGet("/jim/groups/mygroups", GroupListData.class, callback);
+    }
+
+    @Override
     public void applyFriend(String friendId,
             ApiCallback<com.juggle.im.android.server.beans.FriendApplicationBean> callback) {
         java.util.Map<String, String> body = new java.util.HashMap<>();

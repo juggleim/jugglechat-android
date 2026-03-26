@@ -58,7 +58,7 @@ public class MyGroupsActivity extends AbsAppActivity {
 
     private void loadGroups() {
         progressBar.setVisibility(View.VISIBLE);
-        ServiceManager.getUserService().searchMyGroups("", 200, new ApiCallback<GroupListData>() {
+        ServiceManager.getUserService().myGroups(new ApiCallback<GroupListData>() {
             @Override
             public void onSuccess(GroupListData data) {
                 progressBar.setVisibility(View.GONE);

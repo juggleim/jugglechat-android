@@ -40,6 +40,7 @@ public interface UserService {
 
     void searchMyGroups(String keyword, int limit, ApiCallback<GroupListData> callback);
 
+    public void myGroups(ApiCallback<GroupListData> callback);
     /**
      * Apply (send friend request) to a user. POST /jim/friends/apply {friend_id:
      * "..."}
