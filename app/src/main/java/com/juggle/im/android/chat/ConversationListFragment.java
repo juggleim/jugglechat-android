@@ -384,6 +384,7 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         target.setId(source.getId());
         target.setName(source.getName());
         target.setAvatar(source.getAvatar());
+        target.setDraft(source.getDraft());
         target.setLastMessageUserName(source.getLastMessageUserName());
         target.setTop(source.isTop());
         target.setTopTime(source.getTopTime());

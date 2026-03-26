@@ -51,6 +51,7 @@ import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
+import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.MergeMessagePreviewUnit;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.MessageMentionInfo;
@@ -144,14 +145,14 @@ public class ConversationActivity extends AbsAppActivity {
 
         conversationId = getIntent().getStringExtra(EXTRA_CONVERSATION_ID);
         isGroup = getIntent().getBooleanExtra(EXTRA_IS_GROUP, false);
+        conversation = new Conversation(
+                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
+                conversationId);
         registerMentionResultListener();
 
         if (savedInstanceState == null) {
             boolean isMention = getIntent().getBooleanExtra(ARG_MENTION, false);
             int unreadCount = getIntent().getIntExtra(EXTRA_UNREAD_COUNT, 0);
-            conversation = new Conversation(
-                    isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
-                    conversationId);
             MessageListFragment frag = MessageListFragment.newInstance(conversationId, isGroup, unreadCount, isMention);
             getSupportFragmentManager()
                     .beginTransaction()
@@ -173,6 +174,7 @@ public class ConversationActivity extends AbsAppActivity {
                         MessageMentionInfo mentionInfo = getMessageMentionInfo(mentionModelList);
                         options.setMentionInfo(mentionInfo);
                     }
+                    clearConversationDraft();
                     if (sendType == R.id.tag_edit_msg) {
                         editTextMessage(msgId, msg, options, conversation);
                     } else {
@@ -239,6 +241,7 @@ public class ConversationActivity extends AbsAppActivity {
                 inputBar.setInputHint(getString(R.string.input_msg_to, title));
             }
         }
+        restoreConversationDraftToInput();
 
         // 消息置顶
         JIM.getInstance().getMessageManager().getTopMessage(conversation, new IMessageManager.IGetTopMessageCallback() {
@@ -253,6 +256,60 @@ public class ConversationActivity extends AbsAppActivity {
             }
         });
         applySystemBarStyle();
+    }
+
+    /**
+     * 恢复会话草稿到输入框。
+     *
+     * <p>简要描述：进入会话页时优先使用 SDK 草稿回填输入框，保证离开后再进入仍可继续编辑。</p>
+     */
+    private void restoreConversationDraftToInput() {
+        if (conversation == null) {
+            return;
+        }
+        ChatInputActionBar inputBar = findViewById(R.id.input_bar);
+        if (inputBar == null) {
+            return;
+        }
+        ConversationInfo info = JIM.getInstance().getConversationManager().getConversationInfo(conversation);
+        if (info == null) {
+            return;
+        }
+        String draft = info.getDraft();
+        if (!TextUtils.isEmpty(draft)) {
+            inputBar.setInputText(draft);
+        }
+    }
+
+    /**
+     * 将当前输入框内容同步为会话草稿。
+     *
+     * <p>简要描述：输入框有内容则写入草稿，输入框为空则清空草稿，确保列表摘要与输入框状态一致。</p>
+     */
+    private void syncConversationDraftFromInput() {
+        if (conversation == null) {
+            return;
+        }
+        ChatInputActionBar inputBar = findViewById(R.id.input_bar);
+        if (inputBar == null) {
+            return;
+        }
+        String inputText = inputBar.getInputText();
+        if (TextUtils.isEmpty(inputText) || TextUtils.isEmpty(inputText.trim())) {
+            clearConversationDraft();
+            return;
+        }
+        JIM.getInstance().getConversationManager().setDraft(conversation, inputText);
+    }
+
+    /**
+     * 清空当前会话草稿。
+     */
+    private void clearConversationDraft() {
+        if (conversation == null) {
+            return;
+        }
+        JIM.getInstance().getConversationManager().clearDraft(conversation);
     }
 
     @NonNull
@@ -736,6 +793,12 @@ public class ConversationActivity extends AbsAppActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        syncConversationDraftFromInput();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         // Hide keyboard properly by accessing the ChatInputActionBar component
@@ -757,6 +820,7 @@ public class ConversationActivity extends AbsAppActivity {
 
     @Override
     public void finish() {
+        syncConversationDraftFromInput();
         // Hide the keyboard before finishing the activity
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {

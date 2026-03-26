@@ -26,6 +26,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.juggle.im.android.R;
@@ -134,6 +135,33 @@ public class ChatInputActionBar extends LinearLayout {
             return;
         }
         editTextInput.setHint(hint);
+    }
+
+    /**
+     * 获取输入框当前文本。
+     *
+     * @return 输入框内容，永不为 null
+     */
+    @NonNull
+    public String getInputText() {
+        if (editTextInput == null || editTextInput.getText() == null) {
+            return "";
+        }
+        return editTextInput.getText().toString();
+    }
+
+    /**
+     * 设置输入框文本并将光标移动到末尾。
+     *
+     * @param text 需要设置的输入内容
+     */
+    public void setInputText(@Nullable String text) {
+        if (editTextInput == null) {
+            return;
+        }
+        String safeText = text == null ? "" : text;
+        editTextInput.setText(safeText);
+        editTextInput.setSelection(safeText.length());
     }
 
     public ChatInputActionBar(Context context, @Nullable AttributeSet attrs) {

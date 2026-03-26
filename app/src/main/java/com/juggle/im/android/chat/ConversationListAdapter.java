@@ -9,6 +9,7 @@ import android.graphics.Shader;
 import android.os.Build;
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +27,7 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.model.ConversationInfo;
 import com.juggle.im.model.Message;
 
 import java.util.ArrayList;
@@ -387,9 +389,14 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
 
             // 设置最后一条消息
             Message lastMessage = uiConversation.getLastMessage();
-            if (lastMessage != null) {
+            String draft = uiConversation.getDraft();
+            ConversationInfo conversationInfo = uiConversation.getConversationInfo();
+            if (!TextUtils.isEmpty(draft)) {
+                // 简要描述：会话存在草稿时，摘要区域始终优先显示草稿，不被新消息摘要覆盖。
+                lastMessageView.setText(buildDraftSummary(draft));
+            } else if (lastMessage != null) {
                 String senderName = lastMessage.getSenderUserId().equals(JIM.getInstance().getCurrentUserId()) ? "你" : uiConversation.getLastMessageUserName();
-                if (uiConversation.getConversationInfo().getMentionInfo() != null) {
+                if (conversationInfo != null && conversationInfo.getMentionInfo() != null) {
                     SpannableString spannable = new SpannableString("[有人@我]" + MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
                     spannable.setSpan(
                             new ForegroundColorSpan(itemView.getResources().getColor(R.color.conversation_badge_red)),
@@ -427,7 +434,10 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 mutedUnreadDotView.setVisibility(GONE);
             }
 
-            if (lastMessage != null) {
+            if (!TextUtils.isEmpty(draft)) {
+                progressBar.setVisibility(GONE);
+                ivMsgStatus.setVisibility(GONE);
+            } else if (lastMessage != null) {
                 if (lastMessage.getState() == Message.MessageState.FAIL) {
                     ivMsgStatus.setVisibility(VISIBLE);
                     progressBar.setVisibility(GONE);
@@ -442,6 +452,22 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 progressBar.setVisibility(GONE);
                 ivMsgStatus.setVisibility(GONE);
             }
+        }
+
+        /**
+         * 构建会话草稿摘要文案，并将前缀 [草稿] 渲染为红色。
+         */
+        @NonNull
+        private CharSequence buildDraftSummary(@NonNull String rawDraft) {
+            String summary = rawDraft.replace('\n', ' ').trim();
+            String prefix = "[草稿]";
+            SpannableString spannable = new SpannableString(prefix + summary);
+            spannable.setSpan(
+                    new ForegroundColorSpan(itemView.getResources().getColor(R.color.conversation_badge_red)),
+                    0,
+                    prefix.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            return spannable;
         }
 
         private int dpToPx(int dp) {

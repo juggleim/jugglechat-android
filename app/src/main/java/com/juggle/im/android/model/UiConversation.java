@@ -28,6 +28,7 @@ public class UiConversation {
     private String name = "";
     private String lastMessageUserName = "";
     private String avatar = "";
+    private String draft = "";
     private boolean isGroup;
     private boolean isMuted;
     private boolean isTop;
@@ -71,6 +72,29 @@ public class UiConversation {
 
     public void setAvatar(@Nullable String avatar) {
         this.avatar = trimToEmpty(avatar);
+    }
+
+    /**
+     * 获取会话草稿内容。
+     */
+    @NonNull
+    public String getDraft() {
+        if (!draft.isEmpty()) {
+            return draft;
+        }
+        if (conversationInfo != null) {
+            return trimToEmpty(conversationInfo.getDraft());
+        }
+        return "";
+    }
+
+    /**
+     * 设置会话草稿内容。
+     *
+     * @param draft 草稿文本
+     */
+    public void setDraft(@Nullable String draft) {
+        this.draft = trimToEmpty(draft);
     }
 
     @NonNull
@@ -232,6 +256,7 @@ public class UiConversation {
         ui.isMuted = info.isMute();
         ui.unreadCount = Math.max(info.getUnreadCount(), 0);
         ui.sortTime = info.getSortTime();
+        ui.draft = trimToEmpty(info.getDraft());
         if (info.getConversation().getConversationType() != null) {
             ui.conversationTypeKey = info.getConversation().getConversationType().name();
             ui.isGroup = info.getConversation().getConversationType() == Conversation.ConversationType.GROUP;
