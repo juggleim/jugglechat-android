@@ -57,10 +57,20 @@
             android:inputType="text"
             android:maxLines="1"
             android:paddingStart="8dp"
-            android:paddingEnd="12dp"
+            android:paddingEnd="8dp"
             android:textColor="@color/conversation_primary_text"
             android:textColorHint="@color/conversation_secondary_text"
             android:textSize="14sp" />
+
+        <ImageView
+            android:id="@+id/iv_clear_search"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="12dp"
+            android:contentDescription="@string/add_friend_clear_input"
+            android:src="@drawable/ic_delete"
+            android:tint="@color/conversation_secondary_text"
+            android:visibility="gone" />
     </LinearLayout>
 
     <ProgressBar
@@ -72,13 +82,44 @@
         android:layout_marginTop="12dp"
         android:visibility="gone" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_results"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
         android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="8dp" />
+        android:clipToPadding="false">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/layout_empty"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="200dp"
+                android:layout_height="120dp"
+                android:contentDescription="@string/add_friend_no_result"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_no_friend" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/add_friend_no_result"
+                android:textColor="@color/conversation_secondary_text"
+                android:textSize="18sp" />
+        </LinearLayout>
+    </FrameLayout>
 
 </LinearLayout>

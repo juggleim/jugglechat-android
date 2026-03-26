@@ -45,8 +45,10 @@ public class AddFriendActivity extends AbsAppActivity {
     private Runnable pendingSearchTask;
 
     private EditText searchInput;
+    private ImageView clearSearchView;
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
+    private View emptyLayout;
     private SearchAdapter adapter;
 
     @Override
@@ -69,8 +71,10 @@ public class AddFriendActivity extends AbsAppActivity {
 
     private void initViews() {
         searchInput = findViewById(R.id.edt_search);
+        clearSearchView = findViewById(R.id.iv_clear_search);
         recyclerView = findViewById(R.id.rv_results);
         progressBar = findViewById(R.id.progress_bar);
+        emptyLayout = findViewById(R.id.layout_empty);
 
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
 
@@ -79,9 +83,20 @@ public class AddFriendActivity extends AbsAppActivity {
         recyclerView.setAdapter(adapter);
 
         adapter.setOnAddClickListener(this::applyFriend);
+        updateClearButton("");
+        updateEmptyState(false);
     }
 
     private void bindEvents() {
+        clearSearchView.setOnClickListener(v -> {
+            if (pendingSearchTask != null) {
+                searchHandler.removeCallbacks(pendingSearchTask);
+                pendingSearchTask = null;
+            }
+            searchInput.setText("");
+            searchInput.requestFocus();
+        });
+
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -89,7 +104,9 @@ public class AddFriendActivity extends AbsAppActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                scheduleSearch(s == null ? "" : s.toString());
+                String keyword = s == null ? "" : s.toString();
+                updateClearButton(keyword);
+                scheduleSearch(keyword);
             }
 
             @Override
@@ -126,9 +143,11 @@ public class AddFriendActivity extends AbsAppActivity {
         if (keyword.isEmpty()) {
             progressBar.setVisibility(View.GONE);
             adapter.setItems(new ArrayList<>());
+            updateEmptyState(false);
             return;
         }
 
+        updateEmptyState(false);
         pendingSearchTask = () -> doSearch(keyword);
         searchHandler.postDelayed(pendingSearchTask, SEARCH_DEBOUNCE_MS);
     }
@@ -139,6 +158,7 @@ public class AddFriendActivity extends AbsAppActivity {
 
     private void doSearch(String keyword) {
         progressBar.setVisibility(View.VISIBLE);
+        updateEmptyState(false);
         ServiceManager.getUserService().searchUsers(keyword, new ApiCallback<FriendsListData>() {
             @Override
             public void onSuccess(FriendsListData data) {
@@ -153,6 +173,7 @@ public class AddFriendActivity extends AbsAppActivity {
                         ? new ArrayList<>()
                         : data.getItems();
                 adapter.setItems(items);
+                updateEmptyState(items.isEmpty());
             }
 
             @Override
@@ -163,11 +184,27 @@ public class AddFriendActivity extends AbsAppActivity {
                 }
 
                 progressBar.setVisibility(View.GONE);
+                updateEmptyState(false);
                 Toast.makeText(AddFriendActivity.this,
                         getString(R.string.add_friend_search_failed, String.valueOf(message)),
                         Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void updateClearButton(String keyword) {
+        if (clearSearchView == null) {
+            return;
+        }
+        clearSearchView.setVisibility(normalizeKeyword(keyword).isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
+    private void updateEmptyState(boolean show) {
+        if (emptyLayout == null || recyclerView == null) {
+            return;
+        }
+        emptyLayout.setVisibility(show ? View.VISIBLE : View.GONE);
+        recyclerView.setVisibility(show ? View.INVISIBLE : View.VISIBLE);
     }
 
     private void applyFriend(FriendBean friendBean) {

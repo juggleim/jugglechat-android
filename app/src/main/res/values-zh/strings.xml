@@ -44,6 +44,13 @@
     <string name="txt_name">姓名</string>
     <string name="create_group">创建群聊</string>
     <string name="add_friend">添加朋友</string>
+    <string name="add_friend_title">添加好友</string>
+    <string name="add_friend_search_hint">请输入用户名、邮箱、手机号</string>
+    <string name="add_friend_clear_input">清空搜索关键词</string>
+    <string name="add_friend_no_result">没有匹配的记录</string>
+    <string name="add_friend_search_failed">搜索失败：%1$s</string>
+    <string name="add_friend_request_sent">请求已发送</string>
+    <string name="add_friend_request_failed">添加失败：%1$s</string>
     <string name="contact_groups">群组</string>
     <string name="contact_new_friends">新朋友</string>
     <string name="contact_blacklist">黑名单</string>
