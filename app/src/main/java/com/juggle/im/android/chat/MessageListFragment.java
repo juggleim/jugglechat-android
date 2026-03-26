@@ -27,13 +27,14 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.message.InsertTimeStatusMessage;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
-import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.android.utils.ToastUtils;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
+import com.juggle.im.model.GetMessageOptions;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.MessageContent;
 import com.juggle.im.model.messages.TextMessage;
@@ -78,7 +79,10 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     // UI state
     private final List<UiMessage> uiMessages = new ArrayList<>();
     private androidx.recyclerview.widget.LinearLayoutManager layoutManager;
-    private boolean isLoadingMore = false;
+    private boolean isLoadingOlder = false;
+    private boolean isLoadingNewer = false;
+    private boolean hasMoreOlder = true;
+    private boolean hasMoreNewer = true;
     private MessageListAdapter adapter;
     private RecyclerView recyclerView;
     // queue for incoming messages that haven't been applied to adapter yet
@@ -97,8 +101,23 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     // New Message Bubble
     private View layoutNewMessageBubble;
     private TextView tvNewMessageCount;
-    private TextView tvMention;
+    private View layoutTopLoading;
+    private View layoutBottomLoading;
     private int newMessageCount = 0;
+    private long mentionTargetTimestamp = 0L;
+    private String mentionTargetMessageId = "";
+
+    private static final class ViewportAnchor {
+        final int firstVisiblePosition;
+        final int firstTopOffset;
+        final String stableKey;
+
+        ViewportAnchor(int firstVisiblePosition, int firstTopOffset, String stableKey) {
+            this.firstVisiblePosition = firstVisiblePosition;
+            this.firstTopOffset = firstTopOffset;
+            this.stableKey = stableKey == null ? "" : stableKey;
+        }
+    }
 
     public static MessageListFragment newInstance(String convId, boolean isGroup, int unreadCount, boolean mentioned) {
         MessageListFragment f = new MessageListFragment();
@@ -154,51 +173,81 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         });
         recyclerView.setAdapter(adapter);
 
-        if (unreadCount >= 6) {
-            View bubble = view.findViewById(R.id.layout_unread_bubble);
-            TextView tvUnread = view.findViewById(R.id.tv_unread_count);
-            if (bubble != null && tvUnread != null) {
-                bubble.setVisibility(VISIBLE);
+        View unreadBubble = view.findViewById(R.id.layout_unread_bubble);
+        TextView tvUnread = view.findViewById(R.id.tv_unread_count);
+        if (unreadBubble != null && tvUnread != null) {
+            unreadBubble.setVisibility(GONE);
+            if (unreadCount >= 6) {
+                unreadBubble.setVisibility(VISIBLE);
                 tvUnread.setText((unreadCount >= 99 ? "99+" : unreadCount) + "条新消息");
-                bubble.animate().translationX(0).setDuration(500).start();
-                bubble.setOnClickListener(v -> {
-                    bubble.setVisibility(GONE);
-                    loadMoreMessages(unreadCount - adapter.getItemCount(), true);
+                unreadBubble.animate().translationX(0).setDuration(320).start();
+                unreadBubble.setOnClickListener(v -> {
+                    unreadBubble.setVisibility(GONE);
+                    int needLoad = Math.max(unreadCount - adapter.getItemCount(), 0);
+                    if (needLoad > 0) {
+                        loadOlderMessages(Math.max(needLoad, msgPageCount), true, null);
+                        return;
+                    }
+                    int target = Math.max(adapter.getItemCount() - unreadCount, 0);
+                    recyclerView.smoothScrollToPosition(target);
                 });
             }
         }
 
+        View mentionBubble = view.findViewById(R.id.layout_mention_bubble);
+        TextView mentionText = view.findViewById(R.id.tv_mention);
+        if (mentionBubble != null) {
+            mentionBubble.setVisibility(GONE);
+        }
         if (getArguments().getBoolean(ARG_MENTION, false)) {
-            Conversation conversation = new Conversation(
-                    isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, conversationId);
-            JIM.getInstance().getMessageManager().getMentionMessageList(conversation, 5, 0, JIMConst.PullDirection.OLDER, new IMessageManager.IGetMessagesWithFinishCallback() {
-                @Override
-                public void onSuccess(List<Message> list, boolean b) {
-                    View bubble = view.findViewById(R.id.layout_mention_bubble);
-                    TextView tvMention = view.findViewById(R.id.tv_mention);
-                    if (bubble != null && tvMention != null) {
-                        bubble.setVisibility(VISIBLE);
-                        tvMention.setText("有人@我");
-                        bubble.animate().translationX(0).setDuration(500).start();
-                        bubble.setOnClickListener(v -> {
-                            bubble.setVisibility(GONE);
-                            int target = adapter.getItemCount() - unreadCount;
-                            if (target < 0)
-                                target = 0;
-                            recyclerView.smoothScrollToPosition(target);
-                        });
-                    }
-                }
+            JIM.getInstance().getMessageManager().getMentionMessageList(
+                    getCurrentConversation(),
+                    5,
+                    0,
+                    JIMConst.PullDirection.OLDER,
+                    new IMessageManager.IGetMessagesWithFinishCallback() {
+                        @Override
+                        public void onSuccess(List<Message> list, boolean b) {
+                            updateMentionTargetFromList(list);
+                            if (getActivity() == null) {
+                                return;
+                            }
+                            getActivity().runOnUiThread(() -> {
+                                if (mentionBubble == null || mentionText == null) {
+                                    return;
+                                }
+                                if (mentionTargetTimestamp <= 0L) {
+                                    mentionBubble.setVisibility(GONE);
+                                    return;
+                                }
+                                mentionBubble.setVisibility(VISIBLE);
+                                mentionText.setText("有人@我");
+                                mentionBubble.animate().translationX(0).setDuration(320).start();
+                                mentionBubble.setOnClickListener(v -> {
+                                    mentionBubble.setVisibility(GONE);
+                                    if (mentionTargetTimestamp > 0L) {
+                                        loadAroundTimestamp(mentionTargetTimestamp, mentionTargetMessageId);
+                                    }
+                                });
+                            });
+                        }
 
-                @Override
-                public void onError(int i) {
-
-                }
-            });
+                        @Override
+                        public void onError(int i) {
+                        }
+                    });
         }
         // New Message Bubble Initialization
         layoutNewMessageBubble = view.findViewById(R.id.layout_new_message_bubble);
         tvNewMessageCount = view.findViewById(R.id.tv_new_message_count);
+        layoutTopLoading = view.findViewById(R.id.layout_loading_top);
+        layoutBottomLoading = view.findViewById(R.id.layout_loading_bottom);
+        if (layoutTopLoading != null) {
+            layoutTopLoading.setVisibility(GONE);
+        }
+        if (layoutBottomLoading != null) {
+            layoutBottomLoading.setVisibility(GONE);
+        }
         if (layoutNewMessageBubble != null) {
             layoutNewMessageBubble.setOnClickListener(v -> {
                 layoutNewMessageBubble.setVisibility(GONE);
@@ -244,8 +293,11 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     }
                 }
                 int first = layoutManager.findFirstVisibleItemPosition();
-                if (first == 0 && dy < 0 && !isLoadingMore) {
-                    loadMoreMessages(msgPageCount, false);
+                if (dy < 0 && first == 0) {
+                    loadOlderMessages(msgPageCount, false, null);
+                }
+                if (dy > 0 && itemCount > 0 && lastVisiblePos >= itemCount - 1) {
+                    loadNewerMessages(msgPageCount, null);
                 }
             }
 
@@ -303,20 +355,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             });
         }
 
-        // scroll listener to detect pull-to-top (load older messages)
-        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override
-            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
-                super.onScrolled(rv, dx, dy);
-                int first = layoutManager.findFirstVisibleItemPosition();
-                if (first == 0 && dy < 0 && !isLoadingMore) {
-                    // load older messages
-                    loadMoreMessages(msgPageCount, false);
-                }
-            }
-        });
         // initial load: msgTime = 0 -> SDK should return latest page
-        loadMoreMessages(msgPageCount, false);
+        loadOlderMessages(msgPageCount, false, null);
     }
 
     private void updateOptionBarState(int selectedCount) {
@@ -488,89 +528,335 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         }
     }
 
-    private void loadMoreMessages(int c, boolean scrollTop) {
-        if (isLoadingMore)
+    private Conversation getCurrentConversation() {
+        return new Conversation(
+                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
+                conversationId);
+    }
+
+    private void updateLoadingIndicator(@NonNull JIMConst.PullDirection direction, boolean loading) {
+        View target = direction == JIMConst.PullDirection.OLDER ? layoutTopLoading : layoutBottomLoading;
+        if (target == null) {
             return;
-        isLoadingMore = true;
+        }
+        if (loading) {
+            if (target.getVisibility() == VISIBLE) {
+                return;
+            }
+            target.setAlpha(0f);
+            target.setVisibility(VISIBLE);
+            target.animate().alpha(1f).setDuration(160L).start();
+            return;
+        }
+        if (target.getVisibility() == GONE) {
+            return;
+        }
+        target.animate().cancel();
+        target.setAlpha(1f);
+        target.setVisibility(GONE);
+    }
+
+    private void loadOlderMessages(int count, boolean scrollTop, @Nullable Runnable onDone) {
         long cursor = 0L;
         if (!uiMessages.isEmpty()) {
-            // oldest message is at the end of newest-first list
-            UiMessage oldest = uiMessages.get(uiMessages.size() - 1);
-            cursor = oldest.getTimestamp();
+            cursor = uiMessages.get(uiMessages.size() - 1).getTimestamp();
         }
+        loadMessages(count, cursor, JIMConst.PullDirection.OLDER, scrollTop, onDone);
+    }
 
-        JIMChatCore.getInstance().getMessages(conversationId,
-                isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE, c, cursor,
-                new IMessageManager.IGetMessagesCallbackV3() {
-                    @Override
-                    public void onGetMessages(List<Message> list, long timestamp, boolean hasMore, int code) {
-                        if (list == null || list.isEmpty()) {
-                            isLoadingMore = false;
+    private void loadNewerMessages(int count, @Nullable Runnable onDone) {
+        long cursor = 0L;
+        if (!uiMessages.isEmpty()) {
+            cursor = uiMessages.get(0).getTimestamp();
+        }
+        loadMessages(count, cursor, JIMConst.PullDirection.NEWER, false, onDone);
+    }
+
+    private void loadAroundTimestamp(long targetTimestamp, @Nullable String targetMessageId) {
+        if (targetTimestamp <= 0L) {
+            return;
+        }
+        uiMessages.clear();
+        hasMoreOlder = true;
+        hasMoreNewer = true;
+        adapter.submitList(new ArrayList<>(), () -> loadMessages(
+                msgPageCount,
+                targetTimestamp,
+                JIMConst.PullDirection.OLDER,
+                false,
+                () -> loadMessages(
+                        msgPageCount,
+                        targetTimestamp,
+                        JIMConst.PullDirection.NEWER,
+                        false,
+                        () -> scrollToTargetMessage(targetMessageId, targetTimestamp))));
+    }
+
+    private void loadMessages(int count, long cursor, JIMConst.PullDirection direction, boolean scrollTop,
+            @Nullable Runnable onDone) {
+        if (count <= 0) {
+            if (onDone != null) {
+                onDone.run();
+            }
+            return;
+        }
+        if (direction == JIMConst.PullDirection.OLDER) {
+            if (isLoadingOlder || !hasMoreOlder) {
+                if (onDone != null) {
+                    onDone.run();
+                }
+                return;
+            }
+            isLoadingOlder = true;
+        } else {
+            if (isLoadingNewer || !hasMoreNewer) {
+                if (onDone != null) {
+                    onDone.run();
+                }
+                return;
+            }
+            if (cursor <= 0L && !uiMessages.isEmpty()) {
+                if (onDone != null) {
+                    onDone.run();
+                }
+                return;
+            }
+            isLoadingNewer = true;
+        }
+        updateLoadingIndicator(direction, true);
+
+        ViewportAnchor anchor = captureViewportAnchor();
+        GetMessageOptions options = new GetMessageOptions();
+        options.setCount(count);
+        options.setStartTime(Math.max(cursor, 0L));
+
+        JIM.getInstance().getMessageManager().getMessages(
+                getCurrentConversation(),
+                direction,
+                options,
+                (list, timestamp, hasMore, code) -> {
+                    if (getActivity() == null) {
+                        if (direction == JIMConst.PullDirection.OLDER) {
+                            isLoadingOlder = false;
+                        } else {
+                            isLoadingNewer = false;
+                        }
+                        return;
+                    }
+                    getActivity().runOnUiThread(() -> {
+                        if (direction == JIMConst.PullDirection.OLDER) {
+                            isLoadingOlder = false;
+                            hasMoreOlder = hasMore;
+                        } else {
+                            isLoadingNewer = false;
+                            hasMoreNewer = hasMore;
+                        }
+                        updateLoadingIndicator(direction, false);
+
+                        List<UiMessage> incoming = mapToUiMessages(list);
+                        if (!incoming.isEmpty()) {
+                            setMessageRead(incoming);
+                        }
+                        boolean changed = upsertUiMessages(incoming);
+                        if (!changed) {
+                            if (onDone != null) {
+                                onDone.run();
+                            }
                             return;
                         }
-                        List<UiMessage> incoming = new ArrayList<>();
-                        for (Message m : list) {
-                            UiMessage um = UiMessage.fromMessage(m);
-                            if (um != null)
-                                incoming.add(um);
-                        }
-                        incoming.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
-                        setMessageRead(incoming);
-                        requireActivity().runOnUiThread(() -> {
-                            boolean changed = false;
-                            for (UiMessage um : incoming) {
-                                final String id = um.getMessageId();
-                                boolean exists = false;
-                                for (UiMessage ex : uiMessages) {
-                                    if (ex.getMessageId() != null && ex.getMessageId().equals(id)) {
-                                        exists = true;
-                                        break;
-                                    }
-                                }
-                                if (!exists) {
-                                    uiMessages.add(um);
-                                    changed = true;
-                                }
-                            }
-                            if (changed) {
-                                // Build display list (oldest-first) and insert time status messages according
-                                // to rules
-                                List<UiMessage> merged = new ArrayList<>(uiMessages);
-                                // merged currently is newest-first (we appended newest to end of uiMessages),
-                                // convert to oldest-first for display
-                                List<UiMessage> oldestFirst = new ArrayList<>(merged);
-                                Collections.reverse(oldestFirst);
 
-                                List<UiMessage> displayWithTimes = new ArrayList<>();
-                                UiMessage prev = null;
-                                for (UiMessage cur : oldestFirst) {
-                                    if (MessageUtils.shouldInsertTimeBefore(prev, cur)) {
-                                        UiMessage timeMsg = MessageUtils.createInsertTimeUiMessage(cur.getTimestamp());
-                                        if (timeMsg != null)
-                                            displayWithTimes.add(timeMsg);
-                                    }
-                                    displayWithTimes.add(cur);
-                                    prev = cur;
-                                }
-
-                                int oldFirst = layoutManager.findFirstVisibleItemPosition();
-                                adapter.submitList(displayWithTimes, () -> {
-                                    // restore to roughly the same content position after prepend.
-                                    // Note: because we added time messages, offset by number of inserted entries
-                                    // before oldFirst
-                                    // Simpler approach: scroll to keep roughly same message at top by finding the
-                                    // id at oldFirst
-                                    if (oldFirst >= 0 && oldFirst < displayWithTimes.size()) {
-                                        layoutManager.scrollToPositionWithOffset(scrollTop ? 0 : oldFirst + incoming.size(), 0);
-                                    } else if (oldFirst < 0) {
-                                        scrollToBottomIfNeeded();
-                                    }
-                                });
+                        List<UiMessage> displayWithTimes = buildDisplayMessages();
+                        boolean firstScreen = adapter.getCurrentList().isEmpty()
+                                && direction == JIMConst.PullDirection.OLDER
+                                && cursor <= 0L;
+                        adapter.submitList(displayWithTimes, () -> {
+                            if (scrollTop) {
+                                layoutManager.scrollToPositionWithOffset(0, 0);
+                            } else if (firstScreen) {
+                                scrollToBottomIfNeeded();
+                            } else if (direction == JIMConst.PullDirection.NEWER && atBottom) {
+                                int target = Math.max(adapter.getItemCount() - 1, 0);
+                                recyclerView.scrollToPosition(target);
+                            } else {
+                                restoreViewportAnchor(anchor, displayWithTimes);
                             }
-                            isLoadingMore = false;
+                            if (onDone != null) {
+                                onDone.run();
+                            }
                         });
-                    }
+                    });
                 });
+    }
+
+    private ViewportAnchor captureViewportAnchor() {
+        if (layoutManager == null || adapter == null) {
+            return null;
+        }
+        int first = layoutManager.findFirstVisibleItemPosition();
+        if (first < 0) {
+            return null;
+        }
+        View firstView = layoutManager.findViewByPosition(first);
+        int topOffset = firstView == null ? 0 : (firstView.getTop() - recyclerView.getPaddingTop());
+        List<UiMessage> current = adapter.getCurrentList();
+        String stableKey = "";
+        if (first < current.size()) {
+            stableKey = current.get(first).getStableKey();
+        }
+        return new ViewportAnchor(first, topOffset, stableKey);
+    }
+
+    private void restoreViewportAnchor(@Nullable ViewportAnchor anchor, @NonNull List<UiMessage> newDisplay) {
+        if (anchor == null || newDisplay.isEmpty()) {
+            return;
+        }
+        int target = -1;
+        if (!anchor.stableKey.isEmpty()) {
+            for (int i = 0; i < newDisplay.size(); i++) {
+                if (anchor.stableKey.equals(newDisplay.get(i).getStableKey())) {
+                    target = i;
+                    break;
+                }
+            }
+        }
+        if (target < 0) {
+            target = Math.min(anchor.firstVisiblePosition, newDisplay.size() - 1);
+        }
+        if (target >= 0) {
+            layoutManager.scrollToPositionWithOffset(target, anchor.firstTopOffset);
+        }
+    }
+
+    private List<UiMessage> buildDisplayMessages() {
+        List<UiMessage> oldestFirst = new ArrayList<>(uiMessages);
+        Collections.reverse(oldestFirst);
+        List<UiMessage> displayWithTimes = new ArrayList<>();
+        UiMessage prev = null;
+        for (UiMessage cur : oldestFirst) {
+            if (MessageUtils.shouldInsertTimeBefore(prev, cur)) {
+                UiMessage timeMsg = MessageUtils.createInsertTimeUiMessage(cur.getTimestamp());
+                if (timeMsg != null) {
+                    displayWithTimes.add(timeMsg);
+                }
+            }
+            displayWithTimes.add(cur);
+            prev = cur;
+        }
+        return displayWithTimes;
+    }
+
+    private List<UiMessage> mapToUiMessages(@Nullable List<Message> list) {
+        List<UiMessage> mapped = new ArrayList<>();
+        if (list == null || list.isEmpty()) {
+            return mapped;
+        }
+        for (Message message : list) {
+            UiMessage uiMessage = UiMessage.fromMessage(message);
+            if (uiMessage != null) {
+                mapped.add(uiMessage);
+            }
+        }
+        mapped.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+        return mapped;
+    }
+
+    private boolean upsertUiMessages(@Nullable List<UiMessage> incoming) {
+        if (incoming == null || incoming.isEmpty()) {
+            return false;
+        }
+        boolean changed = false;
+        for (UiMessage uiMessage : incoming) {
+            int index = indexOfUiMessage(uiMessage);
+            if (index >= 0) {
+                uiMessages.set(index, uiMessage);
+                changed = true;
+            } else {
+                uiMessages.add(uiMessage);
+                changed = true;
+            }
+        }
+        if (changed) {
+            uiMessages.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+        }
+        return changed;
+    }
+
+    private int indexOfUiMessage(@NonNull UiMessage target) {
+        String stableKey = target.getStableKey();
+        for (int i = 0; i < uiMessages.size(); i++) {
+            if (stableKey.equals(uiMessages.get(i).getStableKey())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private void scrollToTargetMessage(@Nullable String targetMessageId, long targetTimestamp) {
+        recyclerView.post(() -> {
+            List<UiMessage> display = adapter.getCurrentList();
+            int target = findTargetPosition(display, targetMessageId, targetTimestamp);
+            if (target < 0) {
+                return;
+            }
+            int offset = recyclerView.getHeight() > 0 ? recyclerView.getHeight() / 4 : 0;
+            layoutManager.scrollToPositionWithOffset(target, offset);
+        });
+    }
+
+    private int findTargetPosition(@NonNull List<UiMessage> displayList, @Nullable String targetMessageId,
+            long targetTimestamp) {
+        if (displayList.isEmpty()) {
+            return -1;
+        }
+        if (targetMessageId != null && !targetMessageId.isEmpty()) {
+            for (int i = 0; i < displayList.size(); i++) {
+                if (targetMessageId.equals(displayList.get(i).getMessageId())) {
+                    return i;
+                }
+            }
+        }
+        int bestIndex = -1;
+        long bestDiff = Long.MAX_VALUE;
+        for (int i = 0; i < displayList.size(); i++) {
+            UiMessage uiMessage = displayList.get(i);
+            if (isTimeStatus(uiMessage)) {
+                continue;
+            }
+            long diff = Math.abs(uiMessage.getTimestamp() - targetTimestamp);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
+    }
+
+    private boolean isTimeStatus(@Nullable UiMessage uiMessage) {
+        return uiMessage != null
+                && uiMessage.getMessage() != null
+                && uiMessage.getMessage().getContent() instanceof InsertTimeStatusMessage;
+    }
+
+    private void updateMentionTargetFromList(@Nullable List<Message> list) {
+        mentionTargetTimestamp = 0L;
+        mentionTargetMessageId = "";
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        Message target = null;
+        for (Message message : list) {
+            if (message == null) {
+                continue;
+            }
+            if (target == null || message.getTimestamp() > target.getTimestamp()) {
+                target = message;
+            }
+        }
+        if (target == null) {
+            return;
+        }
+        mentionTargetTimestamp = target.getTimestamp();
+        mentionTargetMessageId = target.getMessageId() == null ? "" : target.getMessageId();
     }
 
     /**
@@ -581,8 +867,10 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     public void scrollToBottomIfNeeded() {
         if (recyclerView == null || layoutManager == null)
             return;
-        // if we're already at bottom, nothing to do
         int total = layoutManager.getItemCount();
+        if (total <= 0) {
+            return;
+        }
         recyclerView.postDelayed(() -> {
             recyclerView.scrollToPosition(total - 1);
         }, 120);
@@ -610,6 +898,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
 
             // if adapter still not ready, enqueue and return; processPendingMessages will
             // run later
+            hasMoreNewer = true;
+            upsertUiMessages(Collections.singletonList(um));
             pendingMessages.add(um);
             processPendingMessages();
 
@@ -663,7 +953,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private void setMessageRead(List<UiMessage> uiMessages) {
         List<String> msgIds = new ArrayList<>();
         for (UiMessage um : uiMessages) {
-            if (!um.getMessage().isHasRead()
+            if (!um.getMessageId().isEmpty()
+                    && !um.getMessage().isHasRead()
                     && um.getMessage().getDirection().getValue() == Message.MessageDirection.RECEIVE.getValue()) {
                 msgIds.add(um.getMessageId());
             }
@@ -677,18 +968,21 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
 
     public void onUpdateMessage(List<Message> messages) {
         List<UiMessage> current = new ArrayList<>(adapter.getCurrentList());
+        List<UiMessage> updated = new ArrayList<>();
         for (Message message : messages) {
             UiMessage um = UiMessage.fromMessage(message);
             if (um == null)
-                return;
+                continue;
             if (!message.getConversation().getConversationId().equals(conversationId))
-                return;
+                continue;
+            updated.add(um);
             int idx = adapter.getIndexByMessageNo(um.getMessage().getClientMsgNo());
             if (idx < 0)
                 continue;
             current.set(idx, um);
         }
         adapter.submitList(current);
+        upsertUiMessages(updated);
     }
 
     private void onMessageAction(UiMessage message, String action) {

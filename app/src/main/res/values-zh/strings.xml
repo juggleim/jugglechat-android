@@ -109,5 +109,7 @@
     <string name="msg_action_delete_remote_unsupported">当前版本仅支持删除自己</string>
     <string name="msg_action_reaction_added">已添加表情：%1$s</string>
     <string name="msg_pin_by_user">由 %1$s 置顶</string>
+    <string name="msg_list_loading_older">加载历史消息</string>
+    <string name="msg_list_loading_newer">加载新消息</string>
 
 </resources>
