@@ -12,6 +12,14 @@ public class SearchResult {
     private Conversation conversation;
 
 
+    /**
+     * 搜索结果
+     * @param id  搜索结果id
+     * @param name 搜索结果名称
+     * @param avatar 搜索结果头像
+     * @param type 搜索结果类型
+     * @param description 搜索结果描述
+     */
     public SearchResult(String id, String name, String avatar, String type, String description) {
         this.name = name;
         this.avatar = avatar;

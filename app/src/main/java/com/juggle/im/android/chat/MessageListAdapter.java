@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -124,11 +125,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     }
 
     public int getIndexByMessageNo(long msgNo) {
+        if (msgNo <= 0L) {
+            return -1;
+        }
         List<UiMessage> current = getCurrentList();
         int idx = -1;
         for (int i = 0; i < current.size(); i++) {
             UiMessage um = current.get(i);
-            if (um.getMessage().getClientMsgNo() == msgNo) {
+            if (um.getMessage().getClientMsgNo() > 0L && um.getMessage().getClientMsgNo() == msgNo) {
                 idx = i;
                 break;
             }
@@ -168,6 +172,49 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             boolean sent = m.getDirection() == com.juggle.im.model.Message.MessageDirection.SEND;
             boolean selected = m.getMessageId() != null && selectedMsg.contains(m);
             ((MessageHolder) holder).bind(m, isGroup, sent, selectionMode, selected);
+        }
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        resetSendStateViews(holder.itemView);
+    }
+
+    private void resetSendStateViews(View itemView) {
+        View msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
+        if (msgStatusContainer != null) {
+            msgStatusContainer.setVisibility(GONE);
+        }
+        ImageView msgReadStatus = itemView.findViewById(R.id.msg_read_status);
+        if (msgReadStatus != null) {
+            msgReadStatus.setVisibility(GONE);
+        }
+        ProgressBar msgSendStatus = itemView.findViewById(R.id.msg_send_status);
+        if (msgSendStatus != null) {
+            msgSendStatus.setVisibility(GONE);
+        }
+
+        View imageStatusContainer = itemView.findViewById(R.id.image_msg_status_container);
+        if (imageStatusContainer != null) {
+            imageStatusContainer.setVisibility(GONE);
+        }
+        ImageView imageReadStatus = itemView.findViewById(R.id.image_msg_read_status);
+        if (imageReadStatus != null) {
+            imageReadStatus.setVisibility(GONE);
+        }
+        ProgressBar imageSendStatus = itemView.findViewById(R.id.image_msg_send_status);
+        if (imageSendStatus != null) {
+            imageSendStatus.setVisibility(GONE);
+        }
+
+        TextView msgTime = itemView.findViewById(R.id.msg_sent_time);
+        if (msgTime != null) {
+            msgTime.setVisibility(VISIBLE);
+        }
+        TextView imageMsgTime = itemView.findViewById(R.id.image_msg_time);
+        if (imageMsgTime != null) {
+            imageMsgTime.setVisibility(GONE);
         }
     }
 

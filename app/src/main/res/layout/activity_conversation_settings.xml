@@ -217,7 +217,7 @@
                 android:id="@+id/btn_quit_group"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:background="@drawable/bg_group_setting_danger_button"
+                android:background="@drawable/rectangle_white_bg"
                 android:gravity="center"
                 android:text="退出群组"
                 android:textColor="@color/red"

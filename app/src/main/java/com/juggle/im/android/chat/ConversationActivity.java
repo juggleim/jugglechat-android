@@ -10,6 +10,7 @@ import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -484,9 +485,8 @@ public class ConversationActivity extends AbsAppActivity {
                 }
                 String url = (String) item;
                 ImageMessage image = new ImageMessage();
-                image.setHeight(600);
-                image.setWidth(800);
                 String fileUrl = FileUtils.convertContentUriToFile(this, url);
+                applyImageSize(image, fileUrl);
                 image.setLocalPath(fileUrl);
                 image.setThumbnailLocalPath(fileUrl);
                 sendImageMessage(image, null, conversation);
@@ -496,9 +496,8 @@ public class ConversationActivity extends AbsAppActivity {
                 return;
             }
             ImageMessage image = new ImageMessage();
-            image.setHeight(600);
-            image.setWidth(800);
             String fileUrl = FileUtils.convertContentUriToFile(this, data.toString());
+            applyImageSize(image, fileUrl);
             image.setLocalPath(fileUrl);
             image.setThumbnailLocalPath(fileUrl);
             sendImageMessage(image, null, conversation);
@@ -589,6 +588,22 @@ public class ConversationActivity extends AbsAppActivity {
         };
         Message message = JIM.getInstance().getMessageManager().sendMessage(text, conversation, options, callback);
         dispatchNewMessageToStream(message);
+    }
+
+    private void applyImageSize(ImageMessage image, String filePath) {
+        int width = 800;
+        int height = 600;
+        if (!TextUtils.isEmpty(filePath)) {
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(filePath, options);
+            if (options.outWidth > 0 && options.outHeight > 0) {
+                width = options.outWidth;
+                height = options.outHeight;
+            }
+        }
+        image.setWidth(width);
+        image.setHeight(height);
     }
 
     private void sendImageMessage(ImageMessage image, MessageOptions options, Conversation conversation) {

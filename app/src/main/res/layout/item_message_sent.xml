@@ -29,6 +29,7 @@
             android:orientation="horizontal">
 
             <LinearLayout
+                android:id="@+id/message_bubble_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
@@ -70,23 +71,23 @@
 
                     <FrameLayout
                         android:layout_width="16dp"
-                        android:layout_height="16dp">
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp">
                         <ImageView
                             android:id="@+id/msg_read_status"
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_marginStart="4dp"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_gravity="center"
                             android:visibility="gone"
                             android:src="@drawable/ic_msg_read" />
                         <ProgressBar
                             android:id="@+id/msg_send_status"
-                            android:indeterminateDrawable="@drawable/ic_msg_sending"
-                            style="?android:attr/progressBarStyleSmallInverse"
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:layout_gravity="start|center_vertical"
+                            style="?android:attr/progressBarStyleSmall"
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:layout_gravity="center"
                             android:indeterminate="true"
-                            android:indeterminateTint="@color/black"
+                            android:indeterminateTint="#CCFFFFFF"
                             android:visibility="gone" />
 
                     </FrameLayout>

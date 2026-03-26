@@ -7,6 +7,7 @@ import static com.juggle.im.android.chat.ConversationActivity.EXTRA_TITLE;
 
 import android.os.Bundle;
 import android.content.Intent;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -976,7 +977,13 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             if (!message.getConversation().getConversationId().equals(conversationId))
                 continue;
             updated.add(um);
-            int idx = adapter.getIndexByMessageNo(um.getMessage().getClientMsgNo());
+            int idx = -1;
+            if (!TextUtils.isEmpty(um.getMessageId())) {
+                idx = adapter.getIndexByMessageId(um.getMessageId());
+            }
+            if (idx < 0 && um.getMessage().getClientMsgNo() > 0L) {
+                idx = adapter.getIndexByMessageNo(um.getMessage().getClientMsgNo());
+            }
             if (idx < 0)
                 continue;
             current.set(idx, um);
