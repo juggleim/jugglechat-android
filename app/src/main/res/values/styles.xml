@@ -27,4 +27,14 @@
     <style name="PopupAnimation">
         <item name="android:windowEnterAnimation">@anim/slide_in_left</item>
     </style>
+
+    <!-- BottomSheetDialog 透明背景样式 -->
+    <style name="TransparentBottomSheetDialog" parent="Theme.Design.Light.BottomSheetDialog">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="bottomSheetStyle">@style/TransparentBottomSheet</item>
+    </style>
+
+    <style name="TransparentBottomSheet" parent="Widget.Design.BottomSheet.Modal">
+        <item name="android:background">@android:color/transparent</item>
+    </style>
 </resources>

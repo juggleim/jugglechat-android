@@ -68,12 +68,12 @@
 
                 <ImageView
                     android:id="@+id/btn_camera"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
                     android:layout_gravity="end|center_vertical"
                     android:layout_marginEnd="10dp"
                     android:padding="5dp"
-                    android:src="@drawable/ic_camera_white" />
+                    android:src="@drawable/icon_moment_post" />
             </androidx.appcompat.widget.Toolbar>
 
         </com.google.android.material.appbar.CollapsingToolbarLayout>

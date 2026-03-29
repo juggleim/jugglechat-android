@@ -293,7 +293,7 @@ public class MomentsActivity extends AbsAppActivity {
     }
 
     private void showCameraOptions() {
-        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+        BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this, R.style.TransparentBottomSheetDialog);
         View sheetView = LayoutInflater.from(this).inflate(R.layout.dialog_camera_options, null);
         bottomSheetDialog.setContentView(sheetView);
 

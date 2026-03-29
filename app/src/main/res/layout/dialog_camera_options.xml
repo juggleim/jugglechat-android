@@ -10,9 +10,9 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:gravity="center"
-        android:text="拍摄"
+        android:text="拍照"
         android:textSize="16sp"
-        android:textColor="#FF576B95"
+        android:textColor="#212121"
         android:background="?android:attr/selectableItemBackground" />
 
     <View
@@ -27,7 +27,7 @@
         android:gravity="center"
         android:text="从相册选择"
         android:textSize="16sp"
-        android:textColor="#FF576B95"
+        android:textColor="#212121"
         android:background="?android:attr/selectableItemBackground" />
 
     <View
@@ -42,7 +42,7 @@
         android:gravity="center"
         android:text="取消"
         android:textSize="16sp"
-        android:textColor="#999999"
+        android:textColor="#212121"
         android:background="?android:attr/selectableItemBackground" />
 
 </LinearLayout>
