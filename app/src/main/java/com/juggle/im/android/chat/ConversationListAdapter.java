@@ -271,7 +271,22 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UiConversation uiConversation = uiConversations.get(position);
         holder.bind(uiConversation);
+        updateSelectionVisuals(holder, position, uiConversation);
+    }
 
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (payloads.contains("selection")) {
+            // 只更新选中状态的视觉效果，不重新绑定数据（避免头像闪烁）
+            UiConversation uiConversation = uiConversations.get(position);
+            updateSelectionVisuals(holder, position, uiConversation);
+        } else {
+            // 完整绑定
+            super.onBindViewHolder(holder, position, payloads);
+        }
+    }
+
+    private void updateSelectionVisuals(@NonNull ViewHolder holder, int position, UiConversation uiConversation) {
         // 长按弹窗打开时：被选中会话保持清晰，其它会话弱化并虚化。
         if (selectedPosition >= 0) {
             boolean isSelected = position == selectedPosition;
@@ -325,16 +340,96 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void clearSelectedPosition() {
         if (selectedPosition >= 0) {
             selectedPosition = -1;
-            notifyDataSetChanged();
+            // 直接遍历可见的 ViewHolder 更新视觉效果，避免 notify 导致的重新绑定
+            if (recyclerView != null) {
+                int childCount = recyclerView.getChildCount();
+                for (int i = 0; i < childCount; i++) {
+                    View child = recyclerView.getChildAt(i);
+                    RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
+                    if (holder instanceof ViewHolder) {
+                        int position = holder.getAbsoluteAdapterPosition();
+                        if (position != RecyclerView.NO_POSITION) {
+                            UiConversation uiConversation = uiConversations.get(position);
+                            updateSelectionVisualsForView((ViewHolder) holder, uiConversation);
+                        }
+                    }
+                }
+            }
         }
     }
-    
+
     // 添加方法来设置选中状态
     public void setSelectedPosition(int position) {
         int target = position >= 0 ? position : -1;
         if (selectedPosition != target) {
+            // 保存旧位置和新位置
+            int oldPosition = selectedPosition;
             selectedPosition = target;
-            notifyDataSetChanged();
+
+            // 直接遍历可见的 ViewHolder 更新视觉效果
+            if (recyclerView != null) {
+                int childCount = recyclerView.getChildCount();
+                for (int i = 0; i < childCount; i++) {
+                    View child = recyclerView.getChildAt(i);
+                    RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
+                    if (holder instanceof ViewHolder) {
+                        int pos = holder.getAbsoluteAdapterPosition();
+                        if (pos != RecyclerView.NO_POSITION) {
+                            UiConversation uiConversation = uiConversations.get(pos);
+                            updateSelectionVisualsForView((ViewHolder) holder, uiConversation);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 直接更新单个 ViewHolder 的选中状态视觉效果，不触发重新绑定
+     */
+    private void updateSelectionVisualsForView(ViewHolder holder, UiConversation uiConversation) {
+        int position = holder.getAbsoluteAdapterPosition();
+        if (position == RecyclerView.NO_POSITION) return;
+
+        if (selectedPosition >= 0) {
+            boolean isSelected = position == selectedPosition;
+            holder.itemView.setAlpha(isSelected ? 1f : 0.35f);
+            applyCardMargins(holder.itemView, isSelected);
+            holder.itemView.setBackgroundResource(isSelected
+                    ? R.drawable.bg_conversation_item_floating
+                    : R.color.white);
+            holder.itemView.setScaleX(isSelected ? 1.02f : 1f);
+            holder.itemView.setScaleY(isSelected ? 1.02f : 1f);
+            holder.itemView.setTranslationY(isSelected ? -dpToPx(holder.itemView, 3f) : 0f);
+            holder.setDividerVisible(!isSelected);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                holder.itemView.setElevation(isSelected ? dpToPx(holder.itemView, 18f) : 0f);
+                holder.itemView.setTranslationZ(isSelected ? dpToPx(holder.itemView, 10f) : 0f);
+                holder.itemView.setClipToOutline(isSelected);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                holder.itemView.setRenderEffect(isSelected
+                        ? null
+                        : RenderEffect.createBlurEffect(6f, 6f, Shader.TileMode.CLAMP));
+            }
+        } else {
+            holder.itemView.setAlpha(1f);
+            applyCardMargins(holder.itemView, false);
+            holder.itemView.setBackgroundResource(uiConversation.isTop()
+                    ? R.color.conversation_top_bg
+                    : R.color.white);
+            holder.itemView.setScaleX(1f);
+            holder.itemView.setScaleY(1f);
+            holder.itemView.setTranslationY(0f);
+            holder.setDividerVisible(true);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                holder.itemView.setElevation(0f);
+                holder.itemView.setTranslationZ(0f);
+                holder.itemView.setClipToOutline(false);
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                holder.itemView.setRenderEffect(null);
+            }
         }
     }
 

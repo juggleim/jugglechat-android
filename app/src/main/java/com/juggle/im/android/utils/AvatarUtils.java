@@ -55,10 +55,12 @@ public final class AvatarUtils {
             Glide.with(iv)
                     .load(url)
                     .apply(options)
+                    .dontAnimate() // 禁用动画，避免闪烁
                     .error(
                             Glide.with(iv.getContext())
                                     .load(R.drawable.icon_default_avatar)
                                     .apply(options)
+                                    .dontAnimate()
                     )
                     .into(iv);
             return;
