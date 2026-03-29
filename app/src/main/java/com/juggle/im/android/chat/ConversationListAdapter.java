@@ -295,7 +295,10 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         } else {
             holder.itemView.setAlpha(1f);
             applyCardMargins(holder.itemView, false);
-            holder.itemView.setBackgroundResource(R.color.white);
+            // 置顶会话使用浅灰色背景，非置顶使用白色背景
+            holder.itemView.setBackgroundResource(uiConversation.isTop()
+                    ? R.color.conversation_top_bg
+                    : R.color.white);
             holder.itemView.setScaleX(1f);
             holder.itemView.setScaleY(1f);
             holder.itemView.setTranslationY(0f);

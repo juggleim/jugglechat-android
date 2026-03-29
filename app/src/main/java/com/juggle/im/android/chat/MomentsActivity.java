@@ -312,6 +312,11 @@ public class MomentsActivity extends AbsAppActivity {
         });
 
         bottomSheetDialog.show();
+
+        // 设置导航栏背景色为白色
+        if (bottomSheetDialog.getWindow() != null) {
+            bottomSheetDialog.getWindow().setNavigationBarColor(android.graphics.Color.WHITE);
+        }
     }
 
     private void takePhoto() {
