@@ -48,6 +48,7 @@ import com.juggle.im.android.chat.view.ChatInputActionBar;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
+import com.juggle.im.android.event.ReactionUpdatedEvent;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
@@ -56,6 +57,7 @@ import com.juggle.im.model.MergeMessagePreviewUnit;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.MessageMentionInfo;
 import com.juggle.im.model.MessageOptions;
+import com.juggle.im.model.MessageReaction;
 import com.juggle.im.model.PushData;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.FileMessage;
@@ -526,6 +528,39 @@ public class ConversationActivity extends AbsAppActivity {
         List<Message> messages = JIM.getInstance().getMessageManager()
                 .getMessagesByMessageIds(event.getMessageIds());
         dispatchUpdatedMessagesToStream(messages);
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onReactionUpdatedEvent(ReactionUpdatedEvent event) {
+        if (!event.getConversation().getConversationId().equals(conversationId)) {
+            return;
+        }
+        // Refresh the message to get updated reactions
+        String messageId = event.getMessageReaction().getMessageId();
+        if (messageId != null) {
+            List<String> messageIdList = new ArrayList<>();
+            messageIdList.add(messageId);
+            JIM.getInstance().getMessageManager().getMessagesReaction(
+                    messageIdList,
+                    event.getConversation(),
+                    new IMessageManager.IMessageReactionListCallback() {
+                        @Override
+                        public void onSuccess(List<MessageReaction> reactionList) {
+                            // Reactions refreshed - notify adapter to update the specific message
+                            Log.d("ConversationActivity", "Reactions refreshed for message: " + messageId);
+                            MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
+                                    .findFragmentById(R.id.fragment_messages_container);
+                            if (frag != null) {
+                                frag.refreshMessageById(messageId);
+                            }
+                        }
+
+                        @Override
+                        public void onError(int errorCode) {
+                            Log.e("ConversationActivity", "Failed to refresh reactions: " + errorCode);
+                        }
+                    });
+        }
     }
 
     private void handlePluginResult(String pluginId, String action, Object data) {

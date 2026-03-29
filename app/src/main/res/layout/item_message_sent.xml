@@ -5,7 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="6dp">
+    android:padding="6dp"
+    android:clipChildren="false"
+    android:clipToPadding="false">
 
     <!-- selection checkbox, hidden by default -->
     <com.juggle.im.android.widget.JuggleCheckBox
@@ -20,79 +22,130 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="end"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="end"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
             <LinearLayout
-                android:id="@+id/message_bubble_container"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
                 android:gravity="end"
                 android:orientation="vertical"
-                android:background="@drawable/bg_message_sent"
-                android:paddingStart="4dp"
-                android:paddingTop="3dp"
-                android:paddingEnd="4dp"
-                android:paddingBottom="2dp">
+                android:clipChildren="false"
+                android:clipToPadding="false">
 
-                <!-- container where a single content layout will be inflated at runtime -->
-                <LinearLayout
-                    android:orientation="vertical"
-                    android:id="@+id/message_content_container"
-                    android:layout_width="wrap_content"
-                    android:minWidth="50dp"
-                    android:layout_height="wrap_content" />
-
-                <LinearLayout
-                    android:id="@+id/msg_status_container"
+                <!-- 用 FrameLayout 让 reaction 和 bubble 叠放 -->
+                <FrameLayout
+                    android:id="@+id/message_stack_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:gravity="center_vertical|end"
-                    android:orientation="horizontal"
-                    android:paddingStart="2dp"
-                    android:paddingTop="2dp"
-                    android:paddingEnd="2dp"
-                    android:paddingBottom="1dp">
+                    android:clipChildren="false"
+                    android:clipToPadding="false">
 
-                    <TextView
-                        android:id="@+id/msg_sent_time"
+                    <!-- 底层：消息气泡 -->
+                    <LinearLayout
+                        android:id="@+id/message_bubble_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="#CCFFFFFF"
-                        android:textSize="11sp"
-                        tools:text="10:01" />
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_message_sent"
+                        android:gravity="end"
+                        android:orientation="vertical"
+                        android:paddingStart="4dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="4dp"
+                        android:paddingBottom="2dp">
 
-                    <FrameLayout
-                        android:layout_width="16dp"
-                        android:layout_height="16dp"
-                        android:layout_marginStart="4dp">
-                        <ImageView
-                            android:id="@+id/msg_read_status"
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:layout_gravity="center"
-                            android:visibility="gone"
-                            android:src="@drawable/ic_msg_read" />
-                        <ProgressBar
-                            android:id="@+id/msg_send_status"
-                            style="?android:attr/progressBarStyleSmall"
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
-                            android:layout_gravity="center"
-                            android:indeterminate="true"
-                            android:indeterminateTint="#CCFFFFFF"
-                            android:visibility="gone" />
+                        <!-- container where a single content layout will be inflated at runtime -->
+                        <LinearLayout
+                            android:id="@+id/message_content_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minWidth="50dp"
+                            android:orientation="vertical" />
 
-                    </FrameLayout>
+                        <LinearLayout
+                            android:id="@+id/msg_status_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end"
+                            android:gravity="center_vertical|end"
+                            android:orientation="horizontal"
+                            android:paddingStart="2dp"
+                            android:paddingTop="2dp"
+                            android:paddingEnd="2dp"
+                            android:paddingBottom="1dp">
 
-                </LinearLayout>
+                            <TextView
+                                android:id="@+id/msg_sent_time"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textColor="#CCFFFFFF"
+                                android:textSize="11sp"
+                                tools:text="10:01" />
+
+                            <FrameLayout
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:layout_marginStart="4dp">
+
+                                <ImageView
+                                    android:id="@+id/msg_read_status"
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:layout_gravity="center"
+                                    android:src="@drawable/ic_msg_read"
+                                    android:visibility="gone" />
+
+                                <ProgressBar
+                                    android:id="@+id/msg_send_status"
+                                    style="?android:attr/progressBarStyleSmall"
+                                    android:layout_width="14dp"
+                                    android:layout_height="14dp"
+                                    android:layout_gravity="center"
+                                    android:indeterminate="true"
+                                    android:indeterminateTint="#CCFFFFFF"
+                                    android:visibility="gone" />
+                            </FrameLayout>
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 上层：reaction，压住 bubble 一部分 -->
+                    <LinearLayout
+                        android:id="@+id/reaction_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_reaction_pill"
+                        android:elevation="2dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="8dp"
+                        android:paddingTop="3dp"
+                        android:paddingEnd="8dp"
+                        android:paddingBottom="3dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/reaction_emojis"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                </FrameLayout>
+
             </LinearLayout>
 
             <ImageView

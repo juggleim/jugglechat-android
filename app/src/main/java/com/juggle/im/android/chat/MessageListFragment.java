@@ -39,6 +39,9 @@ import com.juggle.im.model.Conversation;
 import com.juggle.im.model.GetMessageOptions;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.MessageContent;
+import com.juggle.im.model.MessageReaction;
+import com.juggle.im.model.MessageReactionItem;
+import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.TextMessage;
 
 import java.util.ArrayList;
@@ -1235,22 +1238,78 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
                     conversationId);
         }
-        String reactionId = toReactionId(emoji);
-        JIM.getInstance().getMessageManager().addMessageReaction(
-                message.getMessageId(),
-                conv,
-                reactionId,
-                new IMessageManager.ISimpleCallback() {
-                    @Override
-                    public void onSuccess() {
-                        ToastUtils.show(requireContext(), getString(R.string.msg_action_reaction_added, emoji));
-                    }
+        final String reactionId = toReactionId(emoji);
+        final Conversation finalConv = conv;
 
-                    @Override
-                    public void onError(int i) {
-                        ToastUtils.show(requireContext(), R.string.operation_failed);
+        // Check if current user already reacted with this emoji (toggle logic)
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        List<String> messageIdList = new ArrayList<>();
+        messageIdList.add(message.getMessageId());
+
+        // First get cached reactions for quick check
+        List<MessageReaction> cachedReactions = JIM.getInstance().getMessageManager()
+                .getCachedMessagesReaction(messageIdList);
+
+        boolean alreadyReacted = false;
+        if (cachedReactions != null && !cachedReactions.isEmpty()) {
+            for (MessageReaction reaction : cachedReactions) {
+                if (reaction.getItemList() != null) {
+                    for (MessageReactionItem item : reaction.getItemList()) {
+                        if (reactionId.equals(item.getReactionId())) {
+                            if (item.getUserInfoList() != null) {
+                                for (UserInfo user : item.getUserInfoList()) {
+                                    if (currentUserId != null && currentUserId.equals(user.getUserId())) {
+                                        alreadyReacted = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if (alreadyReacted) break;
                     }
-                });
+                }
+                if (alreadyReacted) break;
+            }
+        }
+
+        if (alreadyReacted) {
+            // Remove reaction
+            JIM.getInstance().getMessageManager().removeMessageReaction(
+                    message.getMessageId(),
+                    finalConv,
+                    reactionId,
+                    new IMessageManager.ISimpleCallback() {
+                        @Override
+                        public void onSuccess() {
+                            // Refresh the message to update reaction display
+                            refreshMessageById(message.getMessageId());
+                        }
+
+                        @Override
+                        public void onError(int i) {
+                            ToastUtils.show(requireContext(), R.string.operation_failed);
+                        }
+                    });
+        } else {
+            // Add reaction
+            JIM.getInstance().getMessageManager().addMessageReaction(
+                    message.getMessageId(),
+                    finalConv,
+                    reactionId,
+                    new IMessageManager.ISimpleCallback() {
+                        @Override
+                        public void onSuccess() {
+                            ToastUtils.show(requireContext(), getString(R.string.msg_action_reaction_added, emoji));
+                            // Refresh the message to update reaction display
+                            refreshMessageById(message.getMessageId());
+                        }
+
+                        @Override
+                        public void onError(int i) {
+                            ToastUtils.show(requireContext(), R.string.operation_failed);
+                        }
+                    });
+        }
     }
 
     private String toReactionId(String emoji) {
@@ -1312,5 +1371,16 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                         ToastUtils.show(requireContext(), R.string.operation_failed);
                     }
                 });
+    }
+
+    /**
+     * Refresh a specific message by its ID (used for reaction updates)
+     */
+    public void refreshMessageById(String messageId) {
+        if (adapter == null || messageId == null) return;
+        int idx = adapter.getIndexByMessageId(messageId);
+        if (idx >= 0) {
+            adapter.notifyItemChanged(idx);
+        }
     }
 }

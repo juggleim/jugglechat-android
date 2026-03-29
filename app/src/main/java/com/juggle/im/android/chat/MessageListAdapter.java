@@ -11,7 +11,9 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -30,6 +32,8 @@ import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ResourceUtils;
 import com.juggle.im.android.widget.JuggleCheckBox;
 import com.juggle.im.model.Message;
+import com.juggle.im.model.MessageReaction;
+import com.juggle.im.model.MessageReactionItem;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.TextMessage;
@@ -223,6 +227,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final JuggleCheckBox checkBox;
+        private final View reactionContainer;
+        private final View msgViewContainer;
+        private final TextView reactionEmojis;
         private String lastBoundStableKey = "";
         private Class<?> lastBoundContentClass = null;
         private boolean lastBoundHasReply = false;
@@ -232,6 +239,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             this.container = itemView.findViewById(R.id.message_content_container);
             this.actionListener = listener;
             this.checkBox = itemView.findViewById(R.id.checkbox);
+            this.reactionContainer = itemView.findViewById(R.id.reaction_container);
+            this.msgViewContainer = itemView.findViewById(R.id.message_bubble_container);
+            this.reactionEmojis = itemView.findViewById(R.id.reaction_emojis);
         }
 
         void bind(UiMessage m, boolean isGroup, boolean isSend, boolean inSelectionMode, boolean selected) {
@@ -285,6 +295,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             }
             delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
 
+            // Display reactions
+            bindReactions(m);
+
             // set long click to either enter selection mode (if supported) or show actions
             container.setOnLongClickListener(v -> {
                 int pos = getBindingAdapterPosition();
@@ -315,6 +328,89 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                         actionListener.onMessageAction(m, "toggle_select");
                     }
                 });
+            }
+        }
+
+        private void bindReactions(UiMessage m) {
+            if (reactionContainer == null || reactionEmojis == null) return;
+
+            String messageId = m.getMessageId();
+            if (messageId == null || messageId.isEmpty()) {
+                reactionContainer.setVisibility(GONE);
+                setupMessageBubble(false);
+                return;
+            }
+
+            // Get cached reactions
+            List<String> messageIdList = new ArrayList<>();
+            messageIdList.add(messageId);
+            List<MessageReaction> reactions = JIM.getInstance().getMessageManager()
+                    .getCachedMessagesReaction(messageIdList);
+
+            if (reactions == null || reactions.isEmpty()) {
+                reactionContainer.setVisibility(GONE);
+                setupMessageBubble(false);
+                return;
+            }
+
+            MessageReaction reaction = reactions.get(0);
+            List<MessageReactionItem> items = reaction.getItemList();
+            if (items == null || items.isEmpty()) {
+                reactionContainer.setVisibility(GONE);
+                setupMessageBubble(false);
+                return;
+            }
+
+            // Build reaction display string
+            StringBuilder sb = new StringBuilder();
+            for (MessageReactionItem item : items) {
+                String emoji = reactionIdToEmoji(item.getReactionId());
+                int count = item.getUserInfoList() != null ? item.getUserInfoList().size() : 0;
+                if (sb.length() > 0) sb.append(" ");
+                sb.append(emoji);
+                if (count > 1) {
+                    sb.append(count);
+                }
+            }
+
+            if (sb.length() > 0) {
+                reactionEmojis.setText(sb.toString());
+                reactionContainer.setVisibility(VISIBLE);
+                setupMessageBubble(true);
+            } else {
+                reactionContainer.setVisibility(GONE);
+                setupMessageBubble(false);
+            }
+        }
+
+        private void setupMessageBubble(boolean hasReaction) {
+            if (hasReaction) {
+                FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) msgViewContainer.getLayoutParams();
+                p.setMargins(0, dp(msgViewContainer, 15), 0, 0);
+                msgViewContainer.setLayoutParams(p);
+            } else {
+                FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) msgViewContainer.getLayoutParams();
+                p.setMargins(0, 0, 0, 0);
+                msgViewContainer.setLayoutParams(p);
+            }
+        }
+
+        private int dp(View itemView, int value) {
+            return Math.round(value * itemView.getResources().getDisplayMetrics().density);
+        }
+
+        private String reactionIdToEmoji(String reactionId) {
+            if (reactionId == null) return "";
+            switch (reactionId) {
+                case ":ok_hand": return "👌";
+                case ":thumb_up": return "👍";
+                case ":heart_eyes": return "😍";
+                case ":salute": return "🫡";
+                case ":heart": return "❤️";
+                case ":broken_heart": return "💔";
+                case ":poop": return "💩";
+                case ":tada": return "🎉";
+                default: return reactionId;
             }
         }
 

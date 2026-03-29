@@ -18,6 +18,7 @@ import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
+import com.juggle.im.android.event.ReactionUpdatedEvent;
 import com.juggle.im.android.event.UnreadMessageCountEvent;
 import com.juggle.im.android.model.ConfigUtils;
 import com.juggle.im.interfaces.IConnectionManager;
@@ -245,11 +246,13 @@ public class JIMChatCore {
             @Override
             public void onMessageReactionAdd(Conversation conversation, MessageReaction messageReaction) {
                 Log.d(tag, "onMessageReactionAdd: " + messageReaction.toString());
+                EventBus.getDefault().post(new ReactionUpdatedEvent(conversation, messageReaction, true));
             }
 
             @Override
             public void onMessageReactionRemove(Conversation conversation, MessageReaction messageReaction) {
                 Log.d(tag, "onMessageReactionRemove: " + messageReaction.toString());
+                EventBus.getDefault().post(new ReactionUpdatedEvent(conversation, messageReaction, false));
             }
 
             @Override
