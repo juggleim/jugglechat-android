@@ -28,6 +28,11 @@ import java.util.List;
 
 public class FriendApplicationsActivity extends AbsAppActivity {
     private static final String FRIEND_APPLY = "friend_apply";
+    private static final int STATUS_APPLYING = 0;
+    private static final int STATUS_AGREED = 1;
+    private static final int STATUS_REJECTED = 2;
+    private static final int STATUS_EXPIRED = 3;
+
     private RecyclerView rvApplications;
     private ProgressBar progressBar;
     private TextView emptyView;
@@ -85,7 +90,7 @@ public class FriendApplicationsActivity extends AbsAppActivity {
         });
     }
 
-    static class ApplicationsAdapter extends RecyclerView.Adapter<ApplicationsAdapter.ViewHolder> {
+    class ApplicationsAdapter extends RecyclerView.Adapter<ApplicationsAdapter.ViewHolder> {
         private List<FriendApplicationBean> items;
 
         ApplicationsAdapter(List<FriendApplicationBean> items) {
@@ -107,39 +112,121 @@ public class FriendApplicationsActivity extends AbsAppActivity {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             FriendApplicationBean app = items.get(position);
+            boolean isSponsor = app.isSponsor();
+            int status = app.getStatus();
 
-            // Set nickname
+            // 设置头像和昵称
             if (app.getUserInfo() != null) {
                 holder.tvNickname.setText(app.getUserInfo().getNickname());
                 AvatarUtils.loadAvatar(holder.ivAvatar, app.getUserInfo().getAvatar(), app.getUserInfo().getNickname());
             }
 
-            // Set description based on is_sponsor
-            if (app.isSponsor()) {
-                holder.tvDescription.setText("你已申请");
+            // 设置描述文字
+            if (isSponsor) {
+                // 当前用户发起的申请
+                holder.tvDescription.setText("申请添加对方为好友");
             } else {
+                // 对方发起的申请
                 holder.tvDescription.setText("申请添加你为好友");
             }
 
-            // Set status text based on status code
-            // 0: Applying, 1: Agreed, 2: Rejected, 3: Expired
-            String statusText;
-            switch (app.getStatus()) {
-                case 1:
-                    statusText = "已添加";
-                    break;
-                case 2:
-                    statusText = "已拒绝";
-                    break;
-                case 3:
-                    statusText = "已过期";
-                    break;
-                case 0:
-                default:
-                    statusText = "申请中";
-                    break;
+            // 根据是否发起者和状态设置右侧显示
+            if (!isSponsor && status == STATUS_APPLYING) {
+                // 对方发起，且申请中：显示接受和拒绝按钮
+                holder.buttonsContainer.setVisibility(View.VISIBLE);
+                holder.tvStatus.setVisibility(View.GONE);
+
+                holder.btnAccept.setOnClickListener(v -> {
+                    acceptApplication(app, holder.getAdapterPosition());
+                });
+
+                holder.btnRefuse.setOnClickListener(v -> {
+                    refuseApplication(app, holder.getAdapterPosition());
+                });
+            } else {
+                // 其他情况：显示状态文字
+                holder.buttonsContainer.setVisibility(View.GONE);
+                holder.tvStatus.setVisibility(View.VISIBLE);
+
+                String statusText;
+                if (isSponsor) {
+                    // 当前用户发起的申请
+                    switch (status) {
+                        case STATUS_APPLYING:
+                            statusText = "等待验证";
+                            break;
+                        case STATUS_AGREED:
+                            statusText = "已添加";
+                            break;
+                        case STATUS_REJECTED:
+                            statusText = "已被拒绝";
+                            break;
+                        case STATUS_EXPIRED:
+                            statusText = "已过期";
+                            break;
+                        default:
+                            statusText = "等待验证";
+                            break;
+                    }
+                } else {
+                    // 对方发起的申请
+                    switch (status) {
+                        case STATUS_AGREED:
+                            statusText = "已添加";
+                            break;
+                        case STATUS_REJECTED:
+                            statusText = "已拒绝";
+                            break;
+                        case STATUS_EXPIRED:
+                            statusText = "已过期";
+                            break;
+                        default:
+                            statusText = "";
+                            break;
+                    }
+                }
+                holder.tvStatus.setText(statusText);
             }
-            holder.tvStatus.setText(statusText);
+        }
+
+        private void acceptApplication(FriendApplicationBean app, int position) {
+            String targetUserId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
+            if (targetUserId == null) return;
+
+            ServiceManager.getUserService().acceptFriendApplication(targetUserId, new ApiCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    // 更新状态
+                    app.setStatus(STATUS_AGREED);
+                    notifyItemChanged(position);
+                    Toast.makeText(FriendApplicationsActivity.this, "已添加好友", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(int code, String message) {
+                    Toast.makeText(FriendApplicationsActivity.this, "添加失败：" + message, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+
+        private void refuseApplication(FriendApplicationBean app, int position) {
+            String targetUserId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
+            if (targetUserId == null) return;
+
+            ServiceManager.getUserService().refuseFriendApplication(targetUserId, new ApiCallback<Void>() {
+                @Override
+                public void onSuccess(Void data) {
+                    // 更新状态
+                    app.setStatus(STATUS_REJECTED);
+                    notifyItemChanged(position);
+                    Toast.makeText(FriendApplicationsActivity.this, "已拒绝", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(int code, String message) {
+                    Toast.makeText(FriendApplicationsActivity.this, "拒绝失败：" + message, Toast.LENGTH_SHORT).show();
+                }
+            });
         }
 
         @Override
@@ -147,10 +234,13 @@ public class FriendApplicationsActivity extends AbsAppActivity {
             return items == null ? 0 : items.size();
         }
 
-        static class ViewHolder extends RecyclerView.ViewHolder {
+        class ViewHolder extends RecyclerView.ViewHolder {
             ImageView ivAvatar;
             TextView tvNickname;
             TextView tvDescription;
+            View buttonsContainer;
+            TextView btnAccept;
+            TextView btnRefuse;
             TextView tvStatus;
 
             ViewHolder(@NonNull View v) {
@@ -158,6 +248,9 @@ public class FriendApplicationsActivity extends AbsAppActivity {
                 ivAvatar = v.findViewById(R.id.iv_avatar);
                 tvNickname = v.findViewById(R.id.tv_nickname);
                 tvDescription = v.findViewById(R.id.tv_description);
+                buttonsContainer = v.findViewById(R.id.buttons_container);
+                btnAccept = v.findViewById(R.id.btn_accept);
+                btnRefuse = v.findViewById(R.id.btn_refuse);
                 tvStatus = v.findViewById(R.id.tv_status);
             }
         }

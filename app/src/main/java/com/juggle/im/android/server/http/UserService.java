@@ -95,11 +95,21 @@ public interface UserService {
 
     /**
      * Get friend applications list. GET /jim/friends/applications
-     * 
+     *
      * @param start Starting index for pagination
      * @param count Number of items to fetch (default 50)
      */
     void getFriendApplications(int start, int count, ApiCallback<FriendApplicationsData> callback);
+
+    /**
+     * Accept a friend application. POST /jim/friends/accept {user_id: "..."}
+     */
+    void acceptFriendApplication(String userId, ApiCallback<Void> callback);
+
+    /**
+     * Refuse a friend application. POST /jim/friends/refuse {user_id: "..."}
+     */
+    void refuseFriendApplication(String userId, ApiCallback<Void> callback);
 
     /**
      * Query block users list. GET /jim/users/blockusers/list

@@ -286,6 +286,20 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
+    public void acceptFriendApplication(String userId, ApiCallback<Void> callback) {
+        java.util.Map<String, String> body = new java.util.HashMap<>();
+        body.put("user_id", userId == null ? "" : userId);
+        enqueueJson("/jim/friends/accept", body, Void.class, callback);
+    }
+
+    @Override
+    public void refuseFriendApplication(String userId, ApiCallback<Void> callback) {
+        java.util.Map<String, String> body = new java.util.HashMap<>();
+        body.put("user_id", userId == null ? "" : userId);
+        enqueueJson("/jim/friends/refuse", body, Void.class, callback);
+    }
+
+    @Override
     public void getBlockUsers(int count, String offset, ApiCallback<BlockUsersData> callback) {
         int c = count <= 0 ? 20 : count;
         StringBuilder sb = new StringBuilder("/jim/users/blockusers/list?");
