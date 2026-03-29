@@ -11,18 +11,19 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.model.Message;
-import com.juggle.im.model.messages.TextMessage;
+import com.juggle.im.model.messages.StreamTextMessage;
 
 /**
- * Text message content view.
+ * Stream text message content view.
+ * 用于显示 AI 流式输出的文本消息
  */
-public class TextMessageView extends MessageView<UiMessage, TextMessage> {
-    public TextMessageView(@NonNull ViewGroup root) {
+public class StreamTextMessageView extends MessageView<UiMessage, StreamTextMessage> {
+    public StreamTextMessageView(@NonNull ViewGroup root) {
         super(root, R.layout.content_text);
     }
 
     @Override
-    public void bindItem(UiMessage m, TextMessage t, boolean isGroup) {
+    public void bindItem(UiMessage m, StreamTextMessage t, boolean isGroup) {
         TextView tvContent = this.itemView.findViewById(R.id.text_message_content);
 
         // 处理 @提及 文本高亮（将 {userId} 替换为 @用户名）

@@ -28,7 +28,9 @@ import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.model.ConversationInfo;
+import com.juggle.im.model.ConversationMentionInfo;
 import com.juggle.im.model.Message;
+import com.juggle.im.model.MessageMentionInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -399,12 +401,14 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 lastMessageView.setText(buildDraftSummary(draft));
             } else if (lastMessage != null) {
                 String senderName = lastMessage.getSenderUserId().equals(JIM.getInstance().getCurrentUserId()) ? "你" : uiConversation.getLastMessageUserName();
-                if (conversationInfo != null && conversationInfo.getMentionInfo() != null) {
-                    SpannableString spannable = new SpannableString("[有人@我]" + MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
+                // 处理 @提及 显示
+                String mentionPrefix = getMentionPrefix(conversationInfo);
+                if (mentionPrefix != null) {
+                    SpannableString spannable = new SpannableString(mentionPrefix + MessageUtils.formatChatListMessageSummary(itemView, senderName, lastMessage));
                     spannable.setSpan(
                             new ForegroundColorSpan(itemView.getResources().getColor(R.color.conversation_badge_red)),
                             0,
-                            6,
+                            mentionPrefix.length(),
                             Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     lastMessageView.setText(spannable);
                 } else {
@@ -486,6 +490,44 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     private float dpToPx(@NonNull View view, float dp) {
         float density = view.getResources().getDisplayMetrics().density;
         return dp * density;
+    }
+
+    /**
+     * 获取 @提及 前缀文本
+     * 根据 MentionType 返回不同的前缀：
+     * - ALL: "[@所有人]"
+     * - SOMEONE: "[有人@我]"
+     * - ALL_AND_SOMEONE: "[@所有人]"
+     * - 其他: null
+     *
+     * @param conversationInfo 会话信息
+     * @return 前缀文本，如果没有 @提及 返回 null
+     */
+    private String getMentionPrefix(ConversationInfo conversationInfo) {
+        if (conversationInfo == null || conversationInfo.getMentionInfo() == null) {
+            return null;
+        }
+
+        ConversationMentionInfo mentionInfo = conversationInfo.getMentionInfo();
+        List<ConversationMentionInfo.MentionMsg> mentionMsgList = mentionInfo.getMentionMsgList();
+
+        if (mentionMsgList == null || mentionMsgList.isEmpty()) {
+            return null;
+        }
+
+        // 获取最后一条 @消息 的类型
+        ConversationMentionInfo.MentionMsg lastMentionMsg = mentionMsgList.get(mentionMsgList.size() - 1);
+        MessageMentionInfo.MentionType type = lastMentionMsg.getType();
+
+        if (type == MessageMentionInfo.MentionType.ALL) {
+            return "[@所有人]";
+        } else if (type == MessageMentionInfo.MentionType.SOMEONE) {
+            return "[有人@我]";
+        } else if (type == MessageMentionInfo.MentionType.ALL_AND_SOMEONE) {
+            return "[@所有人]";
+        }
+
+        return "[有人@我]";
     }
 
     private void applyCardMargins(@NonNull View itemView, boolean isCardStyle) {

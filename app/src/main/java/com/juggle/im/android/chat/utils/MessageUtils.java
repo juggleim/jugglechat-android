@@ -30,6 +30,7 @@ import com.juggle.im.android.chat.provider.ImageMessageView;
 import com.juggle.im.android.chat.provider.MergeMessageView;
 import com.juggle.im.android.chat.provider.MessageView;
 import com.juggle.im.android.chat.provider.StatusMessageView;
+import com.juggle.im.android.chat.provider.StreamTextMessageView;
 import com.juggle.im.android.chat.provider.TextMessageView;
 import com.juggle.im.android.chat.provider.VoiceMessageView;
 import com.juggle.im.android.model.UiMessage;
@@ -44,6 +45,7 @@ import com.juggle.im.model.messages.FileMessage;
 import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.MergeMessage;
 import com.juggle.im.model.messages.RecallInfoMessage;
+import com.juggle.im.model.messages.StreamTextMessage;
 import com.juggle.im.model.messages.TextMessage;
 import com.juggle.im.model.messages.UnknownMessage;
 import com.juggle.im.model.messages.VoiceMessage;
@@ -65,6 +67,7 @@ public class MessageUtils {
 
     static {
         registerMessageView(TextMessage.class, TextMessageView.class);
+        registerMessageView(StreamTextMessage.class, StreamTextMessageView.class);
         registerMessageView(ImageMessage.class, ImageMessageView.class);
         registerMessageView(VoiceMessage.class, VoiceMessageView.class);
         registerMessageView(FileMessage.class, FileMessageView.class);
@@ -264,7 +267,13 @@ public class MessageUtils {
         String content = message.getConversation().getConversationType().equals(Conversation.ConversationType.PRIVATE) ?
                 "%s" : senderName + ": %s";
         if (message.getContent() instanceof TextMessage) {
-            return String.format(content, ((TextMessage) message.getContent()).getContent());
+            // 处理 @提及 替换
+            String textContent = formatMentionToText(((TextMessage) message.getContent()).getContent(), message.getMentionInfo());
+            return String.format(content, textContent);
+        } else if (message.getContent() instanceof StreamTextMessage) {
+            // 流式文本消息，处理 @提及 替换
+            String textContent = formatMentionToText(((StreamTextMessage) message.getContent()).getContent(), message.getMentionInfo());
+            return String.format(content, textContent);
         } else if (message.getContent() instanceof ImageMessage) {
             return String.format(content, view.getResources().getString(R.string.msg_image));
         } else if (message.getContent() instanceof VoiceMessage) {
@@ -372,6 +381,8 @@ public class MessageUtils {
     public static String getMessageSummary(Context view, Message message) {
         if (message.getContent() instanceof TextMessage) {
             return ((TextMessage) message.getContent()).getContent();
+        } else if (message.getContent() instanceof StreamTextMessage) {
+            return ((StreamTextMessage) message.getContent()).getContent();
         } else if (message.getContent() instanceof ImageMessage) {
             return view.getResources().getString(R.string.msg_image);
         } else if (message.getContent() instanceof VoiceMessage) {
@@ -392,6 +403,7 @@ public class MessageUtils {
      */
     public static boolean shownInMessageList(Message message) {
         if (message.getContent() instanceof TextMessage
+                || message.getContent() instanceof StreamTextMessage
                 || message.getContent() instanceof ImageMessage
                 || message.getContent() instanceof VoiceMessage
                 || message.getContent() instanceof FileMessage
@@ -416,33 +428,14 @@ public class MessageUtils {
             return new SpannableString("");
         }
 
-        // 如果没有 mentionInfo，直接返回原文本
-        if (mentionInfo == null || mentionInfo.getTargetUsers() == null || mentionInfo.getTargetUsers().isEmpty()) {
-            // 检查是否是 @所有人
-            if (mentionInfo != null && mentionInfo.getType() == com.juggle.im.model.MessageMentionInfo.MentionType.ALL) {
-                // 替换 {all} 为 @所有人
-                String replaced = content.replace("{all}", "@所有人 ");
-                SpannableString spannable = new SpannableString(replaced);
-                // 高亮 @所有人
-                int startIndex = replaced.indexOf("@所有人");
-                if (startIndex >= 0) {
-                    spannable.setSpan(
-                            new ForegroundColorSpan(ContextCompat.getColor(context, R.color.mention_text_color)),
-                            startIndex,
-                            startIndex + 4,
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                    );
-                }
-                return spannable;
-            }
-            return new SpannableString(content);
-        }
-
         // 构建 userId -> userName 映射
         java.util.Map<String, String> idToNameMap = new java.util.HashMap<>();
         idToNameMap.put("all", "所有人");
-        for (UserInfo user : mentionInfo.getTargetUsers()) {
-            idToNameMap.put(user.getUserId(), user.getUserName());
+
+        if (mentionInfo != null && mentionInfo.getTargetUsers() != null) {
+            for (UserInfo user : mentionInfo.getTargetUsers()) {
+                idToNameMap.put(user.getUserId(), user.getUserName());
+            }
         }
 
         // 替换 {userId} 为 @用户名
@@ -460,6 +453,7 @@ public class MessageUtils {
                 matcher.appendReplacement(sb, replacement);
                 mentionRanges.add(new int[]{start, start + replacement.length()});
             } else {
+                // 如果找不到对应的用户名，保留原始内容
                 matcher.appendReplacement(sb, matcher.group(0));
             }
         }
@@ -479,21 +473,54 @@ public class MessageUtils {
             );
         }
 
-        // 如果类型是 ALL 或 ALL_AND_SOMEONE，也要高亮 @所有人
-        if (mentionInfo.getType() == com.juggle.im.model.MessageMentionInfo.MentionType.ALL
-                || mentionInfo.getType() == com.juggle.im.model.MessageMentionInfo.MentionType.ALL_AND_SOMEONE) {
-            int allIndex = result.indexOf("@所有人");
-            if (allIndex >= 0) {
-                spannable.setSpan(
-                        new ForegroundColorSpan(mentionColor),
-                        allIndex,
-                        allIndex + 4,
-                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                );
+        return spannable;
+    }
+
+    /**
+     * 将 @提及 的文本转换为纯文本（用于会话列表摘要显示）
+     * 将 {userId} 替换为 @用户名
+     *
+     * @param content     原始文本内容
+     * @param mentionInfo 提及信息
+     * @return 替换后的纯文本
+     */
+    public static String formatMentionToText(String content, com.juggle.im.model.MessageMentionInfo mentionInfo) {
+        if (TextUtils.isEmpty(content)) {
+            return content;
+        }
+
+        // 如果没有 mentionInfo，检查是否有 {all} 需要替换
+        if (mentionInfo == null) {
+            return content.replace("{all}", "@所有人 ");
+        }
+
+        // 构建 userId -> userName 映射
+        java.util.Map<String, String> idToNameMap = new java.util.HashMap<>();
+        idToNameMap.put("all", "所有人");
+
+        if (mentionInfo.getTargetUsers() != null) {
+            for (UserInfo user : mentionInfo.getTargetUsers()) {
+                idToNameMap.put(user.getUserId(), user.getUserName());
             }
         }
 
-        return spannable;
+        // 替换 {userId} 为 @用户名
+        final java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        final java.util.regex.Matcher matcher = pattern.matcher(content);
+        StringBuilder sb = new StringBuilder();
+
+        while (matcher.find()) {
+            String userId = matcher.group(1);
+            String userName = idToNameMap.get(userId);
+            if (userName != null) {
+                matcher.appendReplacement(sb, "@" + userName + " ");
+            } else {
+                matcher.appendReplacement(sb, matcher.group(0));
+            }
+        }
+        matcher.appendTail(sb);
+
+        return sb.toString();
     }
 
     public static String formatTimestamp(long ts) {
