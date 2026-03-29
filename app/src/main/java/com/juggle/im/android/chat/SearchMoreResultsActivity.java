@@ -18,7 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.component.AbsAppActivity;
-import com.juggle.im.android.server.beans.FriendsListData;
+import com.juggle.im.android.server.beans.FriendBean;
 import com.juggle.im.android.server.beans.GroupListData;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
@@ -99,17 +99,17 @@ public class SearchMoreResultsActivity extends AbsAppActivity {
         progressBar.setVisibility(View.VISIBLE);
 
         if (SearchActivity.SEARCH_TYPE_CONTACT.equals(searchType)) {
-            ServiceManager.getUserService().searchFriends(keyword, 0, FULL_CONTACT_LIMIT, new ApiCallback<FriendsListData>() {
+            LocalUserSearchCoordinator.searchUsers(keyword, FULL_CONTACT_LIMIT, new LocalUserSearchCoordinator.Callback() {
                 @Override
-                public void onSuccess(FriendsListData data) {
+                public void onSuccess(List<FriendBean> data) {
                     List<SearchResult> items = SearchResultMapper.mapFriendResults(
-                            data == null ? null : data.getItems(),
+                            data,
                             FULL_CONTACT_LIMIT);
                     showResults(items);
                 }
 
                 @Override
-                public void onError(int code, String message) {
+                public void onError(String message) {
                     onLoadError(message);
                 }
             });

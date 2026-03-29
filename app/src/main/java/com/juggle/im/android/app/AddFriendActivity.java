@@ -26,9 +26,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.LocalUserSearchCoordinator;
 import com.juggle.im.android.server.beans.FriendApplicationBean;
 import com.juggle.im.android.server.beans.FriendBean;
-import com.juggle.im.android.server.beans.FriendsListData;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
@@ -156,12 +156,18 @@ public class AddFriendActivity extends AbsAppActivity {
         return text == null ? "" : text.trim();
     }
 
+    /**
+     * 执行本地用户搜索。
+     *
+     * @param keyword 搜索关键词
+     */
     private void doSearch(String keyword) {
         progressBar.setVisibility(View.VISIBLE);
         updateEmptyState(false);
-        ServiceManager.getUserService().searchUsers(keyword, new ApiCallback<FriendsListData>() {
+
+        LocalUserSearchCoordinator.searchUsers(keyword, 50, new LocalUserSearchCoordinator.Callback() {
             @Override
-            public void onSuccess(FriendsListData data) {
+            public void onSuccess(@NonNull List<FriendBean> data) {
                 // 忽略输入已变化的过期结果，避免列表闪回。
                 String latest = normalizeKeyword(searchInput.getText() == null ? "" : searchInput.getText().toString());
                 if (!TextUtils.equals(latest, keyword)) {
@@ -169,15 +175,13 @@ public class AddFriendActivity extends AbsAppActivity {
                 }
 
                 progressBar.setVisibility(View.GONE);
-                List<FriendBean> items = data == null || data.getItems() == null
-                        ? new ArrayList<>()
-                        : data.getItems();
+                List<FriendBean> items = data == null ? new ArrayList<>() : data;
                 adapter.setItems(items);
                 updateEmptyState(items.isEmpty());
             }
 
             @Override
-            public void onError(int code, String message) {
+            public void onError(@NonNull String message) {
                 String latest = normalizeKeyword(searchInput.getText() == null ? "" : searchInput.getText().toString());
                 if (!TextUtils.equals(latest, keyword)) {
                     return;

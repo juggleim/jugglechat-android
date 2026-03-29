@@ -48,14 +48,12 @@
         android:layout_height="38dp"
         android:layout_marginEnd="10dp"
         android:background="@drawable/red_circle_bg"
-        android:padding="10dp"
-        android:src="@drawable/ic_hangup" />
+        android:src="@drawable/icon_hangup" />
 
     <ImageView
         android:id="@+id/btn_accept"
         android:layout_width="38dp"
         android:layout_height="38dp"
         android:background="@drawable/green_circle_bg"
-        android:padding="10dp"
-        android:src="@drawable/ic_answer" />
+        android:src="@drawable/icon_accept" />
 </LinearLayout>

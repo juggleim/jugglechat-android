@@ -25,7 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.component.AbsAppActivity;
-import com.juggle.im.android.server.beans.FriendsListData;
+import com.juggle.im.android.server.beans.FriendBean;
 import com.juggle.im.android.server.beans.GroupListData;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
@@ -170,20 +170,20 @@ public class SearchActivity extends AbsAppActivity {
     }
 
     private void requestContactPreview(String keyword, long token) {
-        ServiceManager.getUserService().searchFriends(keyword, 0, 5, new ApiCallback<FriendsListData>() {
+        LocalUserSearchCoordinator.searchUsers(keyword, 5, new LocalUserSearchCoordinator.Callback() {
             @Override
-            public void onSuccess(FriendsListData data) {
+            public void onSuccess(List<FriendBean> data) {
                 if (!isResultValid(token, keyword)) {
                     return;
                 }
                 List<SearchResult> results = SearchResultMapper.mapFriendResults(
-                        data == null ? null : data.getItems(),
+                        data,
                         PREVIEW_CONTACT_LIMIT);
                 adapter.addResults(results, SEARCH_TYPE_CONTACT);
             }
 
             @Override
-            public void onError(int code, String message) {
+            public void onError(String message) {
             }
         });
     }

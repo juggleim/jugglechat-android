@@ -24,21 +24,14 @@ import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.FileUtils;
-import com.juggle.im.android.server.beans.ContentBean;
-import com.juggle.im.android.server.beans.ImageBean;
-import com.juggle.im.android.server.beans.PostBean;
-import com.juggle.im.android.server.beans.VideoBean;
-import com.juggle.im.android.server.http.ApiCallback;
-import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.model.Moment;
+import com.juggle.im.model.MomentMedia;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.qiniu.android.utils.StringUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class CreatePostActivity extends AbsAppActivity {
     private EditText editPostContent;
@@ -144,32 +137,29 @@ public class CreatePostActivity extends AbsAppActivity {
             return;
         }
 
-        ContentBean postContent = new ContentBean();
-        postContent.setText(content);
-
+        // Build media list
+        List<MomentMedia> mediaList = new ArrayList<>();
         if (!mImageUrls.isEmpty()) {
-            List<ImageBean> images = new ArrayList<>();
             for (String url : mImageUrls.values()) {
                 if (StringUtils.isBlank(url)) continue;
-                ImageBean image = new ImageBean();
-                image.setUrl(url);
-                images.add(image);
+                MomentMedia media = new MomentMedia();
+                media.setUrl(url);
+                media.setType(MomentMedia.MomentMediaType.IMAGE);
+                mediaList.add(media);
             }
-            postContent.setImages(images);
         }
 
-        if (!TextUtils.isEmpty(mVideoUrl)) {
-            VideoBean video = new VideoBean();
-            video.setUrl(mVideoUrl);
-            postContent.setVideo(video);
-        }
+        // Note: Video support can be added when MomentMedia supports video type
+        // if (!TextUtils.isEmpty(mVideoUrl)) {
+        //     MomentMedia videoMedia = new MomentMedia();
+        //     videoMedia.setUrl(mVideoUrl);
+        //     videoMedia.setType(MomentMedia.MomentMediaType.VIDEO);
+        //     mediaList.add(videoMedia);
+        // }
 
-        PostBean post = new PostBean();
-        post.setContent(postContent);
-
-        ServiceManager.getMomentService().addPost(post, new ApiCallback<Void>() {
+        JIM.getInstance().getMomentManager().addMoment(content, mediaList, new JIMConst.IResultCallback<Moment>() {
             @Override
-            public void onSuccess(Void data) {
+            public void onSuccess(Moment data) {
                 Toast.makeText(CreatePostActivity.this, "发表成功", Toast.LENGTH_SHORT).show();
                 InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 if (imm != null) imm.hideSoftInputFromWindow(editPostContent.getWindowToken(), 0);
@@ -181,8 +171,8 @@ public class CreatePostActivity extends AbsAppActivity {
             }
 
             @Override
-            public void onError(int code, String message) {
-                Toast.makeText(CreatePostActivity.this, "发表失败: " + message, Toast.LENGTH_SHORT).show();
+            public void onError(int errorCode) {
+                Toast.makeText(CreatePostActivity.this, "发表失败: " + errorCode, Toast.LENGTH_SHORT).show();
             }
         });
     }

@@ -328,7 +328,7 @@ public class MultiCallActivity extends BaseCallActivity {
         }
         callSession.muteMicrophone(!isMicMute);
         isMicMute = !isMicMute;
-        btnMicMute.setImageResource(isMicMute ? R.drawable.ic_mic_off : R.drawable.ic_mic_on);
+        btnMicMute.setImageResource(isMicMute ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
     }
 
     private void toggleSpeaker() {
@@ -337,7 +337,7 @@ public class MultiCallActivity extends BaseCallActivity {
         }
         callSession.muteSpeaker(!isSpeakerMute);
         isSpeakerMute = !isSpeakerMute;
-        btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.ic_speaker_off : R.drawable.ic_speaker_on);
+        btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_off : R.drawable.icon_speaker_on);
     }
 
     @Override

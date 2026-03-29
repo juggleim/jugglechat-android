@@ -34,17 +34,18 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-import com.google.gson.Gson;
 import com.juggle.im.JIM;
+import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
 import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.model.ConfigUtils;
-import com.juggle.im.android.server.beans.ImageBean;
-import com.juggle.im.android.server.beans.PostBean;
-import com.juggle.im.android.server.beans.PostsListData;
-import com.juggle.im.android.server.beans.TopCommentBean;
-import com.juggle.im.android.server.http.ApiCallback;
-import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.interfaces.IMessageManager;
+import com.juggle.im.model.GetMomentOption;
+import com.juggle.im.model.Moment;
+import com.juggle.im.model.MomentComment;
+import com.juggle.im.model.MomentMedia;
+import com.juggle.im.model.MomentReaction;
+import com.juggle.im.model.UserInfo;
 import com.juggle.im.android.utils.PermissionComponent;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.chat.utils.FileUtils;
@@ -52,10 +53,7 @@ import com.juggle.im.android.chat.utils.FileUtils;
 import android.widget.GridLayout;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Moments page. Collapsing cover image fills status bar area. When scrolled past cover, title bar shows.
@@ -69,9 +67,8 @@ public class MomentsActivity extends AbsAppActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private View commentBar;
     private EditText editTextField;
-    private static Gson gson = new Gson();
-    private PostBean selectedPost = null;
-    private TopCommentBean selectedTopComment = null;
+    private Moment selectedMoment = null;
+    private MomentComment selectedComment = null;
     private MomentsAdapter adapter;
     private TextView tvName;
     private ImageView ivAvatar;
@@ -88,27 +85,6 @@ public class MomentsActivity extends AbsAppActivity {
     private static final int REQUEST_CODE_CREATE_POST = 1003;
     private Uri photoUri;
     private int currentPaddingBottom;
-
-    protected static class CommentDetail {
-        String content;
-        String type; //jm:text
-
-        public String getContent() {
-            return content;
-        }
-
-        public void setContent(String content) {
-            this.content = content;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -210,26 +186,23 @@ public class MomentsActivity extends AbsAppActivity {
 
         adapter.setListener(new Listener() {
             @Override
-            public void onComment(int position, PostBean post, TopCommentBean topCommentBean) {
-                if (topCommentBean != null && JIM.getInstance().getCurrentUserId().equals(topCommentBean.getUser_info().getUserId())) {
+            public void onComment(int position, Moment moment, MomentComment comment) {
+                if (comment != null && JIM.getInstance().getCurrentUserId().equals(comment.getUserInfo().getUserId())) {
                     BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(MomentsActivity.this);
                     View sheetView = LayoutInflater.from(MomentsActivity.this).inflate(R.layout.dialog_delete_comment, null);
                     bottomSheetDialog.setContentView(sheetView);
                     sheetView.findViewById(R.id.btn_delete).setOnClickListener(v -> {
                         bottomSheetDialog.dismiss();
-                        List<String> commentIds = new ArrayList<>();
-                        commentIds.add(post.getPost_id()); // Assuming post contains comment_id
-                        ServiceManager.getMomentService().deleteComment(commentIds, new ApiCallback<Void>() {
+                        JIM.getInstance().getMomentManager().removeComment(moment.getMomentId(), comment.getCommentId(), new IMessageManager.ISimpleCallback() {
                             @Override
-                            public void onSuccess(Void data) {
-                                refreshPostItem(post);
+                            public void onSuccess() {
+                                refreshMomentItem(moment);
                             }
 
                             @Override
-                            public void onError(int code, String message) {
+                            public void onError(int errorCode) {
                                 runOnUiThread(() -> {
-                                    // Handle error
-                                    Toast.makeText(MomentsActivity.this, "Failed to delete comment: " + message, Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(MomentsActivity.this, "Failed to delete comment: " + errorCode, Toast.LENGTH_SHORT).show();
                                 });
                             }
                         });
@@ -239,21 +212,23 @@ public class MomentsActivity extends AbsAppActivity {
 
                     bottomSheetDialog.show();
                 } else {
-                    showPostComment(position, post, topCommentBean);
+                    showPostComment(position, moment, comment);
                 }
             }
 
             @Override
-            public void onClickImage(int position, PostBean post, String imageUrl) {
+            public void onClickImage(int position, Moment moment, String imageUrl) {
                 Intent it = new Intent(MomentsActivity.this, ImagePreviewActivity.class);
                 ArrayList<String> urls = new ArrayList<>();
                 int startIndex = 0;
-                List<ImageBean> images = post.getContent().getImages();
-                for (int i = 0; i < images.size(); i++) {
-                    ImageBean imageBean = images.get(i);
-                    urls.add(imageBean.getUrl());
-                    if (imageBean.getUrl().equals(imageUrl)) {
-                        startIndex = i;
+                List<MomentMedia> mediaList = moment.getMediaList();
+                if (mediaList != null) {
+                    for (int i = 0; i < mediaList.size(); i++) {
+                        MomentMedia media = mediaList.get(i);
+                        urls.add(media.getUrl());
+                        if (media.getUrl().equals(imageUrl)) {
+                            startIndex = i;
+                        }
                     }
                 }
                 it.putStringArrayListExtra(ImagePreviewActivity.EXTRA_IMAGE_URLS, urls);
@@ -262,47 +237,48 @@ public class MomentsActivity extends AbsAppActivity {
             }
 
             @Override
-            public void onDeletePost(int position, PostBean post) {
-                ServiceManager.getMomentService().deletePost(Arrays.asList(post.getPost_id()), new ApiCallback<Void>() {
+            public void onDeletePost(int position, Moment moment) {
+                JIM.getInstance().getMomentManager().removeMoment(moment.getMomentId(), new IMessageManager.ISimpleCallback() {
                     @Override
-                    public void onSuccess(Void data) {
-                        adapter.notifyItemRemoved(position);
+                    public void onSuccess() {
+                        runOnUiThread(() -> {
+                            adapter.items.remove(position);
+                            adapter.notifyItemRemoved(position);
+                        });
                     }
 
                     @Override
-                    public void onError(int code, String message) {
-                        Toast.makeText(MomentsActivity.this, "Failed to delete post: " + message, Toast.LENGTH_SHORT).show();
+                    public void onError(int errorCode) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(MomentsActivity.this, "Failed to delete moment: " + errorCode, Toast.LENGTH_SHORT).show();
+                        });
                     }
                 });
             }
         });
 
         findViewById(R.id.btn_send_comment).setOnClickListener(v -> {
-            if (selectedPost != null) {
+            if (selectedMoment != null) {
                 String commentText = editTextField.getText().toString().trim();
                 if (!TextUtils.isEmpty(commentText)) {
-                    Map<String, String> comment = new HashMap<>();
-                    comment.put("content", commentText);
-                    comment.put("type", "jg:text");
-                    ServiceManager.getMomentService().addComment(
-                            selectedPost.getPost_id(), // postId
-                            selectedTopComment != null ? selectedTopComment.getParent_comment_id() : null, // parentCommentId (null for top-level comment)
-                            selectedTopComment != null ? selectedTopComment.getUser_info().getUserId() : null, // parentUserId (null for top-level comment)
-                            gson.toJson(comment), // text
-                            new ApiCallback<Void>() {
+                    JIM.getInstance().getMomentManager().addComment(
+                            selectedMoment.getMomentId(),
+                            selectedComment != null ? selectedComment.getCommentId() : null,
+                            commentText,
+                            new JIMConst.IResultCallback<MomentComment>() {
                                 @Override
-                                public void onSuccess(Void data) {
-                                    refreshPostItem(selectedPost);
+                                public void onSuccess(MomentComment data) {
+                                    refreshMomentItem(selectedMoment);
                                     runOnUiThread(() -> {
                                         hideCommentInput();
-                                        editTextField.setText(""); // Clear input field
+                                        editTextField.setText("");
                                     });
                                 }
 
                                 @Override
-                                public void onError(int code, String message) {
+                                public void onError(int errorCode) {
                                     runOnUiThread(() -> {
-                                        Log.e("MomentsActivity", "Failed to add comment: " + message);
+                                        Log.e("MomentsActivity", "Failed to add comment: " + errorCode);
                                     });
                                 }
                             }
@@ -369,49 +345,48 @@ public class MomentsActivity extends AbsAppActivity {
         loadMoments();
     }
 
-    private void refreshPostItem(PostBean postBean) {
-        ServiceManager.getMomentService().getPost(postBean.getPost_id(), new ApiCallback<PostBean>() {
+    private void refreshMomentItem(Moment moment) {
+        JIM.getInstance().getMomentManager().getMoment(moment.getMomentId(), new JIMConst.IResultCallback<Moment>() {
             @Override
-            public void onSuccess(PostBean data) {
+            public void onSuccess(Moment data) {
                 runOnUiThread(() -> {
-                    int pos = adapter.getPositionById(data.getPost_id());
+                    int pos = adapter.getPositionById(data.getMomentId());
                     if (pos >= 0) {
                         adapter.items.set(pos, data);
                         adapter.notifyItemChanged(pos);
                     }
                 });
-
             }
 
             @Override
-            public void onError(int code, String message) {
-
+            public void onError(int errorCode) {
+                // Handle error
             }
         });
     }
 
-    private void likePost(int position, PostBean post) {
-        ServiceManager.getMomentService().addReaction(post.getPost_id(), "key", "v", new ApiCallback<Void>() {
+    private void likePost(int position, Moment moment) {
+        JIM.getInstance().getMomentManager().addReaction(moment.getMomentId(), "like", new IMessageManager.ISimpleCallback() {
             @Override
-            public void onSuccess(Void data) {
-                refreshPostItem(post);
+            public void onSuccess() {
+                refreshMomentItem(moment);
             }
 
             @Override
-            public void onError(int code, String message) {
-                Log.e("MomentsActivity", "Failed to add reaction: " + message);
+            public void onError(int errorCode) {
+                Log.e("MomentsActivity", "Failed to add reaction: " + errorCode);
             }
         });
     }
 
-    private void showPostComment(int position, PostBean post, TopCommentBean topCommentBean) {
+    private void showPostComment(int position, Moment moment, MomentComment comment) {
         if (commentBar.getVisibility() == GONE) {
-            selectedPost = post;
-            selectedTopComment = topCommentBean;
+            selectedMoment = moment;
+            selectedComment = comment;
             showCommentInput(position);
         }
-        if (topCommentBean != null) {
-            String hint = topCommentBean.getUser_info().getNickname();
+        if (comment != null && comment.getUserInfo() != null) {
+            String hint = comment.getUserInfo().getUserName();
             editTextField.setHint("回复 " + hint + ": ");
         }
     }
@@ -523,25 +498,30 @@ public class MomentsActivity extends AbsAppActivity {
     }
 
     private void loadMoments() {
-        // fetch posts from server and populate adapter
-        ServiceManager.getMomentService().getPosts(null, pageSize, currentPage * pageSize, new ApiCallback<PostsListData>() {
+        // fetch moments from SDK
+        GetMomentOption option = new GetMomentOption();
+        option.setCount(pageSize);
+        option.setStartTime(currentPage == 0 ? 0 : adapter.items.isEmpty() ? 0 : adapter.items.get(adapter.items.size() - 1).getCreateTime());
+        option.setDirection(JIMConst.PullDirection.OLDER);
+
+        JIM.getInstance().getMomentManager().getMomentList(option, new JIMConst.IResultListCallback<Moment>() {
             @Override
-            public void onSuccess(PostsListData data) {
+            public void onSuccess(List<Moment> data, boolean isFinish) {
                 runOnUiThread(() -> {
                     swipeRefreshLayout.setRefreshing(false);
                     isLoading = false;
 
-                    if (data != null && data.getItems() != null) {
+                    if (data != null && !data.isEmpty()) {
                         if (currentPage == 0) {
                             // 下拉刷新，替换所有数据
-                            adapter.setItems(data.getItems());
+                            adapter.setItems(data);
                         } else {
                             // 上拉加载更多，追加数据
-                            adapter.addItems(data.getItems());
+                            adapter.addItems(data);
                         }
 
                         // 更新分页参数
-                        if (data.getItems().size() < pageSize) {
+                        if (isFinish || data.size() < pageSize) {
                             hasMore = false; // 没有更多数据了
                         } else {
                             currentPage++;
@@ -555,12 +535,12 @@ public class MomentsActivity extends AbsAppActivity {
             }
 
             @Override
-            public void onError(int code, String message) {
-                Log.e("MomentsActivity", "Failed to loadMoments: " + message);
+            public void onError(int errorCode) {
+                Log.e("MomentsActivity", "Failed to loadMoments: " + errorCode);
                 runOnUiThread(() -> {
                     swipeRefreshLayout.setRefreshing(false);
                     isLoading = false;
-                    Toast.makeText(MomentsActivity.this, "加载失败: " + message, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MomentsActivity.this, "加载失败: " + errorCode, Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -571,18 +551,18 @@ public class MomentsActivity extends AbsAppActivity {
     }
 
     interface Listener {
-        void onComment(int position, PostBean post, TopCommentBean topCommentBean);
+        void onComment(int position, Moment moment, MomentComment comment);
 
-        void onClickImage(int position, PostBean post, String imageUrl);
+        void onClickImage(int position, Moment moment, String imageUrl);
 
-        void onDeletePost(int position, PostBean post);
+        void onDeletePost(int position, Moment moment);
     }
 
     class MomentsAdapter extends RecyclerView.Adapter<MomentsAdapter.VH> {
-        private final List<PostBean> items;
+        private final List<Moment> items;
         private Listener listener;
 
-        MomentsAdapter(List<PostBean> items) {
+        MomentsAdapter(List<Moment> items) {
             this.items = items;
         }
 
@@ -590,21 +570,21 @@ public class MomentsActivity extends AbsAppActivity {
             this.listener = l;
         }
 
-        int getPositionById(String postId) {
+        int getPositionById(String momentId) {
             for (int i = 0; i < items.size(); i++) {
-                if (items.get(i).getPost_id().equals(postId))
+                if (items.get(i).getMomentId().equals(momentId))
                     return i;
             }
             return -1;
         }
 
-        void setItems(List<PostBean> newItems) {
+        void setItems(List<Moment> newItems) {
             items.clear();
             if (newItems != null) items.addAll(newItems);
             notifyDataSetChanged();
         }
 
-        void addItems(List<PostBean> newItems) {
+        void addItems(List<Moment> newItems) {
             if (newItems != null) {
                 int startPosition = items.size();
                 items.addAll(newItems);
@@ -621,22 +601,25 @@ public class MomentsActivity extends AbsAppActivity {
 
         @Override
         public void onBindViewHolder(@NonNull VH holder, int position) {
-            PostBean post = items.get(position);
-            String text = (post.getContent() != null && post.getContent().getText() != null) ? post.getContent().getText() : "";
+            Moment moment = items.get(position);
+            String text = moment.getContent() != null ? moment.getContent() : "";
             // name
-            if (post.getUser_info() != null) {
-                holder.tvName.setText(post.getUser_info().getNickname());
-                if (post.getUser_info().getUserId().equals(JIM.getInstance().getCurrentUserId())) {
+            if (moment.getUserInfo() != null) {
+                holder.tvName.setText(moment.getUserInfo().getUserName());
+                if (moment.getUserInfo().getUserId().equals(JIM.getInstance().getCurrentUserId())) {
                     holder.vDelete.setVisibility(VISIBLE);
                     holder.vDelete.setOnClickListener(v -> {
-                        if (listener != null) listener.onDeletePost(position, post);
+                        if (listener != null) listener.onDeletePost(position, moment);
                     });
+                } else {
+                    holder.vDelete.setVisibility(View.GONE);
                 }
             } else {
                 holder.tvName.setText("匿名");
+                holder.vDelete.setVisibility(View.GONE);
             }
 
-            AvatarUtils.loadAvatar(holder.ivAvatar, post.getUser_info().getAvatar(), post.getUser_info().getNickname());
+            AvatarUtils.loadAvatar(holder.ivAvatar, moment.getUserInfo() != null ? moment.getUserInfo().getPortrait() : null, moment.getUserInfo() != null ? moment.getUserInfo().getUserName() : null);
 
             // content text
             if (TextUtils.isEmpty(text)) {
@@ -648,9 +631,9 @@ public class MomentsActivity extends AbsAppActivity {
 
             // media (images)
             holder.mediaContainer.removeAllViews();
-            if (post.getContent() != null && post.getContent().getImages() != null && !post.getContent().getImages().isEmpty()) {
+            if (moment.getMediaList() != null && !moment.getMediaList().isEmpty()) {
                 holder.mediaContainer.setVisibility(VISIBLE);
-                int imageSize = post.getContent().getImages().size();
+                int imageSize = moment.getMediaList().size();
 
                 // 根据图片数量确定行列数
                 int rows, cols;
@@ -674,8 +657,7 @@ public class MomentsActivity extends AbsAppActivity {
                 gridLayout.setColumnCount(cols);
 
                 // 添加图片视图
-                int idx = 0;
-                for (com.juggle.im.android.server.beans.ImageBean img : post.getContent().getImages()) {
+                for (MomentMedia media : moment.getMediaList()) {
                     ImageView iv = new ImageView(holder.itemView.getContext());
 
                     // 计算图片尺寸
@@ -698,14 +680,13 @@ public class MomentsActivity extends AbsAppActivity {
                     iv.setLayoutParams(lp);
                     iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
                     iv.setBackgroundColor(0xFFCCCCCC);
-                    AvatarUtils.loadImage(iv, img.getUrl());
+                    AvatarUtils.loadImage(iv, media.getUrl());
 
                     gridLayout.addView(iv);
-                    idx++;
                     final int positionCopy = position;
-                    final String imageUrl = img.getUrl();
+                    final String imageUrl = media.getUrl();
                     iv.setOnClickListener(l -> {
-                        if (listener != null) listener.onClickImage(positionCopy, post, imageUrl);
+                        if (listener != null) listener.onClickImage(positionCopy, moment, imageUrl);
                     });
                 }
             } else {
@@ -713,9 +694,9 @@ public class MomentsActivity extends AbsAppActivity {
             }
 
             // time
-            if (post.getCreated_time() > 0) {
+            if (moment.getCreateTime() > 0) {
                 long currentTime = System.currentTimeMillis();
-                long timeDifference = currentTime - post.getCreated_time();
+                long timeDifference = currentTime - moment.getCreateTime();
 
                 long minutes = timeDifference / (1000 * 60);
                 long hours = timeDifference / (1000 * 60 * 60);
@@ -741,13 +722,15 @@ public class MomentsActivity extends AbsAppActivity {
 
             // likes (reactions) - flatten user nicknames
             boolean hasLikes = false;
-            if (post.getReactions() != null && !post.getReactions().isEmpty()) {
+            if (moment.getReactionList() != null && !moment.getReactionList().isEmpty()) {
                 StringBuilder sb = new StringBuilder();
-                for (java.util.Map.Entry<String, java.util.List<com.juggle.im.android.server.beans.ReactionItem>> entry : post.getReactions().entrySet()) {
-                    for (com.juggle.im.android.server.beans.ReactionItem it : entry.getValue()) {
-                        if (it.getUser_info() != null) {
-                            if (sb.length() > 0) sb.append(", ");
-                            sb.append(it.getUser_info().getNickname());
+                for (MomentReaction reaction : moment.getReactionList()) {
+                    if (reaction.getUserList() != null) {
+                        for (UserInfo user : reaction.getUserList()) {
+                            if (user != null) {
+                                if (sb.length() > 0) sb.append(", ");
+                                sb.append(user.getUserName());
+                            }
                         }
                     }
                 }
@@ -756,7 +739,6 @@ public class MomentsActivity extends AbsAppActivity {
                     holder.tvLikes.setVisibility(VISIBLE);
                     // color the names using Spannable
                     android.text.SpannableStringBuilder ssb = new android.text.SpannableStringBuilder(sb.toString());
-                    // naive: color full string; for more precise color-per-name we'd parse and apply spans per name
                     ssb.setSpan(new android.text.style.ForegroundColorSpan(0xFF576B95), 0, ssb.length(), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     holder.tvLikes.setText(ssb);
                 }
@@ -769,19 +751,18 @@ public class MomentsActivity extends AbsAppActivity {
             // comments
             holder.commentsContainer.removeAllViews();
             boolean hasComments = false;
-            if (post.getTop_comments() != null && !post.getTop_comments().isEmpty()) {
+            if (moment.getCommentList() != null && !moment.getCommentList().isEmpty()) {
                 hasComments = true;
-                for (com.juggle.im.android.server.beans.TopCommentBean c : post.getTop_comments()) {
+                for (MomentComment c : moment.getCommentList()) {
                     TextView tv = new TextView(holder.itemView.getContext());
                     LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
                     params.setMargins(0, 5, 0, 0);
                     tv.setLayoutParams(params);
                     tv.setTextSize(13f);
                     // build name + content with name colored
-                    String name = c.getUser_info() != null ? c.getUser_info().getNickname() : "";
-                    String content = c.getText() != null ? c.getText() : "";
-                    CommentDetail commentDetail = gson.fromJson(content, CommentDetail.class);
-                    String full = name + ": " + commentDetail.getContent();
+                    String name = c.getUserInfo() != null ? c.getUserInfo().getUserName() : "";
+                    String content = c.getContent() != null ? c.getContent() : "";
+                    String full = name + ": " + content;
                     android.text.SpannableStringBuilder ss = new android.text.SpannableStringBuilder(full);
                     if (!name.isEmpty()) {
                         ss.setSpan(new android.text.style.ForegroundColorSpan(0xFF576B95), 0, name.length(), android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -790,7 +771,7 @@ public class MomentsActivity extends AbsAppActivity {
                     tv.setText(ss);
                     holder.commentsContainer.addView(tv);
                     tv.setOnClickListener(v -> {
-                        if (listener != null) listener.onComment(position, post, c);
+                        if (listener != null) listener.onComment(position, moment, c);
                     });
                 }
             }
@@ -805,13 +786,13 @@ public class MomentsActivity extends AbsAppActivity {
                 // Set click listeners for popup menu items
                 popupView.findViewById(R.id.btn_like).setOnClickListener(view -> {
                     popupWindow.dismiss();
-                    likePost(position, post);
+                    likePost(position, moment);
                 });
 
                 popupView.findViewById(R.id.btn_comment).setOnClickListener(view -> {
                     popupWindow.dismiss();
                     // Handle comment action
-                    showPostComment(position, post, null);
+                    showPostComment(position, moment, null);
                 });
 
                 // 获取 PopupWindow 宽度

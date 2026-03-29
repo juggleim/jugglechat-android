@@ -8,17 +8,27 @@
     <RelativeLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
-        android:layout_height="66dp"
+        android:layout_height="44dp"
+        android:gravity="center_vertical"
         android:layout_alignParentTop="true"
         android:layout_marginTop="16dp"
         android:paddingStart="14dp"
         android:paddingEnd="14dp">
 
+
+        <ImageView
+            android:id="@+id/btn_minimize"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:gravity="center_vertical"
+            android:src="@drawable/icon_call_minimize"
+            android:contentDescription="@string/call_action_minimize" />
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:gravity="center_vertical"
             android:layout_centerInParent="true"
-            android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <TextView
@@ -40,32 +50,14 @@
                 android:visibility="gone" />
         </LinearLayout>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+        <ImageView
+            android:id="@+id/btn_invite"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_alignParentEnd="true"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/btn_invite"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginEnd="10dp"
-                android:background="@drawable/bg_call_top_action"
-                android:padding="7dp"
-                android:src="@drawable/ic_add_white"
-                android:contentDescription="@string/call_action_invite" />
-
-            <ImageView
-                android:id="@+id/btn_minimize"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:background="@drawable/bg_call_top_action"
-                android:padding="7dp"
-                android:src="@drawable/ic_call_minimize"
-                android:contentDescription="@string/call_action_minimize" />
-        </LinearLayout>
+            android:layout_marginEnd="10dp"
+            android:src="@drawable/ic_add_white"
+            android:contentDescription="@string/call_action_invite" />
     </RelativeLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -107,12 +99,10 @@
 
             <ImageView
                 android:id="@+id/iv_speaker"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/gray_circle_bg"
-                android:padding="10dp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_speaker_on" />
+                android:src="@drawable/icon_speaker_on" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -132,12 +122,10 @@
 
             <ImageView
                 android:id="@+id/iv_mic"
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/gray_circle_bg"
-                android:padding="10dp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_mic_on" />
+                android:src="@drawable/icon_mic_on" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -157,12 +145,10 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/red_circle_bg"
-                android:padding="10dp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_hangup" />
+                android:src="@drawable/icon_hangup" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -182,12 +168,10 @@
             android:orientation="vertical">
 
             <ImageView
-                android:layout_width="52dp"
-                android:layout_height="52dp"
-                android:background="@drawable/green_circle_bg"
-                android:padding="10dp"
+                android:layout_width="70dp"
+                android:layout_height="70dp"
                 android:scaleType="fitCenter"
-                android:src="@drawable/ic_answer" />
+                android:src="@drawable/icon_accept" />
 
             <TextView
                 android:layout_width="wrap_content"
