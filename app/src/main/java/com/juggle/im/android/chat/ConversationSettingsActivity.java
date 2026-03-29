@@ -22,7 +22,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import com.juggle.im.android.component.AbsAppActivity;
-import androidx.appcompat.widget.SwitchCompat;
+import com.juggle.im.android.widget.JuggleSwitch;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.JIM;
@@ -564,7 +564,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         TextView titleView = root.findViewById(R.id.tv_row_title);
         TextView subtitleView = root.findViewById(R.id.tv_row_subtitle);
         ImageView arrowView = root.findViewById(R.id.iv_row_arrow);
-        SwitchCompat switchView = root.findViewById(R.id.switch_row);
+        JuggleSwitch switchView = root.findViewById(R.id.switch_row);
         View dividerView = root.findViewById(R.id.row_divider);
 
         icon.setImageResource(iconRes);
@@ -617,7 +617,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         TextView title;
         TextView subtitle;
         ImageView arrow;
-        SwitchCompat switchCompat;
+        JuggleSwitch switchCompat;
         View divider;
     }
 }

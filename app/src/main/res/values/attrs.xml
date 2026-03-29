@@ -6,4 +6,30 @@
         <!-- 是否禁用 -->
         <attr name="disabled" format="boolean" />
     </declare-styleable>
+
+    <declare-styleable name="JuggleSwitch">
+        <!-- 是否选中 -->
+        <attr name="js_checked" format="boolean" />
+        <!-- 是否可用 -->
+        <attr name="js_enabled" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="SettingRowView">
+        <!-- 标题文本 -->
+        <attr name="srv_title" format="string" />
+        <!-- 副标题文本 -->
+        <attr name="srv_subtitle" format="string" />
+        <!-- 图标资源 -->
+        <attr name="srv_icon" format="reference" />
+        <!-- 右侧模式: 0=箭头, 1=开关, 2=无 -->
+        <attr name="srv_mode" format="enum">
+            <enum name="arrow" value="0" />
+            <enum name="toggle" value="1" />
+            <enum name="none" value="2" />
+        </attr>
+        <!-- 是否显示分割线 -->
+        <attr name="srv_showDivider" format="boolean" />
+        <!-- 是否可用 -->
+        <attr name="srv_enabled" format="boolean" />
+    </declare-styleable>
 </resources>

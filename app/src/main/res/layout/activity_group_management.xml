@@ -1,44 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/group_bg_page"
+    android:background="#F5F6F8"
     android:orientation="vertical">
 
-    <RelativeLayout
+    <!-- 顶部导航栏 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="44dp"
-        android:background="@android:color/white">
+        android:background="@android:color/white"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <ImageView
             android:id="@+id/iv_back"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back"
+            android:padding="12dp"
             android:src="@drawable/ic_back" />
 
         <TextView
             android:id="@+id/tv_title"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
+            android:layout_weight="1"
+            android:gravity="center"
             android:text="群组管理"
             android:textColor="@color/conversation_header_text"
-            android:textSize="17sp" />
+            android:textSize="17sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tv_confirm"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true"
-            android:layout_marginEnd="16dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:text="确定"
             android:textColor="@color/app_primary"
-            android:textSize="14sp" />
-    </RelativeLayout>
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+    </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
@@ -50,11 +59,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingTop="16dp"
-            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
             android:paddingBottom="24dp">
 
+            <!-- 权限设置卡片 -->
             <LinearLayout
                 android:id="@+id/card_permission"
                 android:layout_width="match_parent"
@@ -63,31 +71,57 @@
                 android:background="@drawable/bg_group_setting_card"
                 android:orientation="vertical">
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_add_member"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="true"
+                    app:srv_title="谁可以添加成员" />
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_pin"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="true"
+                    app:srv_title="谁可以置顶消息" />
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_mention"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="true"
+                    app:srv_title="谁可以 @ 所有人" />
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_edit"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="true"
+                    app:srv_title="谁可以编辑群消息" />
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_chat"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="true"
+                    app:srv_title="谁可以在群里发言" />
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_life"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="false"
+                    app:srv_title="谁可以设置消息定时删除" />
+
             </LinearLayout>
 
+            <!-- 开关设置卡片 -->
             <LinearLayout
                 android:id="@+id/card_toggle"
                 android:layout_width="match_parent"
@@ -96,38 +130,60 @@
                 android:background="@drawable/bg_group_setting_card"
                 android:orientation="vertical">
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_history_visible"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_mode="toggle"
+                    app:srv_showDivider="false"
+                    app:srv_title="新人进群获取历史消息" />
+
             </LinearLayout>
 
+            <!-- 群主操作卡片 -->
             <LinearLayout
                 android:id="@+id/card_owner_actions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:background="@drawable/bg_group_setting_card"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_group_admins"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_icon="@drawable/ic_contact_entry_groups"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="true"
+                    app:srv_title="群管理员" />
 
-                <include
+                <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_transfer_owner"
-                    layout="@layout/item_group_setting_row" />
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:srv_icon="@drawable/ic_forward"
+                    app:srv_mode="arrow"
+                    app:srv_showDivider="false"
+                    app:srv_title="转让群主" />
+
             </LinearLayout>
 
+            <!-- 解散群组按钮 -->
             <TextView
                 android:id="@+id/btn_dissolve_group"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
                 android:background="@drawable/bg_group_setting_danger_button"
                 android:gravity="center"
                 android:text="解散群组"
                 android:textColor="@color/red"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:visibility="gone" />
+
         </LinearLayout>
     </ScrollView>
 

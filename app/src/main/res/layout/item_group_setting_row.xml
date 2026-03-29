@@ -36,15 +36,13 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <androidx.appcompat.widget.SwitchCompat
+        <com.juggle.im.android.widget.JuggleSwitch
             android:id="@+id/switch_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:visibility="gone"
-            app:thumbTint="@color/app_primary"
-            app:trackTint="@color/divider" />
+            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/iv_row_arrow"
@@ -52,8 +50,7 @@
             android:layout_height="24dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
-            android:src="@drawable/ic_arrow_right"
-            android:tint="@color/search_secondary_text" />
+            android:src="@drawable/ic_arrow_right" />
 
         <TextView
             android:id="@+id/tv_row_subtitle"

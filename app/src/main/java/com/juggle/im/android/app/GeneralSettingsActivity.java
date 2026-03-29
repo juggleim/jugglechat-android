@@ -8,10 +8,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.appcompat.widget.SwitchCompat;
-
 import com.juggle.im.android.R;
 import com.juggle.im.android.component.AbsAppActivity;
+import com.juggle.im.android.widget.JuggleSwitch;
 
 /**
  * 通用设置页面
@@ -39,7 +38,7 @@ public class GeneralSettingsActivity extends AbsAppActivity {
         setupRow(rowChatBackground, -1, "聊天背景", "", true);
         setupRow(rowAppNotify,-1, "应用内通知", "", false);
 
-        SwitchCompat notifySwitch = rowAppNotify.findViewById(R.id.switch_row);
+        JuggleSwitch notifySwitch = rowAppNotify.findViewById(R.id.switch_row);
         ImageView notifyArrow = rowAppNotify.findViewById(R.id.iv_row_arrow);
         TextView notifySubtitle = rowAppNotify.findViewById(R.id.tv_row_subtitle);
         notifyArrow.setVisibility(GONE);

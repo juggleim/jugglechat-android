@@ -9,18 +9,17 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import com.juggle.im.android.component.AbsAppActivity;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.component.UserListAdapter;
+import com.juggle.im.android.chat.widget.SettingRowView;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupManagementBean;
 import com.juggle.im.android.server.http.ApiCallback;
@@ -55,15 +54,15 @@ public class GroupManagementActivity extends AbsAppActivity {
     private GroupDetailBean groupDetail;
     private GroupManagementBean management;
 
-    private RowHolder rowAddMember;
-    private RowHolder rowTop;
-    private RowHolder rowMention;
-    private RowHolder rowEdit;
-    private RowHolder rowChat;
-    private RowHolder rowLife;
-    private RowHolder rowHistory;
-    private RowHolder rowAdmins;
-    private RowHolder rowTransferOwner;
+    private SettingRowView rowAddMember;
+    private SettingRowView rowTop;
+    private SettingRowView rowMention;
+    private SettingRowView rowEdit;
+    private SettingRowView rowChat;
+    private SettingRowView rowLife;
+    private SettingRowView rowHistory;
+    private SettingRowView rowAdmins;
+    private SettingRowView rowTransferOwner;
 
     private View cardOwnerActions;
     private TextView dissolveButton;
@@ -90,18 +89,24 @@ public class GroupManagementActivity extends AbsAppActivity {
         cardOwnerActions = findViewById(R.id.card_owner_actions);
         dissolveButton = findViewById(R.id.btn_dissolve_group);
 
-        rowAddMember = bindRow(R.id.row_setting_add_member, R.drawable.ic_add_memb, "谁可以添加成员");
-        rowTop = bindRow(R.id.row_setting_pin, R.drawable.ic_pin, "谁可以置顶消息");
-        rowMention = bindRow(R.id.row_setting_mention, R.drawable.ic_msg_action_reply, "谁可以 @ 所有人");
-        rowEdit = bindRow(R.id.row_setting_edit, R.drawable.ic_msg_action_edit, "谁可以编辑群消息");
-        rowChat = bindRow(R.id.row_setting_chat, R.drawable.ic_msg_action_reply, "谁可以在群里发言");
-        rowLife = bindRow(R.id.row_setting_life, R.drawable.ic_more_timed_delete_design, "谁可以设置消息定时删除");
-        rowHistory = bindRow(R.id.row_history_visible, R.drawable.ic_msg_top, "新人进群获取历史消息");
-        rowAdmins = bindRow(R.id.row_group_admins, R.drawable.ic_contact_entry_groups, "群管理员");
-        rowTransferOwner = bindRow(R.id.row_transfer_owner, R.drawable.ic_forward, "转让群主");
-        rowLife.divider.setVisibility(View.GONE);
-        rowHistory.divider.setVisibility(View.GONE);
-        rowTransferOwner.divider.setVisibility(View.GONE);
+        // 绑定设置行
+        rowAddMember = findViewById(R.id.row_setting_add_member);
+        rowTop = findViewById(R.id.row_setting_pin);
+        rowMention = findViewById(R.id.row_setting_mention);
+        rowEdit = findViewById(R.id.row_setting_edit);
+        rowChat = findViewById(R.id.row_setting_chat);
+        rowLife = findViewById(R.id.row_setting_life);
+        rowHistory = findViewById(R.id.row_history_visible);
+        rowAdmins = findViewById(R.id.row_group_admins);
+        rowTransferOwner = findViewById(R.id.row_transfer_owner);
+
+        // 设置默认副标题
+        rowAddMember.setSubtitle("全部成员");
+        rowTop.setSubtitle("全部成员");
+        rowMention.setSubtitle("全部成员");
+        rowEdit.setSubtitle("全部成员");
+        rowChat.setSubtitle("全部成员");
+        rowLife.setSubtitle("全部成员");
 
         setupHistoryRow();
         bindActions();
@@ -118,14 +123,14 @@ public class GroupManagementActivity extends AbsAppActivity {
     }
 
     private void bindActions() {
-        rowAddMember.root.setOnClickListener(v -> showSettingRoleDialog("谁可以添加成员", KEY_ADD_MEMBER, management == null ? 0 : management.getGroupAddMemberRight(), rowAddMember));
-        rowTop.root.setOnClickListener(v -> showSettingRoleDialog("谁可以置顶消息", KEY_TOP_MSG, management == null ? 0 : management.getGroupTopMsgRight(), rowTop));
-        rowMention.root.setOnClickListener(v -> showSettingRoleDialog("谁可以 @ 所有人", KEY_MENTION_ALL, management == null ? 0 : management.getGroupMentionAllRight(), rowMention));
-        rowEdit.root.setOnClickListener(v -> showSettingRoleDialog("谁可以编辑群消息", KEY_EDIT_MSG, management == null ? 0 : management.getGroupEditMsgRight(), rowEdit));
-        rowChat.root.setOnClickListener(v -> showSettingRoleDialog("谁可以在群里发言", KEY_SEND_MSG, management == null ? 0 : management.getGroupSendMsgRight(), rowChat));
-        rowLife.root.setOnClickListener(v -> showSettingRoleDialog("谁可以设置消息定时删除", KEY_SET_MSG_LIFE, management == null ? 0 : management.getGroupSetMsgLifeRight(), rowLife));
+        rowAddMember.setOnRowClickListener(v -> showSettingRoleDialog("谁可以添加成员", KEY_ADD_MEMBER, management == null ? 0 : management.getGroupAddMemberRight(), rowAddMember));
+        rowTop.setOnRowClickListener(v -> showSettingRoleDialog("谁可以置顶消息", KEY_TOP_MSG, management == null ? 0 : management.getGroupTopMsgRight(), rowTop));
+        rowMention.setOnRowClickListener(v -> showSettingRoleDialog("谁可以 @ 所有人", KEY_MENTION_ALL, management == null ? 0 : management.getGroupMentionAllRight(), rowMention));
+        rowEdit.setOnRowClickListener(v -> showSettingRoleDialog("谁可以编辑群消息", KEY_EDIT_MSG, management == null ? 0 : management.getGroupEditMsgRight(), rowEdit));
+        rowChat.setOnRowClickListener(v -> showSettingRoleDialog("谁可以在群里发言", KEY_SEND_MSG, management == null ? 0 : management.getGroupSendMsgRight(), rowChat));
+        rowLife.setOnRowClickListener(v -> showSettingRoleDialog("谁可以设置消息定时删除", KEY_SET_MSG_LIFE, management == null ? 0 : management.getGroupSetMsgLifeRight(), rowLife));
 
-        rowAdmins.root.setOnClickListener(v -> {
+        rowAdmins.setOnRowClickListener(v -> {
             if (groupDetail == null) {
                 return;
             }
@@ -133,7 +138,7 @@ public class GroupManagementActivity extends AbsAppActivity {
             startActivity(GroupAdminsActivity.intentFor(this, groupId, ownerId));
         });
 
-        rowTransferOwner.root.setOnClickListener(v -> {
+        rowTransferOwner.setOnRowClickListener(v -> {
             Intent intent = new Intent(this, SelectMemberActivity.class);
             intent.putExtra(GROUP_ID, groupId);
             intent.putExtra("mode", UserListAdapter.LIST_MODE_SELECT_MEMBER);
@@ -163,10 +168,7 @@ public class GroupManagementActivity extends AbsAppActivity {
     }
 
     private void setupHistoryRow() {
-        rowHistory.subtitle.setVisibility(View.GONE);
-        rowHistory.arrow.setVisibility(View.GONE);
-        rowHistory.switchCompat.setVisibility(View.VISIBLE);
-        rowHistory.switchCompat.setOnCheckedChangeListener((buttonView, isChecked) -> {
+        rowHistory.setOnSwitchCheckedChangeListener((view, isChecked) -> {
             if (bindingHistorySwitch || management == null) {
                 return;
             }
@@ -179,7 +181,7 @@ public class GroupManagementActivity extends AbsAppActivity {
                 @Override
                 public void onError(int code, String message) {
                     bindingHistorySwitch = true;
-                    rowHistory.switchCompat.setChecked(!isChecked);
+                    rowHistory.setSwitchChecked(!isChecked);
                     bindingHistorySwitch = false;
                     Toast.makeText(GroupManagementActivity.this,
                             "保存失败：" + message,
@@ -211,15 +213,15 @@ public class GroupManagementActivity extends AbsAppActivity {
     }
 
     private void renderManagement() {
-        rowAddMember.subtitle.setText(roleToText(management.getGroupAddMemberRight()));
-        rowTop.subtitle.setText(roleToText(management.getGroupTopMsgRight()));
-        rowMention.subtitle.setText(roleToText(management.getGroupMentionAllRight()));
-        rowEdit.subtitle.setText(roleToText(management.getGroupEditMsgRight()));
-        rowChat.subtitle.setText(roleToText(management.getGroupSendMsgRight()));
-        rowLife.subtitle.setText(roleToText(management.getGroupSetMsgLifeRight()));
+        rowAddMember.setSubtitle(roleToText(management.getGroupAddMemberRight()));
+        rowTop.setSubtitle(roleToText(management.getGroupTopMsgRight()));
+        rowMention.setSubtitle(roleToText(management.getGroupMentionAllRight()));
+        rowEdit.setSubtitle(roleToText(management.getGroupEditMsgRight()));
+        rowChat.setSubtitle(roleToText(management.getGroupSendMsgRight()));
+        rowLife.setSubtitle(roleToText(management.getGroupSetMsgLifeRight()));
 
         bindingHistorySwitch = true;
-        rowHistory.switchCompat.setChecked(management.getHistoryMessageVisible() == 1);
+        rowHistory.setSwitchChecked(management.getHistoryMessageVisible() == 1);
         bindingHistorySwitch = false;
 
         boolean isOwner = groupDetail != null && groupDetail.getMyRole() == ROLE_OWNER;
@@ -227,7 +229,7 @@ public class GroupManagementActivity extends AbsAppActivity {
         dissolveButton.setVisibility(isOwner ? View.VISIBLE : View.GONE);
     }
 
-    private void showSettingRoleDialog(String title, String key, int currentValue, RowHolder rowHolder) {
+    private void showSettingRoleDialog(String title, String key, int currentValue, SettingRowView rowView) {
         int normalized = normalizeRole(currentValue);
         String[] labels = new String[]{"仅群主", "群主和管理员", "全部成员"};
         int[] values = new int[]{SETTING_OWNER, SETTING_ADMIN_OWNER, SETTING_ALL};
@@ -250,7 +252,7 @@ public class GroupManagementActivity extends AbsAppActivity {
                     ServiceManager.getUserService().setGroupManagement(groupId, key, selectedValue, new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {
-                            rowHolder.subtitle.setText(labels[selectedIndex[0]]);
+                            rowView.setSubtitle(labels[selectedIndex[0]]);
                             updateManagementValue(key, selectedValue);
                         }
 
@@ -323,33 +325,6 @@ public class GroupManagementActivity extends AbsAppActivity {
         return "全部成员";
     }
 
-    private RowHolder bindRow(int includeId, int iconRes, String title) {
-        View root = findViewById(includeId);
-        ImageView icon = root.findViewById(R.id.iv_row_icon);
-        TextView titleView = root.findViewById(R.id.tv_row_title);
-        TextView subtitleView = root.findViewById(R.id.tv_row_subtitle);
-        ImageView arrowView = root.findViewById(R.id.iv_row_arrow);
-        SwitchCompat switchView = root.findViewById(R.id.switch_row);
-        View dividerView = root.findViewById(R.id.row_divider);
-
-        icon.setImageResource(iconRes);
-        titleView.setText(title);
-        subtitleView.setText("全部成员");
-        subtitleView.setVisibility(View.VISIBLE);
-        arrowView.setVisibility(View.VISIBLE);
-        switchView.setVisibility(View.GONE);
-
-        RowHolder holder = new RowHolder();
-        holder.root = root;
-        holder.icon = icon;
-        holder.title = titleView;
-        holder.subtitle = subtitleView;
-        holder.arrow = arrowView;
-        holder.switchCompat = switchView;
-        holder.divider = dividerView;
-        return holder;
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -377,15 +352,5 @@ public class GroupManagementActivity extends AbsAppActivity {
                 }
             });
         }
-    }
-
-    private static class RowHolder {
-        View root;
-        ImageView icon;
-        TextView title;
-        TextView subtitle;
-        ImageView arrow;
-        SwitchCompat switchCompat;
-        View divider;
     }
 }
