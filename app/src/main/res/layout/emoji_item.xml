@@ -6,6 +6,7 @@
     android:gravity="center"
     android:background="@android:color/transparent"
     android:id="@+id/emoji_item_grid_1"
+    android:textColor="@android:color/white"
     android:textSize="30sp">
 
 </TextView>
