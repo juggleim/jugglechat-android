@@ -53,4 +53,7 @@
 
     <!-- 置顶会话背景色（类似微信） -->
     <color name="conversation_top_bg">#F7F7F7</color>
+
+    <!-- @提及 文本颜色 -->
+    <color name="mention_text_color">#2465FF</color>
 </resources>

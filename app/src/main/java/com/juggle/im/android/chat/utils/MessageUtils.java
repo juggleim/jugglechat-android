@@ -2,18 +2,29 @@ package com.juggle.im.android.chat.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.message.FriendNotifyMessage;
 import com.juggle.im.android.chat.message.GroupNotifyMessage;
 import com.juggle.im.android.chat.message.InsertTimeStatusMessage;
+import com.juggle.im.android.chat.message.LifeTimeNotifyMessage;
+import com.juggle.im.android.chat.message.MomentNotifyMessage;
+import com.juggle.im.android.chat.message.StickerEmojiMessage;
+import com.juggle.im.android.chat.message.StickerGameMessage;
+import com.juggle.im.android.chat.message.SyncDataNotifyMessage;
+import com.juggle.im.android.chat.message.TimelineNotifyMessage;
 import com.juggle.im.android.chat.provider.FileMessageView;
 import com.juggle.im.android.chat.provider.ImageMessageView;
 import com.juggle.im.android.chat.provider.MergeMessageView;
@@ -64,6 +75,12 @@ public class MessageUtils {
         registerMessageView(InsertTimeStatusMessage.class, StatusMessageView.class);
         registerMessageView(RecallInfoMessage.class, StatusMessageView.class);
         registerMessageView(CallFinishNotifyMessage.class, StatusMessageView.class);
+        registerMessageView(LifeTimeNotifyMessage.class, StatusMessageView.class);
+        registerMessageView(MomentNotifyMessage.class, StatusMessageView.class);
+        registerMessageView(SyncDataNotifyMessage.class, StatusMessageView.class);
+        registerMessageView(TimelineNotifyMessage.class, StatusMessageView.class);
+        registerMessageView(StickerGameMessage.class, StatusMessageView.class);
+        registerMessageView(StickerEmojiMessage.class, StatusMessageView.class);
 
         registerMessageViewTemplate(StatusMessageView.class, R.layout.item_message_notification);
     }
@@ -261,14 +278,54 @@ public class MessageUtils {
         } else if (message.getContent() instanceof CallFinishNotifyMessage) {
             return "通话结束";
         }
-        // notify message
+        // 自定义消息类型
+        else if (message.getContent() instanceof GroupNotifyMessage) {
+            return view.getResources().getString(R.string.msg_group_notify);
+        } else if (message.getContent() instanceof FriendNotifyMessage) {
+            return view.getResources().getString(R.string.msg_friend_notify);
+        } else if (message.getContent() instanceof LifeTimeNotifyMessage) {
+            return view.getResources().getString(R.string.msg_lifetime_notify);
+        } else if (message.getContent() instanceof MomentNotifyMessage) {
+            return view.getResources().getString(R.string.msg_moment_notify);
+        } else if (message.getContent() instanceof StickerEmojiMessage) {
+            return view.getResources().getString(R.string.msg_sticker_emoji);
+        } else if (message.getContent() instanceof StickerGameMessage) {
+            StickerGameMessage gameMsg = (StickerGameMessage) message.getContent();
+            if (StickerGameMessage.TYPE_DICE.equals(gameMsg.getGameType())) {
+                return view.getResources().getString(R.string.msg_sticker_game_dice);
+            } else if (StickerGameMessage.TYPE_MORA.equals(gameMsg.getGameType())) {
+                return view.getResources().getString(R.string.msg_sticker_game_mora);
+            }
+            return view.getResources().getString(R.string.msg_sticker_game);
+        } else if (message.getContent() instanceof SyncDataNotifyMessage) {
+            return view.getResources().getString(R.string.msg_sync_data_notify);
+        } else if (message.getContent() instanceof TimelineNotifyMessage) {
+            return view.getResources().getString(R.string.msg_timeline_notify);
+        }
+        // 通过 contentType 判断（处理未注册的情况）
         else if (message.getContentType().equals("jgd:grpntf")) {
             return view.getResources().getString(R.string.msg_group_notify);
         } else if (message.getContentType().equals("jgd:friendntf")) {
             return view.getResources().getString(R.string.msg_friend_notify);
+        } else if (message.getContentType().equals("jgd:lifetime_msg")) {
+            return view.getResources().getString(R.string.msg_lifetime_notify);
+        } else if (message.getContentType().equals("jgd:postnotify")) {
+            return view.getResources().getString(R.string.msg_moment_notify);
+        } else if (message.getContentType().equals("snl:sticker")) {
+            return view.getResources().getString(R.string.msg_sticker_emoji);
+        } else if (message.getContentType().equals("jgd:sticker_game")) {
+            return view.getResources().getString(R.string.msg_sticker_game);
+        } else if (message.getContentType().equals("snl:syncdntf")) {
+            return view.getResources().getString(R.string.msg_sync_data_notify);
+        } else if (message.getContentType().equals("jgd:timeline")) {
+            return view.getResources().getString(R.string.msg_timeline_notify);
+        } else if (message.getContentType().equals("snl:typing")) {
+            return view.getResources().getString(R.string.msg_typing_notify);
+        } else if (message.getContentType().equals("jgd:contactcard")) {
+            return view.getResources().getString(R.string.msg_contact_card);
         } else {
             Log.i("formater", "conv msg: " + message.getConversation().getConversationType().toString());
-            return String.format(content, message.getContent().toString());
+            return String.format(content, view.getResources().getString(R.string.msg_unknown));
         }
     }
 
@@ -286,8 +343,28 @@ public class MessageUtils {
             return (userInfo != null ? userInfo.getUserName() : "") + "撤回了一条消息";
         } else if (t instanceof CallFinishNotifyMessage) {
             return "通话结束";
-        }
-        else {
+        } else if (t instanceof LifeTimeNotifyMessage) {
+            LifeTimeNotifyMessage msg = (LifeTimeNotifyMessage) t;
+            return msg.description(userInfo != null ? userInfo.getUserName() : "对方");
+        } else if (t instanceof MomentNotifyMessage) {
+            return "朋友圈通知";
+        } else if (t instanceof SyncDataNotifyMessage) {
+            return "数据已同步";
+        } else if (t instanceof TimelineNotifyMessage) {
+            TimelineNotifyMessage msg = (TimelineNotifyMessage) t;
+            String content = msg.getContent();
+            return TextUtils.isEmpty(content) ? "时间线" : content;
+        } else if (t instanceof StickerGameMessage) {
+            StickerGameMessage msg = (StickerGameMessage) t;
+            if (StickerGameMessage.TYPE_DICE.equals(msg.getGameType())) {
+                return "骰子游戏";
+            } else if (StickerGameMessage.TYPE_MORA.equals(msg.getGameType())) {
+                return "猜拳游戏";
+            }
+            return "互动游戏";
+        } else if (t instanceof StickerEmojiMessage) {
+            return "表情贴纸";
+        } else {
             return "不支持的消息类型";
         }
     }
@@ -323,6 +400,100 @@ public class MessageUtils {
         } else {
             return false;
         }
+    }
+
+    /**
+     * 格式化带有 @提及 的文本消息
+     * 将 {userId} 替换为 @用户名 并返回 SpannableString 以高亮显示
+     *
+     * @param content     原始文本内容
+     * @param mentionInfo 提及信息
+     * @param context     上下文用于获取颜色
+     * @return 格式化后的 SpannableString
+     */
+    public static SpannableString formatMentionText(String content, com.juggle.im.model.MessageMentionInfo mentionInfo, Context context) {
+        if (TextUtils.isEmpty(content)) {
+            return new SpannableString("");
+        }
+
+        // 如果没有 mentionInfo，直接返回原文本
+        if (mentionInfo == null || mentionInfo.getTargetUsers() == null || mentionInfo.getTargetUsers().isEmpty()) {
+            // 检查是否是 @所有人
+            if (mentionInfo != null && mentionInfo.getType() == com.juggle.im.model.MessageMentionInfo.MentionType.ALL) {
+                // 替换 {all} 为 @所有人
+                String replaced = content.replace("{all}", "@所有人 ");
+                SpannableString spannable = new SpannableString(replaced);
+                // 高亮 @所有人
+                int startIndex = replaced.indexOf("@所有人");
+                if (startIndex >= 0) {
+                    spannable.setSpan(
+                            new ForegroundColorSpan(ContextCompat.getColor(context, R.color.mention_text_color)),
+                            startIndex,
+                            startIndex + 4,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                    );
+                }
+                return spannable;
+            }
+            return new SpannableString(content);
+        }
+
+        // 构建 userId -> userName 映射
+        java.util.Map<String, String> idToNameMap = new java.util.HashMap<>();
+        idToNameMap.put("all", "所有人");
+        for (UserInfo user : mentionInfo.getTargetUsers()) {
+            idToNameMap.put(user.getUserId(), user.getUserName());
+        }
+
+        // 替换 {userId} 为 @用户名
+        final java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
+        final java.util.regex.Matcher matcher = pattern.matcher(content);
+        StringBuilder sb = new StringBuilder();
+        java.util.List<int[]> mentionRanges = new java.util.ArrayList<>();
+
+        while (matcher.find()) {
+            String userId = matcher.group(1);
+            String userName = idToNameMap.get(userId);
+            if (userName != null) {
+                int start = sb.length();
+                String replacement = "@" + userName + " ";
+                matcher.appendReplacement(sb, replacement);
+                mentionRanges.add(new int[]{start, start + replacement.length()});
+            } else {
+                matcher.appendReplacement(sb, matcher.group(0));
+            }
+        }
+        matcher.appendTail(sb);
+
+        String result = sb.toString();
+        SpannableString spannable = new SpannableString(result);
+
+        // 高亮所有 @提及
+        int mentionColor = ContextCompat.getColor(context, R.color.mention_text_color);
+        for (int[] range : mentionRanges) {
+            spannable.setSpan(
+                    new ForegroundColorSpan(mentionColor),
+                    range[0],
+                    range[1],
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            );
+        }
+
+        // 如果类型是 ALL 或 ALL_AND_SOMEONE，也要高亮 @所有人
+        if (mentionInfo.getType() == com.juggle.im.model.MessageMentionInfo.MentionType.ALL
+                || mentionInfo.getType() == com.juggle.im.model.MessageMentionInfo.MentionType.ALL_AND_SOMEONE) {
+            int allIndex = result.indexOf("@所有人");
+            if (allIndex >= 0) {
+                spannable.setSpan(
+                        new ForegroundColorSpan(mentionColor),
+                        allIndex,
+                        allIndex + 4,
+                        Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                );
+            }
+        }
+
+        return spannable;
     }
 
     public static String formatTimestamp(long ts) {

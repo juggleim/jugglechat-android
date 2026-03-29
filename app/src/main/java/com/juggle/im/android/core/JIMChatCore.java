@@ -7,6 +7,13 @@ import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.chat.message.FriendNotifyMessage;
 import com.juggle.im.android.chat.message.GroupNotifyMessage;
+import com.juggle.im.android.chat.message.LifeTimeNotifyMessage;
+import com.juggle.im.android.chat.message.MomentNotifyMessage;
+import com.juggle.im.android.chat.message.StickerEmojiMessage;
+import com.juggle.im.android.chat.message.StickerGameMessage;
+import com.juggle.im.android.chat.message.SyncDataNotifyMessage;
+import com.juggle.im.android.chat.message.TimelineNotifyMessage;
+import com.juggle.im.android.chat.message.TypingNotifyMessage;
 import com.juggle.im.android.event.ConnectStatusEvent;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
@@ -82,6 +89,13 @@ public class JIMChatCore {
         builder.setJLogConfig(new JLogConfig(logBuilder));
         JIM.getInstance().getMessageManager().registerContentType(FriendNotifyMessage.class);
         JIM.getInstance().getMessageManager().registerContentType(GroupNotifyMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(LifeTimeNotifyMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(MomentNotifyMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(SyncDataNotifyMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(TimelineNotifyMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(TypingNotifyMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(StickerGameMessage.class);
+        JIM.getInstance().getMessageManager().registerContentType(StickerEmojiMessage.class);
         JIM.getInstance().init(context, appKey, builder.build());
         initListener();
         JIM.getInstance().getConnectionManager().addConnectionStatusListener("conn", new IConnectionManager.IConnectionStatusListener() {

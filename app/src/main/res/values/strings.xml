@@ -101,6 +101,17 @@
     <string name="msg_recall">撤回了一条消息</string>
     <string name="msg_group_notify">[群通知]</string>
     <string name="msg_friend_notify">[好友通知]</string>
+    <string name="msg_lifetime_notify">[消息时效设置]</string>
+    <string name="msg_moment_notify">[朋友圈通知]</string>
+    <string name="msg_sticker_emoji">[表情]</string>
+    <string name="msg_sticker_game">[游戏]</string>
+    <string name="msg_sticker_game_dice">[骰子]</string>
+    <string name="msg_sticker_game_mora">[猜拳]</string>
+    <string name="msg_sync_data_notify">[数据同步]</string>
+    <string name="msg_timeline_notify">[时间线]</string>
+    <string name="msg_typing_notify">[正在输入]</string>
+    <string name="msg_contact_card">[名片]</string>
+    <string name="msg_unknown">[消息]</string>
     <string name="unknown_message">不支持的消息类型</string>
     <string name="merge_message_title">合并转发</string>
     <string name="history_messages">聊天记录</string>
