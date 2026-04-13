@@ -70,6 +70,7 @@ public class CreateGroupActivity extends AbsAppActivity {
     private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
     private final Map<String, TextView> indexViewMap = new HashMap<>();
     private final Set<String> disabledUserIds = new HashSet<>();
+    private final List<String> visibleIndexLetters = new ArrayList<>();
 
     private EditText searchInput;
     private TextView btnConfirm;
@@ -184,10 +185,18 @@ public class CreateGroupActivity extends AbsAppActivity {
     }
 
     private void initIndexBar() {
+        rebuildIndexBar();
+        renderIndexHighlight();
+    }
+
+    /**
+     * 根据当前列表可见分组重建侧边字母索引，只展示实际存在的分组。
+     */
+    private void rebuildIndexBar() {
         indexBar.removeAllViews();
         indexViewMap.clear();
 
-        for (String letter : INDEX_LETTERS) {
+        for (String letter : visibleIndexLetters) {
             TextView tv = new TextView(this);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dpToPx(11), dpToPx(16));
             if (indexBar.getChildCount() > 0) {
@@ -205,11 +214,10 @@ public class CreateGroupActivity extends AbsAppActivity {
             indexBar.addView(tv);
             indexViewMap.put(letter, tv);
         }
-        renderIndexHighlight();
     }
 
     private void renderIndexHighlight() {
-        for (String letter : INDEX_LETTERS) {
+        for (String letter : visibleIndexLetters) {
             TextView tv = indexViewMap.get(letter);
             if (tv == null) {
                 continue;
@@ -354,14 +362,33 @@ public class CreateGroupActivity extends AbsAppActivity {
         currentRows.clear();
         currentRows.addAll(rows);
         adapter.submit(currentRows, selectedMap.keySet(), disabledUserIds);
+        updateVisibleIndexLetters();
 
         if (adapter.findSectionPosition(activeIndexLetter) < 0) {
             String firstSection = findFirstSectionLetter();
             activeIndexLetter = firstSection == null ? "A" : firstSection;
-            renderIndexHighlight();
         }
+        rebuildIndexBar();
+        renderIndexHighlight();
         syncIndexByFirstVisibleSection();
         updateConfirmButtonState();
+    }
+
+    /**
+     * 根据当前渲染结果提取可见索引字母，保证侧边栏与列表内容保持一致。
+     * tips：搜索过滤后需要同步收缩索引字母，避免展示无数据的字母入口。
+     */
+    private void updateVisibleIndexLetters() {
+        visibleIndexLetters.clear();
+        for (CreateGroupListAdapter.RowItem row : currentRows) {
+            if (row instanceof CreateGroupListAdapter.SectionRow) {
+                String section = ((CreateGroupListAdapter.SectionRow) row).section;
+                if (!TextUtils.isEmpty(section) && !visibleIndexLetters.contains(section)) {
+                    visibleIndexLetters.add(section);
+                }
+            }
+        }
+        indexBar.setVisibility(visibleIndexLetters.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
     @Nullable

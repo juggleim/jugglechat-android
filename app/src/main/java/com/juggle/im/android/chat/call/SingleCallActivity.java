@@ -196,6 +196,13 @@ public class SingleCallActivity extends BaseCallActivity {
         AvatarUtils.loadAvatar(imgAvatar, userInfo.getPortrait(), userInfo.getUserName(), userInfo.getUserId());
     }
 
+    /**
+     * 初始化视频视图的可见性与预览。
+     *
+     * tips: 主叫（outgoing）场景下 BaseCallActivity.onCreate 提前调用 onStartCall，
+     * 此时视图尚未绑定（localSurfaceView == null），预览未启动。
+     * 这里在 bindViews 之后补调 startLocalPreviewIfNeed 确保预览正常启动。
+     */
     private void initVideoViewsForStartup() {
         localSurfaceView.setVisibility(GONE);
         remoteSurfaceView.setVisibility(GONE);
@@ -215,8 +222,14 @@ public class SingleCallActivity extends BaseCallActivity {
         }
     }
 
+    /**
+     * 启动本地视频预览。
+     *
+     * tips: BaseCallActivity.onCreate 在子类 setContentView/bindViews 之前调用 onStartCall，
+     * 此时 localSurfaceView 可能为 null，需要做空判断保护。
+     */
     private void startLocalPreviewIfNeed() {
-        if (!isVideoCall || callSession == null) {
+        if (!isVideoCall || callSession == null || localSurfaceView == null) {
             return;
         }
         localSurfaceView.setVisibility(VISIBLE);
