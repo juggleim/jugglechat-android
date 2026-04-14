@@ -177,8 +177,8 @@
                 android:orientation="vertical">
 
                 <ImageView
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
                     android:background="@drawable/red_circle_bg"
                     android:scaleType="fitCenter"
                     android:src="@drawable/icon_hangup" />
@@ -201,8 +201,8 @@
                 android:orientation="vertical">
 
                 <ImageView
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
                     android:background="@drawable/green_circle_bg"
                     android:scaleType="fitCenter"
                     android:src="@drawable/icon_accept" />
