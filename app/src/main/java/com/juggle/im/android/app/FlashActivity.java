@@ -2,7 +2,6 @@ package com.juggle.im.android.app;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.Window;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,8 +24,7 @@ public class FlashActivity extends AppCompatActivity {
             // 自动登录
             autoLogin();
         } else {
-            // 延迟跳转到登录页面
-            new Handler().postDelayed(this::goToLogin, 1500);
+            goToLogin();
         }
         Window window = getWindow();
         window.setNavigationBarColor(getColor(R.color.white));
@@ -48,7 +46,7 @@ public class FlashActivity extends AppCompatActivity {
 
     private void autoLogin() {
         // 尝试连接
-        new Handler().postDelayed(this::goToMain, 1200);
+        goToMain();
     }
 
     private void goToMain() {

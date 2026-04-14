@@ -34,6 +34,7 @@ import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.android.utils.ToastUtils;
+import com.juggle.im.android.widget.BottomActionSheet;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.GetMessageOptions;
@@ -451,51 +452,20 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     }
 
     private void showForwardMenu() {
-        if (overlayForwardContainer == null)
-            return;
-        overlayForwardContainer.setVisibility(VISIBLE);
-        overlayForwardContainer.setOnClickListener(v -> {
-            overlayForwardContainer.removeAllViews();
-            overlayForwardContainer.setVisibility(GONE);
-            selectionOptionBar.setVisibility(VISIBLE);
-        });
-        // create a small menu view at bottom
-        View menu = LayoutInflater.from(requireContext()).inflate(R.layout.layout_forward_menu, null);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.gravity = android.view.Gravity.BOTTOM;
-        overlayForwardContainer.removeAllViews();
-        menu.setClickable(true);
-        overlayForwardContainer.addView(menu, lp);
-        selectionOptionBar.setVisibility(GONE);
-        View vSingle = menu.findViewById(R.id.action_forward_single);
-        View vMerge = menu.findViewById(R.id.action_forward_merge);
-        View vCancel = menu.findViewById(R.id.action_forward_cancel);
-        vSingle.setOnClickListener(v -> {
-            overlayForwardContainer.removeView(menu);
-            overlayForwardContainer.setVisibility(GONE);
-            selectionOptionBar.setVisibility(VISIBLE);
-            // start ForwardConversationListActivity in single-forward mode
-            if (getActivity() != null) {
-                Intent it = ForwardConversationListActivity.createIntent(getActivity(), "single");
-                getActivity().startActivityForResult(it, ConversationActivity.REQ_FORWARD);
-            }
-        });
-        vMerge.setOnClickListener(v -> {
-            overlayForwardContainer.removeView(menu);
-            overlayForwardContainer.setVisibility(GONE);
-            selectionOptionBar.setVisibility(VISIBLE);
-            // start ForwardConversationListActivity in merge-forward mode
-            if (getActivity() != null) {
-                Intent it = ForwardConversationListActivity.createIntent(getActivity(), "merge");
-                getActivity().startActivityForResult(it, ConversationActivity.REQ_FORWARD);
-            }
-        });
-        vCancel.setOnClickListener(v -> {
-            overlayForwardContainer.removeView(menu);
-            overlayForwardContainer.setVisibility(GONE);
-            selectionOptionBar.setVisibility(VISIBLE);
-        });
+        BottomActionSheet.builder(requireContext())
+                .addItem(getString(R.string.forward_single_message), () -> {
+                    if (getActivity() != null) {
+                        Intent it = ForwardConversationListActivity.createIntent(getActivity(), "single");
+                        getActivity().startActivityForResult(it, ConversationActivity.REQ_FORWARD);
+                    }
+                })
+                .addItem(getString(R.string.forward_merge_msg), () -> {
+                    if (getActivity() != null) {
+                        Intent it = ForwardConversationListActivity.createIntent(getActivity(), "merge");
+                        getActivity().startActivityForResult(it, ConversationActivity.REQ_FORWARD);
+                    }
+                })
+                .show();
     }
 
     /**
@@ -1177,16 +1147,12 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 break;
             case MessageListAdapter.Action.DELETE:
                 if (message.getDirection() == Message.MessageDirection.SEND) {
-                    new AlertDialog.Builder(requireContext())
-                            .setItems(new String[]{
-                                            getString(R.string.msg_action_delete_self),
-                                            getString(R.string.msg_action_delete_both)},
-                                    (dialog, which) -> {
-                                        if (which == 1) {
-                                            ToastUtils.show(requireContext(), R.string.msg_action_delete_remote_unsupported);
-                                        }
-                                        deleteSingleMessage(message);
-                                    })
+                    BottomActionSheet.builder(requireContext())
+                            .addItem(getString(R.string.msg_action_delete_self), () -> deleteSingleMessage(message))
+                            .addItem(getString(R.string.msg_action_delete_both), () -> {
+                                ToastUtils.show(requireContext(), R.string.msg_action_delete_remote_unsupported);
+                                deleteSingleMessage(message);
+                            })
                             .show();
                 } else {
                     deleteSingleMessage(message);
