@@ -49,6 +49,7 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
             Glide.with(imageView)
                     .load(url)
                     .fitCenter()
+                    .placeholder(R.drawable.ic_default_img)
                     .transform(new RoundedCorners(cornerRadius))
                     .dontAnimate()
                     .into(imageView);

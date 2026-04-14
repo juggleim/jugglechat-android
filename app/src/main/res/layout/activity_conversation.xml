@@ -45,6 +45,20 @@
             android:src="@drawable/ic_more" />
     </FrameLayout>
 
+    <TextView
+        android:id="@+id/tv_typing_indicator"
+        android:layout_width="match_parent"
+        android:layout_height="24dp"
+        android:layout_marginTop="44dp"
+        android:background="@color/conversation_page_bg"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="@string/msg_typing_status"
+        android:textColor="#999999"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
     <FrameLayout
         android:id="@+id/fragment_messages_container"
         android:layout_width="match_parent"

@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -43,6 +45,7 @@ import com.juggle.im.android.chat.plugin.TimedDeletePlugin;
 import com.juggle.im.android.chat.plugin.VideoCallPlugin;
 import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.android.chat.utils.FileUtils;
+import com.juggle.im.android.chat.message.MessageTypes;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
@@ -90,6 +93,8 @@ public class ConversationActivity extends AbsAppActivity {
     private boolean isGroup;
     private String conversationId;
     private Conversation conversation;
+    private final Handler typingHandler = new Handler(Looper.getMainLooper());
+    private Runnable typingHideRunnable;
 
     public static Intent intentFor(Context ctx,
             String conversationId,
@@ -508,8 +513,12 @@ public class ConversationActivity extends AbsAppActivity {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void MessageUpdatedEvent(MessageUpdatedEvent event) {
-        // New single message received via EventBus -> append to the end (newest)
         if (!event.getMessage().getConversation().getConversationId().equals(conversationId)) {
+            return;
+        }
+        // tips: typing 消息不加入消息列表，而是在 title bar 下方显示"正在输入"指示器
+        if (MessageTypes.TYPING_NTF.equals(event.getMessage().getContentType())) {
+            showTypingIndicator();
             return;
         }
         dispatchNewMessageToStream(event.getMessage());
@@ -518,6 +527,41 @@ public class ConversationActivity extends AbsAppActivity {
                 isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
                 conversationId);
         JIM.getInstance().getConversationManager().clearUnreadCount(conversation, null);
+    }
+
+    /**
+     * 显示"对方正在输入…"指示器，3秒内无新 typing 消息则自动隐藏。
+     */
+    private void showTypingIndicator() {
+        TextView tvTyping = findViewById(R.id.tv_typing_indicator);
+        if (tvTyping != null) {
+            tvTyping.setVisibility(VISIBLE);
+        }
+        if (typingHideRunnable != null) {
+            typingHandler.removeCallbacks(typingHideRunnable);
+        }
+        typingHideRunnable = () -> {
+            TextView tv = findViewById(R.id.tv_typing_indicator);
+            if (tv != null) {
+                tv.setVisibility(GONE);
+            }
+            typingHideRunnable = null;
+        };
+        typingHandler.postDelayed(typingHideRunnable, 3000L);
+    }
+
+    /**
+     * 清理 typing 指示器定时器。
+     */
+    private void cleanupTypingIndicator() {
+        if (typingHideRunnable != null) {
+            typingHandler.removeCallbacks(typingHideRunnable);
+            typingHideRunnable = null;
+        }
+        TextView tvTyping = findViewById(R.id.tv_typing_indicator);
+        if (tvTyping != null) {
+            tvTyping.setVisibility(GONE);
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -836,7 +880,7 @@ public class ConversationActivity extends AbsAppActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        // Hide keyboard properly by accessing the ChatInputActionBar component
+        cleanupTypingIndicator();
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
             inputBar.hideKeyboard();

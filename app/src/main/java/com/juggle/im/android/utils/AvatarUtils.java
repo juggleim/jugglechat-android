@@ -2,12 +2,18 @@ package com.juggle.im.android.utils;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.graphics.Shader;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.widget.ImageView;
+
+import androidx.core.content.ContextCompat;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
@@ -51,15 +57,18 @@ public final class AvatarUtils {
                 return; // URL 相同，跳过加载
             }
             iv.setTag(TAG_URL, url);
-            RequestOptions options = RequestOptions.circleCropTransform();
+            Drawable circularPlaceholder = toCircularDrawable(ctx, R.drawable.icon_default_avatar);
+            RequestOptions options = RequestOptions.circleCropTransform()
+                    .placeholder(circularPlaceholder);
             Glide.with(iv)
                     .load(url)
                     .apply(options)
-                    .dontAnimate() // 禁用动画，避免闪烁
+                    .dontAnimate()
                     .error(
                             Glide.with(iv.getContext())
                                     .load(R.drawable.icon_default_avatar)
-                                    .apply(options)
+                                    .apply(RequestOptions.circleCropTransform()
+                                            .placeholder(circularPlaceholder))
                                     .dontAnimate()
                     )
                     .into(iv);
@@ -137,5 +146,33 @@ public final class AvatarUtils {
 
     private static int dpToPx(Context ctx, int dp) {
         return (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, ctx.getResources().getDisplayMetrics());
+    }
+
+    /**
+     * 将 drawable 资源裁剪为圆形 BitmapDrawable
+     *
+     * @param ctx  上下文
+     * @param resId drawable 资源 ID
+     * @return 圆形裁剪后的 BitmapDrawable
+     */
+    private static Drawable toCircularDrawable(Context ctx, int resId) {
+        Drawable src = ContextCompat.getDrawable(ctx, resId);
+        if (src == null) return null;
+        int size = dpToPx(ctx, 40);
+        Bitmap square = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(square);
+        RectF rect = new RectF(0, 0, size, size);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setShader(new BitmapShader(drawableToBitmap(src, size, size), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+        canvas.drawRoundRect(rect, size / 2f, size / 2f, paint);
+        return new BitmapDrawable(ctx.getResources(), square);
+    }
+
+    private static Bitmap drawableToBitmap(Drawable drawable, int width, int height) {
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bmp);
+        drawable.setBounds(0, 0, width, height);
+        drawable.draw(canvas);
+        return bmp;
     }
 }

@@ -124,6 +124,7 @@
     <string name="msg_sync_data_notify">[数据同步]</string>
     <string name="msg_timeline_notify">[时间线]</string>
     <string name="msg_typing_notify">[正在输入]</string>
+    <string name="msg_typing_status">对方正在输入…</string>
     <string name="msg_contact_card">[名片]</string>
     <string name="msg_unknown">[消息]</string>
     <string name="unknown_message">不支持的消息类型</string>
