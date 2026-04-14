@@ -102,14 +102,16 @@ public interface UserService {
     void getFriendApplications(int start, int count, ApiCallback<FriendApplicationsData> callback);
 
     /**
-     * Accept a friend application. POST /jim/friends/accept {user_id: "..."}
+     * 接受好友申请。POST /jim/friends/confirm {sponsor_id: "...", is_agree: true}
+     * @param sponsorId 好友申请发起人ID
      */
-    void acceptFriendApplication(String userId, ApiCallback<Void> callback);
+    void acceptFriendApplication(String sponsorId, ApiCallback<Void> callback);
 
     /**
-     * Refuse a friend application. POST /jim/friends/refuse {user_id: "..."}
+     * 拒绝好友申请。POST /jim/friends/confirm {sponsor_id: "...", is_agree: false}
+     * @param sponsorId 好友申请发起人ID
      */
-    void refuseFriendApplication(String userId, ApiCallback<Void> callback);
+    void refuseFriendApplication(String sponsorId, ApiCallback<Void> callback);
 
     /**
      * Query block users list. GET /jim/users/blockusers/list

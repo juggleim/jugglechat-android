@@ -14,6 +14,12 @@
         <item name="colorPrimaryDark">@color/primary_bg_dark</item>
         <item name="colorAccent">@color/bg_light</item>
     </style>
+    <!-- 通话页面主题：深色 windowBackground 避免启动时白色闪烁 -->
+    <style name="CallActivityTheme" parent="AppTheme">
+        <item name="android:windowBackground">@color/call_gb</item>
+        <item name="android:statusBarColor">@color/call_gb</item>
+    </style>
+
     <style name="Widget" parent="android:Widget"/>
 
     <style name="NoTitleTextAppearance">

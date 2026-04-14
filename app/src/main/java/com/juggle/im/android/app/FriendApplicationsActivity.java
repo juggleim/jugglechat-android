@@ -190,10 +190,10 @@ public class FriendApplicationsActivity extends AbsAppActivity {
         }
 
         private void acceptApplication(FriendApplicationBean app, int position) {
-            String targetUserId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
-            if (targetUserId == null) return;
+            String sponsorId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
+            if (sponsorId == null) return;
 
-            ServiceManager.getUserService().acceptFriendApplication(targetUserId, new ApiCallback<Void>() {
+            ServiceManager.getUserService().acceptFriendApplication(sponsorId, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
                     // 更新状态
@@ -210,10 +210,10 @@ public class FriendApplicationsActivity extends AbsAppActivity {
         }
 
         private void refuseApplication(FriendApplicationBean app, int position) {
-            String targetUserId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
-            if (targetUserId == null) return;
+            String sponsorId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
+            if (sponsorId == null) return;
 
-            ServiceManager.getUserService().refuseFriendApplication(targetUserId, new ApiCallback<Void>() {
+            ServiceManager.getUserService().refuseFriendApplication(sponsorId, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
                     // 更新状态

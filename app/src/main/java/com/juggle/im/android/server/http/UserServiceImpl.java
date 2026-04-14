@@ -286,17 +286,19 @@ public class UserServiceImpl extends BaseService implements UserService {
     }
 
     @Override
-    public void acceptFriendApplication(String userId, ApiCallback<Void> callback) {
-        java.util.Map<String, String> body = new java.util.HashMap<>();
-        body.put("user_id", userId == null ? "" : userId);
-        enqueueJson("/jim/friends/accept", body, Void.class, callback);
+    public void acceptFriendApplication(String sponsorId, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("sponsor_id", sponsorId == null ? "" : sponsorId);
+        body.put("is_agree", true);
+        enqueueJson("/jim/friends/confirm", body, Void.class, callback);
     }
 
     @Override
-    public void refuseFriendApplication(String userId, ApiCallback<Void> callback) {
-        java.util.Map<String, String> body = new java.util.HashMap<>();
-        body.put("user_id", userId == null ? "" : userId);
-        enqueueJson("/jim/friends/refuse", body, Void.class, callback);
+    public void refuseFriendApplication(String sponsorId, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("sponsor_id", sponsorId == null ? "" : sponsorId);
+        body.put("is_agree", false);
+        enqueueJson("/jim/friends/confirm", body, Void.class, callback);
     }
 
     @Override

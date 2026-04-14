@@ -196,9 +196,11 @@
         <activity
             android:name=".chat.call.SingleCallActivity"
             android:launchMode="singleTop"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/CallActivityTheme" />
         <activity android:name=".chat.call.MultiCallActivity"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/CallActivityTheme" />
         <activity android:name=".chat.SelectMemberActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".chat.SearchActivity"
