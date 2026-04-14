@@ -822,10 +822,12 @@ public class ChatInputActionBar extends LinearLayout {
     }
 
     /**
-     * @param name
-     * @param msg
-     * @param msgId
-     * @param type  1 - reply, 2-edit message
+     * 显示引用/回复/编辑消息面板
+     *
+     * @param name  发送者名称
+     * @param msg   消息内容摘要
+     * @param msgId 消息 ID
+     * @param type  引用类型：R.id.tag_reply_msg（回复）或 R.id.tag_edit_msg（编辑）
      */
     public void showReferMsgPanel(String name, String msg, String msgId, int type) {
         View referView = findViewById(R.id.refer_msg_container);
@@ -833,11 +835,12 @@ public class ChatInputActionBar extends LinearLayout {
         findViewById(R.id.button_del_ref).setOnClickListener((v) -> {
             referView.setVisibility(GONE);
         });
-        // clear old tag
         referView.setTag(R.id.tag_edit_msg, null);
         referView.setTag(R.id.tag_reply_msg, null);
+        TextView tvSender = findViewById(R.id.refer_msg_sender);
+        tvSender.setText("回复：" + name);
         TextView tvContent = findViewById(R.id.message_content);
-        tvContent.setText(name + ": " + msg);
+        tvContent.setText(msg);
         referView.setTag(type, msgId);
         collapsePanel();
     }

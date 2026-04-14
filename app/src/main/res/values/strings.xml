@@ -170,4 +170,5 @@
     <string name="im_service_content">正在保持连接，确保消息及时送达</string>
     <string name="im_service_channel_name">IM前台服务</string>
     <string name="im_service_channel_description">保持IM长连接，防止消息丢失</string>
+    <string name="splash_logo_content_description">应用启动品牌图</string>
 </resources>

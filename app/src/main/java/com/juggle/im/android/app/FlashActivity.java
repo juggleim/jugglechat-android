@@ -29,7 +29,7 @@ public class FlashActivity extends AppCompatActivity {
             new Handler().postDelayed(this::goToLogin, 1500);
         }
         Window window = getWindow();
-        window.setNavigationBarColor(getColor(R.color.primary_bg_light));
+        window.setNavigationBarColor(getColor(R.color.white));
     }
 
     private void applySession(StartupRouteUseCase.RouteDecision routeDecision) {

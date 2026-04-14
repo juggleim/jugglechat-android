@@ -46,6 +46,7 @@ import java.util.List;
  */
 public class ConversationSettingsActivity extends AbsAppActivity {
     private static final int REQ_ADD_MEMBER = 1000;
+    private static final int REQ_ANNOUNCEMENT = 1001;
     private static final int ROLE_OWNER = 1;
     private static final int ROLE_ADMIN = 2;
 
@@ -171,7 +172,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         ImageView editView = findViewById(R.id.iv_edit_group);
         String title = getIntent().getStringExtra(EXTRA_TITLE);
         if (isGroup) {
-            titleView.setText("");
+            titleView.setText(getString(R.string.conversation_setting));
         } else {
             titleView.setText(TextUtils.isEmpty(title)
                     ? getString(R.string.conversation_setting)
@@ -220,11 +221,9 @@ public class ConversationSettingsActivity extends AbsAppActivity {
             if (!isGroup) {
                 return;
             }
-            startActivity(GroupAnnouncementActivity.intentFor(
-                    this,
-                    conversationId,
-                    announcementPreview,
-                    isGroupAdmin()));
+            startActivityForResult(
+                    GroupAnnouncementActivity.intentFor(this, conversationId, isGroupAdmin()),
+                    REQ_ANNOUNCEMENT);
         });
 
         addMemberRow.root.setOnClickListener(v -> {
@@ -527,7 +526,9 @@ public class ConversationSettingsActivity extends AbsAppActivity {
 
     private void updateToolStates() {
         topTool.title.setText(isTop ? "取消置顶" : "置顶");
+        topTool.icon.setImageResource(isTop ? R.drawable.icon_cancel_top : R.drawable.ic_setting_pin);
         muteTool.title.setText(isMute ? "取消免打扰" : "免打扰");
+        muteTool.icon.setImageResource(isMute ? R.drawable.icon_cancel_notify : R.drawable.ic_setting_mute);
     }
 
     private Conversation getConversation() {
@@ -602,6 +603,16 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         if (requestCode == REQ_ADD_MEMBER && resultCode == RESULT_OK) {
             // CreateGroupActivity 已在内部处理邀请逻辑，这里只需刷新群组信息
             loadGroupInfo();
+        } else if (requestCode == REQ_ANNOUNCEMENT && resultCode == RESULT_OK && data != null) {
+            // tips: 群公告发布成功后，刷新预览文案
+            String content = data.getStringExtra("announcement_content");
+            if (!TextUtils.isEmpty(content)) {
+                announcementPreview = content;
+                announcementRow.subtitle.setText(content.replace('\n', ' '));
+            } else {
+                announcementPreview = "";
+                announcementRow.subtitle.setText("未设置");
+            }
         }
     }
 

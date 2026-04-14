@@ -40,7 +40,7 @@
             android:textSize="14sp" />
     </RelativeLayout>
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingStart="16dp"
@@ -51,14 +51,22 @@
         <EditText
             android:id="@+id/et_content"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="150dp"
             android:background="@drawable/bg_group_setting_card"
             android:gravity="start|top"
-            android:hint="说点什么…"
+            android:hint="群公告…"
             android:padding="16dp"
             android:textColor="@color/conversation_primary_text"
             android:textColorHint="@color/conversation_secondary_text"
             android:textSize="14sp" />
-    </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress_bar"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+    </FrameLayout>
 
 </LinearLayout>

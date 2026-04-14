@@ -71,8 +71,9 @@
 
                 <ImageView
                     android:id="@+id/appLogo"
-                    android:layout_width="60dp"
-                    android:layout_height="60dp"
+                    android:layout_width="84dp"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
                     android:contentDescription="@string/auth_cd_logo"
                     android:src="@drawable/ic_brand_logo" />
 

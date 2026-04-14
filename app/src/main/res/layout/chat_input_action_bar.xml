@@ -11,6 +11,67 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- 被引用/回复/编辑的消息预览，位于输入框上方 -->
+        <LinearLayout
+            android:id="@+id/refer_msg_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@color/input_bg_light"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@drawable/icon_msg_reply"/>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/refer_msg_sender"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/app_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    tools:text="张三" />
+
+                <TextView
+                    android:id="@+id/message_content"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textColor="@color/conversation_secondary_text"
+                    android:textSize="12sp"
+                    tools:text="这是一条被引用的消息内容" />
+            </LinearLayout>
+
+            <ImageView
+                android:id="@+id/button_del_ref"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:contentDescription="关闭引用"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_del_primary" />
+        </LinearLayout>
+
         <LinearLayout
             android:id="@+id/input_action_bar"
             android:layout_width="match_parent"
@@ -96,43 +157,6 @@
                 android:src="@drawable/ic_chat_input_more_design" />
 
         </LinearLayout>
-
-        <!--        refer msg-->
-
-        <FrameLayout
-            android:id="@+id/refer_msg_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="52dp"
-            android:layout_marginTop="2dp"
-            android:layout_marginEnd="88dp"
-            android:layout_marginBottom="4dp"
-            android:background="@color/app_primary_inverse"
-            tools:visibility="visible"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/message_content"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="30dp"
-                android:gravity="center_vertical"
-                android:maxLines="2"
-                android:padding="3dp"
-                android:textColor="#666666"
-                android:textSize="12sp"
-                tools:text="sdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfsdfssdf sdfsdfsdfsdfsdf: " />
-
-            <ImageView
-                android:id="@+id/button_del_ref"
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:layout_gravity="end|center_vertical"
-                android:contentDescription="voice"
-                android:gravity="center|center_vertical"
-                android:padding="3dp"
-                android:src="@drawable/ic_del_primary" />
-        </FrameLayout>
     </LinearLayout>
 
     <!-- container for panels like emoji and more; hidden by default -->
