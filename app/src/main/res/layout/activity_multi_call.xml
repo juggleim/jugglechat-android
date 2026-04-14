@@ -5,6 +5,11 @@
     android:layout_height="match_parent"
     android:background="@color/call_gb">
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_call_status_scrim" />
+
     <RelativeLayout
         android:id="@+id/top_bar"
         android:layout_width="match_parent"
@@ -18,11 +23,12 @@
 
         <ImageView
             android:id="@+id/btn_minimize"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:gravity="center_vertical"
-            android:src="@drawable/icon_call_minimize"
-            android:contentDescription="@string/call_action_minimize" />
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/bg_call_top_action"
+            android:contentDescription="@string/call_action_minimize"
+            android:padding="6dp"
+            android:src="@drawable/icon_call_minimize" />
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -52,12 +58,14 @@
 
         <ImageView
             android:id="@+id/btn_invite"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_alignParentEnd="true"
             android:layout_marginEnd="10dp"
-            android:src="@drawable/ic_add_white"
-            android:contentDescription="@string/call_action_invite" />
+            android:background="@drawable/bg_call_top_action"
+            android:contentDescription="@string/call_action_invite"
+            android:padding="6dp"
+            android:src="@drawable/ic_add_white" />
     </RelativeLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -84,12 +92,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        android:background="@drawable/bg_call_bottom_panel"
         android:gravity="center"
         android:orientation="horizontal"
         android:paddingStart="10dp"
-        android:paddingTop="14dp"
+        android:paddingTop="18dp"
         android:paddingEnd="10dp"
-        android:paddingBottom="24dp">
+        android:paddingBottom="30dp">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -105,11 +114,12 @@
                 android:src="@drawable/icon_speaker_on" />
 
             <TextView
+                android:id="@+id/tv_speaker_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="扬声器"
-                android:textColor="@android:color/white"
+                android:text="@string/call_action_speaker_on"
+                android:textColor="@color/call_action_text"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -128,11 +138,12 @@
                 android:src="@drawable/icon_mic_on" />
 
             <TextView
+                android:id="@+id/tv_mic_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="麦克风"
-                android:textColor="@android:color/white"
+                android:text="@string/call_action_mic_on"
+                android:textColor="@color/call_action_text"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -154,7 +165,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="挂断"
+                android:text="@string/call_action_cancel"
                 android:textColor="@android:color/white"
                 android:textSize="13sp" />
         </LinearLayout>
@@ -177,7 +188,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="接听"
+                android:text="@string/call_action_accept"
                 android:textColor="@android:color/white"
                 android:textSize="13sp" />
         </LinearLayout>

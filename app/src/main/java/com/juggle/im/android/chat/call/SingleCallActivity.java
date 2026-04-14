@@ -37,6 +37,8 @@ public class SingleCallActivity extends BaseCallActivity {
     private TextView tvTime;
     private TextView tvNickname;
     private TextView tvStatus;
+    private TextView tvMicLabel;
+    private TextView tvSpeakerLabel;
     private ImageView imgAvatar;
     private ImageView btnMicMute;
     private ImageView btnSpeakerMute;
@@ -133,6 +135,8 @@ public class SingleCallActivity extends BaseCallActivity {
         btnMinimize = findViewById(R.id.btn_minimize);
         btnMicMute = findViewById(R.id.iv_mic);
         btnSpeakerMute = findViewById(R.id.iv_speaker);
+        tvMicLabel = findViewById(R.id.tv_mic_label);
+        tvSpeakerLabel = findViewById(R.id.tv_speaker_label);
         connectedContainer = findViewById(R.id.connected_container);
         userBar = findViewById(R.id.call_user_bar);
         connectingContainer = findViewById(R.id.connecting_container);
@@ -258,7 +262,7 @@ public class SingleCallActivity extends BaseCallActivity {
             userBar.setVisibility(VISIBLE);
             if ("outgoing".equals(direction)) {
                 btnAccept.setVisibility(GONE);
-                tvStatus.setText(R.string.call_status_waiting_answer);
+                tvStatus.setText(isVideoCall ? R.string.call_status_video_outgoing : R.string.call_status_voice_outgoing);
             } else {
                 btnAccept.setVisibility(VISIBLE);
                 tvStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
@@ -295,6 +299,7 @@ public class SingleCallActivity extends BaseCallActivity {
         callSession.muteMicrophone(!isMicMute);
         isMicMute = !isMicMute;
         btnMicMute.setImageResource(isMicMute ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
+        tvMicLabel.setText(isMicMute ? R.string.call_action_mic_off : R.string.call_action_mic_on);
     }
 
     private void toggleSpeaker() {
@@ -304,5 +309,6 @@ public class SingleCallActivity extends BaseCallActivity {
         callSession.muteSpeaker(!isSpeakerMute);
         isSpeakerMute = !isSpeakerMute;
         btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_on : R.drawable.icon_speaker_off);
+        tvSpeakerLabel.setText(isSpeakerMute ? R.string.call_action_speaker_off : R.string.call_action_speaker_on);
     }
 }

@@ -40,6 +40,8 @@ public class MultiCallActivity extends BaseCallActivity {
     private GridLayout gridParticipants;
     private TextView tvCallTime;
     private TextView tvCallStatus;
+    private TextView tvMicLabel;
+    private TextView tvSpeakerLabel;
     private View btnHangup;
     private View btnInvite;
     private View btnAccept;
@@ -127,6 +129,7 @@ public class MultiCallActivity extends BaseCallActivity {
 
         updateParticipantView(newUsers);
         bindRemoteVideoViews(remoteUserIds);
+        updateCallUiState();
     }
 
     /**
@@ -154,6 +157,7 @@ public class MultiCallActivity extends BaseCallActivity {
             return;
         }
         gridParticipants.requestLayout();
+        updateCallUiState();
     }
 
     private void bindViews() {
@@ -164,6 +168,8 @@ public class MultiCallActivity extends BaseCallActivity {
         btnHangup = findViewById(R.id.btn_hangup);
         btnMicMute = findViewById(R.id.iv_mic);
         btnSpeakerMute = findViewById(R.id.iv_speaker);
+        tvMicLabel = findViewById(R.id.tv_mic_label);
+        tvSpeakerLabel = findViewById(R.id.tv_speaker_label);
         btnAccept = findViewById(R.id.btn_accept);
         btnMinimize = findViewById(R.id.btn_minimize);
     }
@@ -204,7 +210,7 @@ public class MultiCallActivity extends BaseCallActivity {
             tvCallTime.setVisibility(GONE);
             if ("outgoing".equals(direction)) {
                 btnAccept.setVisibility(GONE);
-                tvCallStatus.setText(R.string.call_status_waiting_answer);
+                tvCallStatus.setText(isVideoCall ? R.string.call_status_video_outgoing : R.string.call_status_voice_outgoing);
             } else {
                 btnAccept.setVisibility(VISIBLE);
                 tvCallStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
@@ -213,7 +219,7 @@ public class MultiCallActivity extends BaseCallActivity {
         }
 
         btnAccept.setVisibility(GONE);
-        tvCallStatus.setText(R.string.call_status_connected);
+        tvCallStatus.setText(getString(R.string.call_status_member_count, gridParticipants.getChildCount()));
         ensureTimerStarted();
     }
 
@@ -329,6 +335,7 @@ public class MultiCallActivity extends BaseCallActivity {
         callSession.muteMicrophone(!isMicMute);
         isMicMute = !isMicMute;
         btnMicMute.setImageResource(isMicMute ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
+        tvMicLabel.setText(isMicMute ? R.string.call_action_mic_off : R.string.call_action_mic_on);
     }
 
     private void toggleSpeaker() {
@@ -338,6 +345,7 @@ public class MultiCallActivity extends BaseCallActivity {
         callSession.muteSpeaker(!isSpeakerMute);
         isSpeakerMute = !isSpeakerMute;
         btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_off : R.drawable.icon_speaker_on);
+        tvSpeakerLabel.setText(isSpeakerMute ? R.string.call_action_speaker_off : R.string.call_action_speaker_on);
     }
 
     @Override

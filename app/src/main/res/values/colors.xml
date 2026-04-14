@@ -10,6 +10,12 @@
     <color name="gray">#BFBEBE</color>
     <color name="call_gray">#717182</color>
     <color name="call_green">#09B83E</color>
+    <color name="call_surface_overlay">#26000000</color>
+    <color name="call_bottom_panel">#4D000000</color>
+    <color name="call_status_text">#E6FFFFFF</color>
+    <color name="call_action_text">#CCFFFFFF</color>
+    <color name="call_card_name_bg">#4D000000</color>
+    <color name="call_video_self_bg">#33FFFFFF</color>
     <color name="primary_300">#2196F3</color>
     <color name="secondary_300">#64B5F6</color>
     <color name="background">#FFFFFF</color>

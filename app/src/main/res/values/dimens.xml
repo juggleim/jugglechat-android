@@ -39,4 +39,6 @@
     <dimen name="group_text_auxiliary">12sp</dimen>
 
     <dimen name="call_incoming_floating">76dp</dimen>
+    <dimen name="create_group_selected_chip_height">28dp</dimen>
+    <dimen name="create_group_selected_chip_spacing">6dp</dimen>
 </resources>
