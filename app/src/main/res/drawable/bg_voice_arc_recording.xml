@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 底部弧形背景（正常录音状态）：顶部为弧线，不是整块圆顶 -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:top="36dp">
+    <item android:top="66dp">
         <shape android:shape="rectangle">
-            <solid android:color="#EAF1FFFF" />
+            <solid android:color="#D7E7FF" />
         </shape>
     </item>
     <item android:bottom="0dp">
         <shape android:shape="oval">
-            <size android:width="1200dp" android:height="176dp" />
-            <solid android:color="#EAF1FFFF" />
+            <size android:width="800dp" android:height="200dp" />
+            <solid android:color="#D7E7FF" />
         </shape>
     </item>
 </layer-list>

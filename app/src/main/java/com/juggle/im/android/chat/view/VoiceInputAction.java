@@ -4,17 +4,20 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.drawable.ColorDrawable;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -72,6 +75,8 @@ public class VoiceInputAction extends FrameLayout {
     private boolean slideToCancel = false;
 
     private View overlayView;
+    private PopupWindow overlayPopupWindow;
+    private View overlayAnchorView;
     private View voiceBar;
     private View voiceArc;
     private ImageView micIcon;
@@ -88,33 +93,25 @@ public class VoiceInputAction extends FrameLayout {
     }
 
     private void initOverlay(ViewGroup root) {
-        try {
-            if (getContext() instanceof Activity) {
-                Activity act = (Activity) getContext();
-                overlayView = act.findViewById(R.id.voice_record_overlay);
-            }
-        } catch (Throwable t) {
-            overlayView = null;
-        }
-
-        if (overlayView != null) {
-            voiceBar = overlayView.findViewById(R.id.voice_bar);
-            voiceArc = overlayView.findViewById(R.id.voice_arc);
-            micIcon = overlayView.findViewById(R.id.iv_mic_icon);
-            voiceHint = overlayView.findViewById(R.id.voice_hint);
-            bindWaveBars();
-        } else {
+        if (overlayView == null) {
             LayoutInflater li = LayoutInflater.from(getContext());
             overlayView = li.inflate(R.layout.voice_record_overlay, root, false);
-            overlayView.setLayoutParams(new FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            root.addView(overlayView);
             voiceBar = overlayView.findViewById(R.id.voice_bar);
             voiceArc = overlayView.findViewById(R.id.voice_arc);
             micIcon = overlayView.findViewById(R.id.iv_mic_icon);
             voiceHint = overlayView.findViewById(R.id.voice_hint);
             bindWaveBars();
+            overlayPopupWindow = new PopupWindow(
+                    overlayView,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    false);
+            overlayPopupWindow.setClippingEnabled(false);
+            overlayPopupWindow.setTouchable(false);
+            overlayPopupWindow.setOutsideTouchable(false);
+            overlayPopupWindow.setBackgroundDrawable(new ColorDrawable(0x00000000));
         }
+        overlayAnchorView = root;
         overlayView.setVisibility(GONE);
         setClickable(true);
         setFocusable(true);
@@ -217,18 +214,24 @@ public class VoiceInputAction extends FrameLayout {
     }
 
     private void showOverlay(boolean show) {
-        if (overlayView == null) return;
+        if (overlayView == null || overlayPopupWindow == null) return;
         try {
-            overlayView.bringToFront();
-            overlayView.setVisibility(show ? View.VISIBLE : View.GONE);
             if (show) {
                 bindWaveBars();
                 updateCancelState(false);
+                if (!overlayPopupWindow.isShowing() && overlayAnchorView != null) {
+                    overlayPopupWindow.showAtLocation(overlayAnchorView, Gravity.NO_GRAVITY, 0, 0);
+                }
+                overlayView.setVisibility(View.VISIBLE);
             } else {
+                overlayView.setVisibility(View.GONE);
                 resetWaveAnimation();
                 if (voiceBar != null) {
                     voiceBar.setScaleX(1f);
                     voiceBar.setScaleY(1f);
+                }
+                if (overlayPopupWindow.isShowing()) {
+                    overlayPopupWindow.dismiss();
                 }
             }
         } catch (Throwable t) {
