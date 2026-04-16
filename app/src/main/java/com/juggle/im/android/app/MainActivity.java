@@ -18,6 +18,8 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.FragmentManager;
@@ -51,6 +53,8 @@ import com.juggle.im.model.UserInfo;
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,6 +74,18 @@ public class MainActivity extends AppCompatActivity {
     private ImageView btnMore, btnSearch;
     private AuthGuard authGuard;
     private PopupWindow mainAddActionPopup;
+
+    /**
+     * 扫码结果回调 Launcher。
+     * 接收 ScanQRActivity 返回的扫描结果，解析 JSON 中的 action 字段进行路由。
+     */
+    private final ActivityResultLauncher<Intent> scanQrLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() != RESULT_OK || result.getData() == null) return;
+                String scanResult = result.getData().getStringExtra("scan_result");
+                if (scanResult == null || scanResult.isEmpty()) return;
+                handleScanResult(scanResult);
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -345,7 +361,10 @@ public class MainActivity extends AppCompatActivity {
             dismissMainAddActionsPopupIfNeeded();
         });
         content.findViewById(R.id.action_scan_qr).setOnClickListener(v -> {
-            Toast.makeText(MainActivity.this, R.string.scan_qr_todo, Toast.LENGTH_SHORT).show();
+            if (!authGuard.requireValidSessionForWrite(MainActivity.this, "main.menu.scan_qr")) {
+                return;
+            }
+            scanQrLauncher.launch(new Intent(MainActivity.this, ScanQRActivity.class));
             dismissMainAddActionsPopupIfNeeded();
         });
 
@@ -425,6 +444,38 @@ public class MainActivity extends AppCompatActivity {
 
     private String trimToEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    /**
+     * 处理扫码结果。
+     * 解析二维码 JSON 内容，根据 action 字段路由到不同功能页面。
+     * 支持的 action：add_friend（加好友）、join_group（加群）、login（扫码登录）。
+     *
+     * @param data 二维码原始内容字符串
+     */
+    private void handleScanResult(String data) {
+        try {
+            JSONObject json = new JSONObject(data);
+            String action = json.optString("action", "");
+
+            // tips: 根据 action 类型分发到不同业务流程，保持与 SnailChat 一致
+            switch (action) {
+                case "add_friend": {
+                    String userId = json.optString("user_id", "");
+                    if (!userId.isEmpty()) {
+                        Intent intent = new Intent(this, ContactDetailActivity.class);
+                        intent.putExtra(ContactDetailActivity.EXTRA_USER_ID, userId);
+                        startActivity(intent);
+                    }
+                    break;
+                }
+                default:
+                    Toast.makeText(this, R.string.scan_qr_not_valid, Toast.LENGTH_SHORT).show();
+                    break;
+            }
+        } catch (JSONException e) {
+            Toast.makeText(this, R.string.scan_qr_not_valid, Toast.LENGTH_SHORT).show();
+        }
     }
 
     /**

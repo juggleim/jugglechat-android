@@ -71,6 +71,7 @@ public class VoiceInputAction extends FrameLayout {
     private MediaRecorder recorder;
     private File outFile;
     private long startTimeMs;
+    private long recordSessionId = 0L;
     private boolean recording = false;
     private boolean slideToCancel = false;
 
@@ -188,28 +189,33 @@ public class VoiceInputAction extends FrameLayout {
 
     private void startRecording() {
         try {
+            stopRecording();
             uiHandler.removeCallbacks(amplitudePollRunnable);
+            recordSessionId = System.currentTimeMillis();
             File dir = getContext().getCacheDir();
             String name = "voice_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".m4a";
             outFile = new File(dir, name);
 
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            recorder.setAudioSamplingRate(16000);
-            recorder.setAudioEncodingBitRate(64000);
-            recorder.setOutputFile(outFile.getAbsolutePath());
-            recorder.prepare();
-            recorder.start();
+            MediaRecorder mediaRecorder = new MediaRecorder();
+            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
+            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
+            mediaRecorder.setAudioSamplingRate(16000);
+            mediaRecorder.setAudioEncodingBitRate(64000);
+            mediaRecorder.setOutputFile(outFile.getAbsolutePath());
+            mediaRecorder.prepare();
+            mediaRecorder.start();
+            recorder = mediaRecorder;
             recording = true;
             startTimeMs = System.currentTimeMillis();
             slideToCancel = false;
             updateCancelState(false);
+            resetWaveAnimation();
+            applyWaveAnimation(0.28f);
             if (callback != null) callback.onStart();
-            uiHandler.postDelayed(amplitudePollRunnable, 120);
+            uiHandler.postDelayed(amplitudePollRunnable, 80);
         } catch (IOException | RuntimeException e) {
-            recording = false;
+            stopRecording();
         }
     }
 
@@ -264,15 +270,23 @@ public class VoiceInputAction extends FrameLayout {
     private final Runnable amplitudePollRunnable = new Runnable() {
         @Override
         public void run() {
-            if (!recording || recorder == null) return;
+            if (!recording) return;
+            MediaRecorder currentRecorder = recorder;
+            long currentSessionId = recordSessionId;
             try {
-                int amp = recorder.getMaxAmplitude();
+                int amp = currentRecorder != null ? currentRecorder.getMaxAmplitude() : 0;
                 float level = Math.min(1f, amp / 32767f);
-                applyMicScale(level);
-                applyWaveAnimation(level);
+                float animatedLevel = Math.max(level, 0.18f + waveRandom.nextFloat() * 0.22f);
+                applyMicScale(animatedLevel);
+                applyWaveAnimation(animatedLevel);
             } catch (Exception ignored) {
+                float fallbackLevel = 0.2f + waveRandom.nextFloat() * 0.2f;
+                applyMicScale(fallbackLevel);
+                applyWaveAnimation(fallbackLevel);
             }
-            uiHandler.postDelayed(this, 120);
+            if (recording && recorder == currentRecorder && recordSessionId == currentSessionId) {
+                uiHandler.postDelayed(this, 80);
+            }
         }
     };
 
@@ -391,20 +405,29 @@ public class VoiceInputAction extends FrameLayout {
     }
 
     private void stopRecording() {
+        uiHandler.removeCallbacks(amplitudePollRunnable);
+        MediaRecorder currentRecorder = recorder;
+        recorder = null;
+        recording = false;
+        recordSessionId = 0L;
+        if (currentRecorder == null) {
+            return;
+        }
         try {
-            uiHandler.removeCallbacks(amplitudePollRunnable);
-            if (recorder != null) {
-                try {
-                    recorder.stop();
-                } catch (RuntimeException ignored) {
-                }
-                recorder.reset();
-                recorder.release();
-                recorder = null;
+            try {
+                currentRecorder.stop();
+            } catch (RuntimeException ignored) {
+            }
+            try {
+                currentRecorder.reset();
+            } catch (Exception ignored) {
+            }
+            try {
+                currentRecorder.release();
+            } catch (Exception ignored) {
             }
         } catch (Exception ignored) {
         }
-        recording = false;
     }
 
     public void setCallback(Callback cb) {

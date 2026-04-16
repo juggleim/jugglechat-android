@@ -74,6 +74,14 @@
             android:name=".app.AddFriendActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".app.ScanQRActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".app.ContactDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".app.FriendApplicationsActivity"
