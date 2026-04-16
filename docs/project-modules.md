@@ -49,8 +49,8 @@ app/src/main/java/com/juggle/im/android/
 
 | 文件 | 功能说明 |
 |---|---|
-| `FlashActivity.java` | 闪屏页（LAUNCHER 入口）。根据启动路由决策自动跳转主页或登录页 |
-| `MainActivity.java` | 主框架页面。底部四 Tab 导航（会话/通讯录/发现/我），管理 Fragment 切换、连接状态监听、未读数更新 |
+| `Application.java` | Application 入口。初始化 IM SDK，启动时恢复 session 并做路由决策 |
+| `MainActivity.java` | LAUNCHER 主入口 + 主框架页面。底部四 Tab 导航（会话/通讯录/发现/我），管理 Fragment 切换、连接状态监听、未读数更新 |
 | `BottomNavView.java` | 自定义底部导航栏组件，支持未读数角标显示 |
 
 ### 2.2 登录注册

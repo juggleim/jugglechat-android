@@ -25,9 +25,11 @@ import androidx.fragment.app.FragmentTransaction;
 
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
+import com.juggle.im.android.Application;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthGuard;
 import com.juggle.im.android.auth.MultiDevicePolicy;
+import com.juggle.im.android.auth.StartupRouteUseCase;
 import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
@@ -73,6 +75,15 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // tips: 原 FlashActivity 路由逻辑，session 无效时直接跳转登录页
+        Application app = (Application) getApplicationContext();
+        StartupRouteUseCase.RouteDecision routeDecision = app.getStartupRouteDecision();
+        if (routeDecision == null || routeDecision.getTargetRoute() == StartupRouteUseCase.TargetRoute.LOGIN) {
+            goToLogin();
+            return;
+        }
+
         authGuard = AuthGuard.create(this);
         if (!authGuard.requireValidSessionForWrite(this, "main.enter")) {
             return;
@@ -422,5 +433,15 @@ public class MainActivity extends AppCompatActivity {
 
     private String trimToEmpty(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    /**
+     * 跳转登录页，清空当前任务栈
+     */
+    private void goToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
     }
 }

@@ -7,12 +7,12 @@ import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -27,9 +27,13 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * VoiceInputAction - a self-contained press-to-record UI.
- * Shows a semi-transparent overlay with center ripple animation driven by audio amplitude.
- * Records to a temporary file and reports result via Callback.
+ * 语音输入组件
+ *
+ * <p>按住说话录音，上滑取消。UI 分两种状态：</p>
+ * <ul>
+ *   <li>正常录音：半透明遮罩 + 主题色语音条（圆角矩形 + 底部半圆弧） + 麦克风图标 + "松开发送，上滑取消"</li>
+ *   <li>上滑取消：弧形变黑，语音条变红，文字变为"松开取消"</li>
+ * </ul>
  */
 public class VoiceInputAction extends FrameLayout {
     private static final String TAG = "VoiceInputAction";
@@ -51,14 +55,13 @@ public class VoiceInputAction extends FrameLayout {
     private boolean recording = false;
     private boolean slideToCancel = false;
 
-    // UI
-    private View overlayView; // activity provided overlay (preferred)
-    private View rippleCenter; // the view in the overlay that shows ripple
-    private TextView hintText;
+    private View overlayView;
+    private View voiceBar;
+    private View voiceArc;
+    private ImageView micIcon;
+    private TextView voiceHint;
 
     private Handler uiHandler = new Handler(Looper.getMainLooper());
-    // simple animator state
-    private boolean rippleActive = false;
 
     public VoiceInputAction(@NonNull Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -66,9 +69,6 @@ public class VoiceInputAction extends FrameLayout {
     }
 
     private void initOverlay(ViewGroup root) {
-        // Prefer using an overlay provided by the hosting Activity so the ripple UI
-        // lives in the Activity layout (as requested). If not present, inflate
-        // a fallback overlay layout from resources and add it to the window.
         try {
             if (getContext() instanceof Activity) {
                 Activity act = (Activity) getContext();
@@ -79,17 +79,20 @@ public class VoiceInputAction extends FrameLayout {
         }
 
         if (overlayView != null) {
-            // find children inside provided overlay
-            rippleCenter = overlayView.findViewById(R.id.voice_ripple_center);
+            voiceBar = overlayView.findViewById(R.id.voice_bar);
+            voiceArc = overlayView.findViewById(R.id.voice_arc);
+            micIcon = overlayView.findViewById(R.id.iv_mic_icon);
+            voiceHint = overlayView.findViewById(R.id.voice_hint);
         } else {
-            // inflate fallback overlay from resources and add to this view so
-            // VoiceInputAction still works even if activity hasn't provided one.
             LayoutInflater li = LayoutInflater.from(getContext());
             overlayView = li.inflate(R.layout.voice_record_overlay, root, false);
-            // ensure overlay covers parent
-            overlayView.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            overlayView.setLayoutParams(new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             root.addView(overlayView);
-            rippleCenter = overlayView.findViewById(R.id.voice_ripple_center);
+            voiceBar = overlayView.findViewById(R.id.voice_bar);
+            voiceArc = overlayView.findViewById(R.id.voice_arc);
+            micIcon = overlayView.findViewById(R.id.iv_mic_icon);
+            voiceHint = overlayView.findViewById(R.id.voice_hint);
         }
         overlayView.setVisibility(GONE);
         setClickable(true);
@@ -98,33 +101,30 @@ public class VoiceInputAction extends FrameLayout {
 
     private void initHolder(ViewGroup inputArea) {
         setVisibility(VISIBLE);
-        hintText = inputArea.findViewById(R.id.hold_to_talk);
+        TextView hintText = inputArea.findViewById(R.id.hold_to_talk);
 
-        // touch handling: emulate press to record on ACTION_DOWN inside the pressed area
         hintText.setOnTouchListener((v, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
                     if (checkAudioPermission()) {
-                        // show overlay (if provided by activity it's likely already in the view hierarchy
                         showOverlay(true);
                         startRecording();
                     } else {
-                        // permission missing, attempt to request if host is Activity
                         if (getContext() instanceof Activity) {
                             ActivityCompatWrapper.requestAudioPermission((Activity) getContext());
                         }
-                        // still show overlay so user sees UI feedback
                         showOverlay(true);
                     }
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    // if user moves finger up beyond some threshold, mark slideToCancel
                     float y = event.getY();
                     float h = getHeight();
-                    // if pointer moves to upper 30% area, treat as cancel
+                    // tips: 上滑超过 35% 区域视为取消
+                    boolean wasCancel = slideToCancel;
                     slideToCancel = y < h * 0.35f;
-                    // provide subtle feedback by scaling ripple slightly while sliding
-                    applyRippleLevel(slideToCancel ? 0f : 0.2f);
+                    if (wasCancel != slideToCancel) {
+                        updateCancelState(slideToCancel);
+                    }
                     return true;
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
@@ -156,7 +156,6 @@ public class VoiceInputAction extends FrameLayout {
 
     private void startRecording() {
         try {
-            // prepare file
             File dir = getContext().getCacheDir();
             String name = "voice_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".m4a";
             outFile = new File(dir, name);
@@ -172,14 +171,12 @@ public class VoiceInputAction extends FrameLayout {
             recorder.start();
             recording = true;
             startTimeMs = System.currentTimeMillis();
-            startRipple();
+            slideToCancel = false;
+            updateCancelState(false);
             if (callback != null) callback.onStart();
-            // poll amplitude
             uiHandler.postDelayed(amplitudePollRunnable, 120);
         } catch (IOException | RuntimeException e) {
-            Log.w(TAG, "startRecording failed", e);
             recording = false;
-            stopRipple();
         }
     }
 
@@ -188,7 +185,27 @@ public class VoiceInputAction extends FrameLayout {
         try {
             overlayView.setVisibility(show ? View.VISIBLE : View.GONE);
         } catch (Throwable t) {
-            // ignore
+        }
+    }
+
+    /**
+     * 切换正常录音 / 上滑取消的 UI 状态
+     *
+     * @param cancel true = 上滑取消状态，false = 正常录音状态
+     */
+    private void updateCancelState(boolean cancel) {
+        if (voiceBar != null) {
+            voiceBar.setBackgroundResource(cancel
+                    ? R.drawable.bg_voice_bar_cancel
+                    : R.drawable.bg_voice_bar_recording);
+        }
+        if (voiceArc != null) {
+            voiceArc.setBackgroundResource(cancel
+                    ? R.drawable.bg_voice_arc_cancel
+                    : R.drawable.bg_voice_arc_recording);
+        }
+        if (voiceHint != null) {
+            voiceHint.setText(cancel ? "松开取消" : "松开发送，上滑取消");
         }
     }
 
@@ -198,26 +215,35 @@ public class VoiceInputAction extends FrameLayout {
             if (!recording || recorder == null) return;
             try {
                 int amp = recorder.getMaxAmplitude();
-                // convert to a float 0..1
                 float level = Math.min(1f, amp / 32767f);
-                applyRippleLevel(level);
+                applyMicScale(level);
             } catch (Exception ignored) {
             }
             uiHandler.postDelayed(this, 120);
         }
     };
 
+    /**
+     * 根据音量大小缩放麦克风图标，提供录音反馈
+     *
+     * @param level 0..1
+     */
+    private void applyMicScale(float level) {
+        if (micIcon == null) return;
+        float s = 1f + level * 0.3f;
+        micIcon.setScaleX(s);
+        micIcon.setScaleY(s);
+    }
+
     private void finishOrCancel() {
         if (!recording) return;
         long duration = System.currentTimeMillis() - startTimeMs;
         stopRecording();
         if (slideToCancel) {
-            // delete file
             if (outFile != null && outFile.exists()) outFile.delete();
             if (callback != null) callback.onCancel();
         } else {
             if (duration < 800) {
-                // too short
                 if (outFile != null && outFile.exists()) outFile.delete();
                 if (callback != null) callback.onTooShort();
             } else {
@@ -234,8 +260,6 @@ public class VoiceInputAction extends FrameLayout {
                 try {
                     recorder.stop();
                 } catch (RuntimeException ignored) {
-                    // stop can throw if start failed
-                    Log.e("voice", "stop failed", ignored);
                 }
                 recorder.reset();
                 recorder.release();
@@ -244,58 +268,18 @@ public class VoiceInputAction extends FrameLayout {
         } catch (Exception ignored) {
         }
         recording = false;
-        stopRipple();
     }
 
     public void setCallback(Callback cb) {
         this.callback = cb;
     }
 
-    private void startRipple() {
-        rippleActive = true;
-        if (rippleCenter != null) {
-            rippleCenter.setScaleX(1f);
-            rippleCenter.setScaleY(1f);
-            rippleCenter.setAlpha(1f);
-            // kick off a subtle pulse to make it feel alive
-            animateRipplePulse();
-        }
-    }
-
-    private void stopRipple() {
-        rippleActive = false;
-        if (rippleCenter != null) {
-            rippleCenter.animate().scaleX(1f).scaleY(1f).alpha(0.6f).setDuration(150).start();
-        }
-    }
-
-    private void applyRippleLevel(float level) {
-        // level is 0..1; map to scale 1.0..1.6 and alpha 0.6..1.0
-        if (rippleCenter == null) return;
-        float s = 1f + level * 0.6f;
-        float a = 0.6f + Math.min(1f, level) * 0.4f;
-        rippleCenter.setScaleX(s);
-        rippleCenter.setScaleY(s);
-        rippleCenter.setAlpha(a);
-    }
-
-    private void animateRipplePulse() {
-        if (!rippleActive || rippleCenter == null) return;
-        rippleCenter.animate().scaleX(1.05f).scaleY(1.05f).alpha(1f).setDuration(400).withEndAction(() -> {
-            if (!rippleActive) return;
-            rippleCenter.animate().scaleX(1f).scaleY(1f).alpha(0.9f).setDuration(400).withEndAction(this::animateRipplePulse).start();
-        }).start();
-    }
-
-    // Small wrapper to request permission without pulling androidx code directly here
     private static class ActivityCompatWrapper {
         static void requestAudioPermission(Activity activity) {
             try {
                 PermissionComponent.requestPermissions(activity, 1002, Manifest.permission.RECORD_AUDIO);
             } catch (Throwable t) {
-                // ignore
             }
         }
     }
-
 }

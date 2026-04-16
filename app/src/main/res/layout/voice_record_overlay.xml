@@ -4,41 +4,46 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#80000000"
-    android:visibility="visible"
+    android:visibility="gone"
     android:focusable="true"
     android:focusableInTouchMode="true">
 
-    <LinearLayout
+    <!-- 底部弧形背景 -->
+    <View
+        android:id="@+id/voice_arc"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center"
-        android:orientation="vertical">
+        android:layout_height="80dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_voice_arc_recording" />
 
-        <FrameLayout
-            android:layout_width="200dp"
-            android:layout_height="200dp"
+    <!-- 语音条（横向矩形圆角，位于弧形上方） -->
+    <FrameLayout
+        android:id="@+id/voice_bar"
+        android:layout_width="160dp"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="40dp"
+        android:background="@drawable/bg_voice_bar_recording"
+        android:gravity="center">
+
+        <ImageView
+            android:id="@+id/iv_mic_icon"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_gravity="center"
-            android:foregroundGravity="center">
+            android:src="@drawable/ic_mic_white" />
 
-            <!-- Ripple center: use drawable background so it's styleable in res -->
-            <View
-                android:id="@+id/voice_ripple_center"
-                android:layout_width="120dp"
-                android:layout_height="120dp"
-                android:layout_gravity="center"
-                android:background="@drawable/voice_ripple_circle" />
+    </FrameLayout>
 
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/voice_hint"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:text="按住说话，向上滑动取消" />
-
-    </LinearLayout>
+    <!-- 提示文字 -->
+    <TextView
+        android:id="@+id/voice_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:text="松开发送，上滑取消" />
 
 </FrameLayout>
