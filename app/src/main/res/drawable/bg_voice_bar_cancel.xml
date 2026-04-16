@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 语音条背景（上滑取消状态）- 红色，横向矩形圆角 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FF4D4F" />
+    <corners android:radius="29dp" />
+</shape>

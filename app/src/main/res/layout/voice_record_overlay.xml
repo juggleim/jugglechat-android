@@ -3,47 +3,142 @@
     android:id="@+id/voice_record_overlay"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#80000000"
+    android:background="#73000000"
     android:visibility="gone"
     android:focusable="true"
     android:focusableInTouchMode="true">
 
-    <!-- 底部弧形背景 -->
-    <View
-        android:id="@+id/voice_arc"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
-        android:layout_gravity="bottom"
-        android:background="@drawable/bg_voice_arc_recording" />
+        android:layout_height="match_parent"
+        android:gravity="center_horizontal|bottom"
+        android:orientation="vertical">
 
-    <!-- 语音条（横向矩形圆角，位于弧形上方） -->
-    <FrameLayout
-        android:id="@+id/voice_bar"
-        android:layout_width="160dp"
-        android:layout_height="56dp"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="40dp"
-        android:background="@drawable/bg_voice_bar_recording"
-        android:gravity="center">
+        <FrameLayout
+            android:id="@+id/voice_bar"
+            android:layout_width="172dp"
+            android:layout_height="58dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="54dp"
+            android:background="@drawable/bg_voice_bar_recording"
+            android:gravity="center">
 
-        <ImageView
-            android:id="@+id/iv_mic_icon"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_mic_white" />
+            <LinearLayout
+                android:id="@+id/wave_container"
+                android:layout_width="wrap_content"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:orientation="horizontal">
 
-    </FrameLayout>
+                <View
+                    android:id="@+id/wave_bar_1"
+                    android:layout_width="3dp"
+                    android:layout_height="10dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
 
-    <!-- 提示文字 -->
-    <TextView
-        android:id="@+id/voice_hint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="16dp"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:text="松开发送，上滑取消" />
+                <View
+                    android:id="@+id/wave_bar_2"
+                    android:layout_width="3dp"
+                    android:layout_height="14dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_3"
+                    android:layout_width="3dp"
+                    android:layout_height="18dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_4"
+                    android:layout_width="3dp"
+                    android:layout_height="12dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_5"
+                    android:layout_width="3dp"
+                    android:layout_height="20dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_6"
+                    android:layout_width="3dp"
+                    android:layout_height="16dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_7"
+                    android:layout_width="3dp"
+                    android:layout_height="20dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_8"
+                    android:layout_width="3dp"
+                    android:layout_height="12dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_9"
+                    android:layout_width="3dp"
+                    android:layout_height="18dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_10"
+                    android:layout_width="3dp"
+                    android:layout_height="14dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+
+                <View
+                    android:id="@+id/wave_bar_11"
+                    android:layout_width="3dp"
+                    android:layout_height="10dp"
+                    android:layout_marginHorizontal="2dp"
+                    android:background="@drawable/bg_voice_wave_bar" />
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/voice_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="72dp"
+            android:text="松开发送  上滑取消"
+            android:textColor="#FFFFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/voice_arc"
+            android:layout_width="match_parent"
+            android:layout_height="124dp"
+            android:background="@drawable/bg_voice_arc_recording">
+
+            <ImageView
+                android:id="@+id/iv_mic_icon"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginTop="28dp"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_mic_white"
+                android:tint="#4A4A4A" />
+
+        </FrameLayout>
+    </LinearLayout>
 
 </FrameLayout>

@@ -127,6 +127,10 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".app.FavoriteDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".app.FeedbackActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

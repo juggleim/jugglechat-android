@@ -111,8 +111,15 @@ public class ConversationActivity extends AbsAppActivity {
         return i;
     }
 
-    // Overload to include a human-readable title for the conversation
-    // (UiConversation.name)
+    /**
+     * 带会话标题的便捷跳转方法。
+     *
+     * @param ctx 上下文
+     * @param conversationId 会话 id
+     * @param isGroup 是否群聊
+     * @param title 会话标题
+     * @return 会话页 Intent
+     */
     public static Intent intentFor(Context ctx, String conversationId, boolean isGroup, String title) {
         Intent i = intentFor(ctx, conversationId, title, isGroup, false, false);
         i.putExtra(EXTRA_TITLE, title);

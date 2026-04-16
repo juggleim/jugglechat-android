@@ -239,6 +239,11 @@ public class FavoritesActivity extends AbsAppActivity {
 
             holder.itemView.setOnClickListener(v -> {
                 if (!multiMode) {
+                    // tips: 非多选模式下点击 item 跳转收藏详情预览页
+                    Message msg = row.favorite == null ? null : row.favorite.getMessage();
+                    if (msg != null && !TextUtils.isEmpty(msg.getMessageId())) {
+                        FavoriteDetailActivity.start(FavoritesActivity.this, msg.getMessageId(), row.conversationName);
+                    }
                     return;
                 }
                 row.selected = !row.selected;

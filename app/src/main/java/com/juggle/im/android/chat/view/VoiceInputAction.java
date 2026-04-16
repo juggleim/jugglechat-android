@@ -3,10 +3,12 @@ package com.juggle.im.android.chat.view;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.media.MediaRecorder;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -25,18 +27,32 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Random;
 
 /**
  * 语音输入组件
  *
  * <p>按住说话录音，上滑取消。UI 分两种状态：</p>
  * <ul>
- *   <li>正常录音：半透明遮罩 + 主题色语音条（圆角矩形 + 底部半圆弧） + 麦克风图标 + "松开发送，上滑取消"</li>
- *   <li>上滑取消：弧形变黑，语音条变红，文字变为"松开取消"</li>
+ *   <li>正常录音：半透明遮罩 + 中部蓝色语音条 + 底部浅色大弧形面板 + "松开发送 上滑取消"</li>
+ *   <li>上滑取消：底部弧形变灰，语音条变红，提示文案变为红色的"松开取消"</li>
  * </ul>
  */
 public class VoiceInputAction extends FrameLayout {
     private static final String TAG = "VoiceInputAction";
+    private static final int[] WAVE_BAR_IDS = new int[]{
+            R.id.wave_bar_1,
+            R.id.wave_bar_2,
+            R.id.wave_bar_3,
+            R.id.wave_bar_4,
+            R.id.wave_bar_5,
+            R.id.wave_bar_6,
+            R.id.wave_bar_7,
+            R.id.wave_bar_8,
+            R.id.wave_bar_9,
+            R.id.wave_bar_10,
+            R.id.wave_bar_11
+    };
 
     public interface Callback {
         void onStart();
@@ -60,6 +76,9 @@ public class VoiceInputAction extends FrameLayout {
     private View voiceArc;
     private ImageView micIcon;
     private TextView voiceHint;
+    private View[] waveBars = new View[WAVE_BAR_IDS.length];
+    private float downRawY;
+    private final Random waveRandom = new Random();
 
     private Handler uiHandler = new Handler(Looper.getMainLooper());
 
@@ -83,6 +102,7 @@ public class VoiceInputAction extends FrameLayout {
             voiceArc = overlayView.findViewById(R.id.voice_arc);
             micIcon = overlayView.findViewById(R.id.iv_mic_icon);
             voiceHint = overlayView.findViewById(R.id.voice_hint);
+            bindWaveBars();
         } else {
             LayoutInflater li = LayoutInflater.from(getContext());
             overlayView = li.inflate(R.layout.voice_record_overlay, root, false);
@@ -93,6 +113,7 @@ public class VoiceInputAction extends FrameLayout {
             voiceArc = overlayView.findViewById(R.id.voice_arc);
             micIcon = overlayView.findViewById(R.id.iv_mic_icon);
             voiceHint = overlayView.findViewById(R.id.voice_hint);
+            bindWaveBars();
         }
         overlayView.setVisibility(GONE);
         setClickable(true);
@@ -106,6 +127,7 @@ public class VoiceInputAction extends FrameLayout {
         hintText.setOnTouchListener((v, event) -> {
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    downRawY = event.getRawY();
                     if (checkAudioPermission()) {
                         showOverlay(true);
                         startRecording();
@@ -117,11 +139,10 @@ public class VoiceInputAction extends FrameLayout {
                     }
                     return true;
                 case MotionEvent.ACTION_MOVE:
-                    float y = event.getY();
-                    float h = getHeight();
-                    // tips: 上滑超过 35% 区域视为取消
+                    // tips: 上滑超过固定距离后进入取消态，避免受控件自身高度影响
+                    float slideDistance = downRawY - event.getRawY();
                     boolean wasCancel = slideToCancel;
-                    slideToCancel = y < h * 0.35f;
+                    slideToCancel = slideDistance > dp(88);
                     if (wasCancel != slideToCancel) {
                         updateCancelState(slideToCancel);
                     }
@@ -141,6 +162,19 @@ public class VoiceInputAction extends FrameLayout {
         initOverlay(window);
     }
 
+    /**
+     * 每次切回语音输入态时，确保遮罩和音波条状态恢复可用。
+     */
+    private void ensureOverlayReady() {
+        if (overlayView == null) return;
+        bindWaveBars();
+        updateCancelState(false);
+        if (voiceBar != null) {
+            voiceBar.setScaleX(1f);
+            voiceBar.setScaleY(1f);
+        }
+    }
+
     public void hide() {
         setVisibility(GONE);
         showOverlay(false);
@@ -148,6 +182,7 @@ public class VoiceInputAction extends FrameLayout {
 
     public void show() {
         setVisibility(VISIBLE);
+        ensureOverlayReady();
     }
 
     private boolean checkAudioPermission() {
@@ -156,6 +191,7 @@ public class VoiceInputAction extends FrameLayout {
 
     private void startRecording() {
         try {
+            uiHandler.removeCallbacks(amplitudePollRunnable);
             File dir = getContext().getCacheDir();
             String name = "voice_" + new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date()) + ".m4a";
             outFile = new File(dir, name);
@@ -183,7 +219,18 @@ public class VoiceInputAction extends FrameLayout {
     private void showOverlay(boolean show) {
         if (overlayView == null) return;
         try {
+            overlayView.bringToFront();
             overlayView.setVisibility(show ? View.VISIBLE : View.GONE);
+            if (show) {
+                bindWaveBars();
+                updateCancelState(false);
+            } else {
+                resetWaveAnimation();
+                if (voiceBar != null) {
+                    voiceBar.setScaleX(1f);
+                    voiceBar.setScaleY(1f);
+                }
+            }
         } catch (Throwable t) {
         }
     }
@@ -205,8 +252,10 @@ public class VoiceInputAction extends FrameLayout {
                     : R.drawable.bg_voice_arc_recording);
         }
         if (voiceHint != null) {
-            voiceHint.setText(cancel ? "松开取消" : "松开发送，上滑取消");
+            voiceHint.setText(cancel ? "松开取消" : "松开发送  上滑取消");
+            voiceHint.setTextColor(cancel ? 0xFFFF4D4F : 0xFFFFFFFF);
         }
+        updateWaveBarColor(cancel);
     }
 
     private final Runnable amplitudePollRunnable = new Runnable() {
@@ -217,6 +266,7 @@ public class VoiceInputAction extends FrameLayout {
                 int amp = recorder.getMaxAmplitude();
                 float level = Math.min(1f, amp / 32767f);
                 applyMicScale(level);
+                applyWaveAnimation(level);
             } catch (Exception ignored) {
             }
             uiHandler.postDelayed(this, 120);
@@ -224,15 +274,99 @@ public class VoiceInputAction extends FrameLayout {
     };
 
     /**
-     * 根据音量大小缩放麦克风图标，提供录音反馈
+     * 绑定音波条视图
+     */
+    private void bindWaveBars() {
+        if (overlayView == null) return;
+        for (int i = 0; i < WAVE_BAR_IDS.length; i++) {
+            waveBars[i] = overlayView.findViewById(WAVE_BAR_IDS[i]);
+        }
+        updateWaveBarColor(false);
+        resetWaveAnimation();
+    }
+
+    /**
+     * 更新音波条颜色
+     *
+     * @param cancel true 为取消态
+     */
+    private void updateWaveBarColor(boolean cancel) {
+        int color = cancel ? 0xFFFFFFFF : 0xFFFFFFFF;
+        for (View waveBar : waveBars) {
+            if (waveBar != null) {
+                waveBar.setBackgroundTintList(ColorStateList.valueOf(color));
+            }
+        }
+    }
+
+    /**
+     * 根据当前音量刷新音波条高度，形成动态音波效果
+     *
+     * @param level 0..1
+     */
+    private void applyWaveAnimation(float level) {
+        for (int i = 0; i < waveBars.length; i++) {
+            View waveBar = waveBars[i];
+            if (waveBar == null) continue;
+            int minHeight = dpInt(6);
+            int maxHeight = dpInt(22);
+            float randomFactor = 0.45f + waveRandom.nextFloat() * 0.55f;
+            int targetHeight = minHeight + Math.round((maxHeight - minHeight) * Math.min(1f, level + randomFactor * 0.5f));
+            ViewGroup.LayoutParams params = waveBar.getLayoutParams();
+            if (params.height != targetHeight) {
+                params.height = targetHeight;
+                waveBar.setLayoutParams(params);
+            }
+            waveBar.setAlpha(0.55f + Math.min(0.45f, level * 0.5f + randomFactor * 0.3f));
+        }
+    }
+
+    /**
+     * 重置音波条为静态初始高度
+     */
+    private void resetWaveAnimation() {
+        int[] defaultHeightsDp = new int[]{10, 14, 18, 12, 20, 16, 20, 12, 18, 14, 10};
+        for (int i = 0; i < waveBars.length; i++) {
+            View waveBar = waveBars[i];
+            if (waveBar == null) continue;
+            ViewGroup.LayoutParams params = waveBar.getLayoutParams();
+            params.height = dpInt(defaultHeightsDp[i]);
+            waveBar.setLayoutParams(params);
+            waveBar.setAlpha(1f);
+        }
+    }
+
+    /**
+     * 根据音量大小轻微缩放语音条，提供录音反馈
      *
      * @param level 0..1
      */
     private void applyMicScale(float level) {
-        if (micIcon == null) return;
-        float s = 1f + level * 0.3f;
-        micIcon.setScaleX(s);
-        micIcon.setScaleY(s);
+        if (voiceBar == null) return;
+        float s = 1f + level * 0.08f;
+        voiceBar.setScaleX(s);
+        voiceBar.setScaleY(s);
+    }
+
+    /**
+     * dp 转 px
+     *
+     * @param value dp 值
+     * @return px 值
+     */
+    private float dp(float value) {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value,
+                getResources().getDisplayMetrics());
+    }
+
+    /**
+     * dp 转 int px
+     *
+     * @param value dp 值
+     * @return int px 值
+     */
+    private int dpInt(float value) {
+        return Math.round(dp(value));
     }
 
     private void finishOrCancel() {

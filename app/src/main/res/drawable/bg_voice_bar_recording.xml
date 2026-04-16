@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 语音条背景（正常录音状态）- 主题色，横向矩形圆角 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#356DFF"
+        android:endColor="#2F68FF" />
+    <corners android:radius="29dp" />
+</shape>

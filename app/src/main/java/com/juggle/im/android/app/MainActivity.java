@@ -29,7 +29,6 @@ import com.juggle.im.android.Application;
 import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthGuard;
 import com.juggle.im.android.auth.MultiDevicePolicy;
-import com.juggle.im.android.auth.StartupRouteUseCase;
 import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
@@ -76,14 +75,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // tips: 原 FlashActivity 路由逻辑，session 无效时直接跳转登录页
-        Application app = (Application) getApplicationContext();
-        StartupRouteUseCase.RouteDecision routeDecision = app.getStartupRouteDecision();
-        if (routeDecision == null || routeDecision.getTargetRoute() == StartupRouteUseCase.TargetRoute.LOGIN) {
-            goToLogin();
-            return;
-        }
-
+        // tips: 通过 AuthGuard 实时校验 session 有效性，无效时跳转登录页
         authGuard = AuthGuard.create(this);
         if (!authGuard.requireValidSessionForWrite(this, "main.enter")) {
             return;

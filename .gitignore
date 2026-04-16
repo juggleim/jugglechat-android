@@ -26,3 +26,7 @@ develop
 scripts
 .superpowers
 .claude
+/app/.classpath
+/app/.project
+/.project
+.settings
