@@ -356,7 +356,7 @@ public class MyProfileFragment extends Fragment {
     }
 
     private void navigateToFeedback() {
-        Intent intent = new Intent(getActivity(), FeedbackActivity.class);
+        Intent intent = FeedbackActivity.intentForFeedback(requireContext());
         startActivity(intent);
     }
 

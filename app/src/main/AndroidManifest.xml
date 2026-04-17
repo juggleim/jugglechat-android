@@ -172,6 +172,9 @@
             android:name=".chat.GroupManagementActivity"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".chat.GroupManagementRoleSettingActivity"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".chat.GroupAnnouncementActivity"
             android:screenOrientation="portrait" />
         <activity

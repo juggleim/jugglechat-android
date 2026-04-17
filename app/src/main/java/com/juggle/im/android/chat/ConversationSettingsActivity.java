@@ -28,6 +28,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.app.CreateGroupActivity;
+import com.juggle.im.android.app.FeedbackActivity;
 import com.juggle.im.android.server.beans.GroupAnnouncementBean;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupMemberBean;
@@ -275,7 +276,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
             startActivity(GroupInfoActivity.intentFor(this, conversationId));
         });
 
-        reportRow.root.setOnClickListener(v -> showReportDialog());
+        reportRow.root.setOnClickListener(v -> navigateToReportPage());
 
         btnQuitGroup.setOnClickListener(v -> onQuitOrDissolveGroup());
     }
@@ -376,69 +377,11 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         }
     }
 
-    private void showReportDialog() {
-        if (isGroup) {
-            showGroupReportDialog();
-            return;
-        }
-        ServiceManager.getUserService().submitFeedback(
-                "举报投诉",
-                conversationId,
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new ApiCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void data) {
-                        Toast.makeText(ConversationSettingsActivity.this, "已提交举报", Toast.LENGTH_SHORT).show();
-                    }
-
-                    @Override
-                    public void onError(int code, String message) {
-                        Toast.makeText(ConversationSettingsActivity.this,
-                                "举报失败：" + message,
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    private void showGroupReportDialog() {
-        EditText input = new EditText(this);
-        input.setSingleLine(false);
-        input.setMinLines(3);
-        input.setHint("请输入举报原因（选填）");
-        input.setPadding(dp(16), dp(12), dp(16), dp(12));
-
-        new AlertDialog.Builder(this)
-                .setTitle("举报投诉")
-                .setView(input)
-                .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton("提交", (dialog, which) -> {
-                    String reason = input.getText() == null ? "" : input.getText().toString().trim();
-                    String reportText = TextUtils.isEmpty(reason)
-                            ? conversationId
-                            : conversationId + "|" + reason;
-                    ServiceManager.getUserService().submitFeedback(
-                            "举报投诉",
-                            reportText,
-                            new ArrayList<>(),
-                            new ArrayList<>(),
-                            new ApiCallback<Void>() {
-                                @Override
-                                public void onSuccess(Void data) {
-                                    Toast.makeText(ConversationSettingsActivity.this,
-                                            "已提交举报",
-                                            Toast.LENGTH_SHORT).show();
-                                }
-
-                                @Override
-                                public void onError(int code, String message) {
-                                    Toast.makeText(ConversationSettingsActivity.this,
-                                            "举报失败：" + message,
-                                            Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                })
-                .show();
+    /**
+     * 进入举报投诉页面（与 snailchat 交互保持一致）。
+     */
+    private void navigateToReportPage() {
+        startActivity(FeedbackActivity.intentForReport(this, conversationId));
     }
 
     private void showEditDisplayNameDialog() {

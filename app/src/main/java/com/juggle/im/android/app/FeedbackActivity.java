@@ -1,6 +1,7 @@
 package com.juggle.im.android.app;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -39,6 +40,12 @@ import java.util.List;
 public class FeedbackActivity extends AbsAppActivity {
     private static final int REQ_PICK_IMAGES = 2101;
     private static final int MAX_IMAGE_COUNT = 8;
+    private static final String EXTRA_PAGE_TITLE = "extra_page_title";
+    private static final String EXTRA_CONTENT_PREFIX = "extra_content_prefix";
+    private static final String EXTRA_CATEGORY = "extra_category";
+    private static final String DEFAULT_PAGE_TITLE = "意见反馈";
+    private static final String DEFAULT_CATEGORY = "个人反馈";
+    private static final String REPORT_PAGE_TITLE = "举报投诉";
 
     private EditText inputView;
     private TextView counterView;
@@ -47,17 +54,46 @@ public class FeedbackActivity extends AbsAppActivity {
     private final List<FeedbackImageItem> images = new ArrayList<>();
     private FeedbackImageAdapter adapter;
     private boolean isSubmitting;
+    private String pageTitle = DEFAULT_PAGE_TITLE;
+    private String category = DEFAULT_CATEGORY;
+    private String contentPrefix = "";
+
+    /**
+     * 构建通用意见反馈页面启动参数。
+     *
+     * @param context 页面上下文
+     * @return 反馈页面 Intent（默认标题“意见反馈”）
+     */
+    public static Intent intentForFeedback(Context context) {
+        return new Intent(context, FeedbackActivity.class);
+    }
+
+    /**
+     * 构建举报投诉页面启动参数。
+     *
+     * @param context           页面上下文
+     * @param reportContentSeed 举报内容前缀（通常传会话 ID，提交时会与用户输入拼接）
+     * @return 反馈页面 Intent（标题为“举报投诉”）
+     */
+    public static Intent intentForReport(Context context, String reportContentSeed) {
+        Intent intent = new Intent(context, FeedbackActivity.class);
+        intent.putExtra(EXTRA_PAGE_TITLE, REPORT_PAGE_TITLE);
+        intent.putExtra(EXTRA_CATEGORY, DEFAULT_CATEGORY);
+        intent.putExtra(EXTRA_CONTENT_PREFIX, reportContentSeed == null ? "" : reportContentSeed.trim());
+        return intent;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feedback);
+        resolveIntentArgs();
 
         inputView = findViewById(R.id.et_feedback_input);
         counterView = findViewById(R.id.tv_counter);
         submitButton = findViewById(R.id.btn_submit);
 
-        ((TextView) findViewById(R.id.tv_title)).setText("意见反馈");
+        ((TextView) findViewById(R.id.tv_title)).setText(pageTitle);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         RecyclerView recyclerView = findViewById(R.id.rv_feedback_images);
@@ -81,6 +117,30 @@ public class FeedbackActivity extends AbsAppActivity {
         });
 
         submitButton.setOnClickListener(v -> submitFeedback());
+    }
+
+    /**
+     * 简要描述：
+     * 通过 Intent 参数兼容“意见反馈”和“举报投诉”两种入口，避免复制页面逻辑。
+     */
+    private void resolveIntentArgs() {
+        Intent intent = getIntent();
+        if (intent == null) {
+            return;
+        }
+        String argTitle = intent.getStringExtra(EXTRA_PAGE_TITLE);
+        String argCategory = intent.getStringExtra(EXTRA_CATEGORY);
+        String argPrefix = intent.getStringExtra(EXTRA_CONTENT_PREFIX);
+
+        if (!TextUtils.isEmpty(argTitle)) {
+            pageTitle = argTitle.trim();
+        }
+        if (!TextUtils.isEmpty(argCategory)) {
+            category = argCategory.trim();
+        }
+        if (!TextUtils.isEmpty(argPrefix)) {
+            contentPrefix = argPrefix.trim();
+        }
     }
 
     @Override
@@ -156,11 +216,12 @@ public class FeedbackActivity extends AbsAppActivity {
             return;
         }
 
-        String content = inputView.getText() == null ? "" : inputView.getText().toString().trim();
-        if (TextUtils.isEmpty(content) && images.isEmpty()) {
+        String inputContent = inputView.getText() == null ? "" : inputView.getText().toString().trim();
+        if (TextUtils.isEmpty(inputContent) && images.isEmpty()) {
             Toast.makeText(this, "请填写反馈内容", Toast.LENGTH_SHORT).show();
             return;
         }
+        String submitContent = buildSubmitContent(inputContent);
 
         for (FeedbackImageItem item : images) {
             if (item.uploading) {
@@ -177,7 +238,7 @@ public class FeedbackActivity extends AbsAppActivity {
         }
 
         setSubmitting(true);
-        ServiceManager.getUserService().submitFeedback("个人反馈", content, imageUrls, new ArrayList<>(), new ApiCallback<Void>() {
+        ServiceManager.getUserService().submitFeedback(category, submitContent, imageUrls, new ArrayList<>(), new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
                 setSubmitting(false);
@@ -191,6 +252,13 @@ public class FeedbackActivity extends AbsAppActivity {
                 Toast.makeText(FeedbackActivity.this, "反馈失败：" + safeText(message), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private String buildSubmitContent(String inputContent) {
+        if (TextUtils.isEmpty(contentPrefix)) {
+            return inputContent;
+        }
+        return contentPrefix + "|" + (inputContent == null ? "" : inputContent);
     }
 
     private void setSubmitting(boolean submitting) {

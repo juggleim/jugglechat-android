@@ -101,7 +101,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="谁可以编辑群消息" />
+                    app:srv_title="谁可以编辑群信息" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_chat"

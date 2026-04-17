@@ -13,7 +13,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import com.juggle.im.android.component.AbsAppActivity;
 import androidx.core.view.WindowInsetsControllerCompat;
 
@@ -31,17 +30,9 @@ import java.util.ArrayList;
 public class GroupManagementActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
     private static final int REQ_CHANGE_OWNER = 2001;
+    private static final int REQ_ROLE_SETTING = 2002;
 
     private static final int ROLE_OWNER = 1;
-    private static final int ROLE_ADMIN = 2;
-
-    private static final int SETTING_OWNER = 1;
-    private static final int SETTING_ADMIN = 2;
-    private static final int SETTING_MEMBER = 4;
-    private static final int SETTING_ADMIN_OWNER = SETTING_OWNER | SETTING_ADMIN;
-    private static final int SETTING_OWNER_MEMBER = SETTING_OWNER | SETTING_MEMBER;
-    private static final int SETTING_ADMIN_MEMBER = SETTING_ADMIN | SETTING_MEMBER;
-    private static final int SETTING_ALL = SETTING_OWNER | SETTING_ADMIN | SETTING_MEMBER;
 
     private static final String KEY_ADD_MEMBER = "group_add_member_right";
     private static final String KEY_TOP_MSG = "group_top_msg_right";
@@ -69,6 +60,13 @@ public class GroupManagementActivity extends AbsAppActivity {
 
     private boolean bindingHistorySwitch;
 
+    /**
+     * 构建群组管理页面的启动参数。
+     *
+     * @param context 页面上下文
+     * @param groupId 群组 ID
+     * @return 启动群组管理页的 Intent
+     */
     public static Intent intentFor(Context context, String groupId) {
         Intent intent = new Intent(context, GroupManagementActivity.class);
         intent.putExtra(EXTRA_GROUP_ID, groupId);
@@ -123,12 +121,24 @@ public class GroupManagementActivity extends AbsAppActivity {
     }
 
     private void bindActions() {
-        rowAddMember.setOnRowClickListener(v -> showSettingRoleDialog("谁可以添加成员", KEY_ADD_MEMBER, management == null ? 0 : management.getGroupAddMemberRight(), rowAddMember));
-        rowTop.setOnRowClickListener(v -> showSettingRoleDialog("谁可以置顶消息", KEY_TOP_MSG, management == null ? 0 : management.getGroupTopMsgRight(), rowTop));
-        rowMention.setOnRowClickListener(v -> showSettingRoleDialog("谁可以 @ 所有人", KEY_MENTION_ALL, management == null ? 0 : management.getGroupMentionAllRight(), rowMention));
-        rowEdit.setOnRowClickListener(v -> showSettingRoleDialog("谁可以编辑群消息", KEY_EDIT_MSG, management == null ? 0 : management.getGroupEditMsgRight(), rowEdit));
-        rowChat.setOnRowClickListener(v -> showSettingRoleDialog("谁可以在群里发言", KEY_SEND_MSG, management == null ? 0 : management.getGroupSendMsgRight(), rowChat));
-        rowLife.setOnRowClickListener(v -> showSettingRoleDialog("谁可以设置消息定时删除", KEY_SET_MSG_LIFE, management == null ? 0 : management.getGroupSetMsgLifeRight(), rowLife));
+        rowAddMember.setOnRowClickListener(v -> openRoleSettingPage("谁可以添加成员",
+                KEY_ADD_MEMBER,
+                management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupAddMemberRight()));
+        rowTop.setOnRowClickListener(v -> openRoleSettingPage("谁可以置顶消息",
+                KEY_TOP_MSG,
+                management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupTopMsgRight()));
+        rowMention.setOnRowClickListener(v -> openRoleSettingPage("谁可以 @ 所有人",
+                KEY_MENTION_ALL,
+                management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupMentionAllRight()));
+        rowEdit.setOnRowClickListener(v -> openRoleSettingPage("谁可以编辑群信息",
+                KEY_EDIT_MSG,
+                management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupEditMsgRight()));
+        rowChat.setOnRowClickListener(v -> openRoleSettingPage("谁可以在群里发言",
+                KEY_SEND_MSG,
+                management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupSendMsgRight()));
+        rowLife.setOnRowClickListener(v -> openRoleSettingPage("谁可以设置消息定时删除",
+                KEY_SET_MSG_LIFE,
+                management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupSetMsgLifeRight()));
 
         rowAdmins.setOnRowClickListener(v -> {
             if (groupDetail == null) {
@@ -165,6 +175,14 @@ public class GroupManagementActivity extends AbsAppActivity {
                     }
                 }))
                 .show());
+    }
+
+    /**
+     * 打开权限二级设置页，保持与 snailchat 一致的“进入页面后保存”的交互。
+     */
+    private void openRoleSettingPage(String title, String key, int currentValue) {
+        Intent intent = GroupManagementRoleSettingActivity.intentFor(this, groupId, title, key, currentValue);
+        startActivityForResult(intent, REQ_ROLE_SETTING);
     }
 
     private void setupHistoryRow() {
@@ -213,12 +231,12 @@ public class GroupManagementActivity extends AbsAppActivity {
     }
 
     private void renderManagement() {
-        rowAddMember.setSubtitle(roleToText(management.getGroupAddMemberRight()));
-        rowTop.setSubtitle(roleToText(management.getGroupTopMsgRight()));
-        rowMention.setSubtitle(roleToText(management.getGroupMentionAllRight()));
-        rowEdit.setSubtitle(roleToText(management.getGroupEditMsgRight()));
-        rowChat.setSubtitle(roleToText(management.getGroupSendMsgRight()));
-        rowLife.setSubtitle(roleToText(management.getGroupSetMsgLifeRight()));
+        rowAddMember.setSubtitle(GroupManagementRoleHelper.roleToText(management.getGroupAddMemberRight()));
+        rowTop.setSubtitle(GroupManagementRoleHelper.roleToText(management.getGroupTopMsgRight()));
+        rowMention.setSubtitle(GroupManagementRoleHelper.roleToText(management.getGroupMentionAllRight()));
+        rowEdit.setSubtitle(GroupManagementRoleHelper.roleToText(management.getGroupEditMsgRight()));
+        rowChat.setSubtitle(GroupManagementRoleHelper.roleToText(management.getGroupSendMsgRight()));
+        rowLife.setSubtitle(GroupManagementRoleHelper.roleToText(management.getGroupSetMsgLifeRight()));
 
         bindingHistorySwitch = true;
         rowHistory.setSwitchChecked(management.getHistoryMessageVisible() == 1);
@@ -227,44 +245,6 @@ public class GroupManagementActivity extends AbsAppActivity {
         boolean isOwner = groupDetail != null && groupDetail.getMyRole() == ROLE_OWNER;
         cardOwnerActions.setVisibility(isOwner ? View.VISIBLE : View.GONE);
         dissolveButton.setVisibility(isOwner ? View.VISIBLE : View.GONE);
-    }
-
-    private void showSettingRoleDialog(String title, String key, int currentValue, SettingRowView rowView) {
-        int normalized = normalizeRole(currentValue);
-        String[] labels = new String[]{"仅群主", "群主和管理员", "全部成员"};
-        int[] values = new int[]{SETTING_OWNER, SETTING_ADMIN_OWNER, SETTING_ALL};
-
-        int checkedIndex = 0;
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] == normalized) {
-                checkedIndex = i;
-                break;
-            }
-        }
-
-        final int[] selectedIndex = {checkedIndex};
-        new AlertDialog.Builder(this)
-                .setTitle(title)
-                .setSingleChoiceItems(labels, checkedIndex, (dialog, which) -> selectedIndex[0] = which)
-                .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton("确定", (dialog, which) -> {
-                    int selectedValue = values[selectedIndex[0]];
-                    ServiceManager.getUserService().setGroupManagement(groupId, key, selectedValue, new ApiCallback<Void>() {
-                        @Override
-                        public void onSuccess(Void data) {
-                            rowView.setSubtitle(labels[selectedIndex[0]]);
-                            updateManagementValue(key, selectedValue);
-                        }
-
-                        @Override
-                        public void onError(int code, String message) {
-                            Toast.makeText(GroupManagementActivity.this,
-                                    "保存失败：" + message,
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                })
-                .show();
     }
 
     private void updateManagementValue(String key, int value) {
@@ -295,39 +275,57 @@ public class GroupManagementActivity extends AbsAppActivity {
         }
     }
 
-    private int normalizeRole(int value) {
-        if (value == SETTING_OWNER || value == SETTING_ADMIN_OWNER || value == SETTING_ALL) {
-            return value;
+    /**
+     * 简要描述：
+     * 统一处理二级权限页返回，避免每个设置项单独写一套回传解析逻辑。
+     */
+    private void handleRoleSettingResult(@Nullable Intent data) {
+        if (data == null) {
+            return;
         }
-        if (value == SETTING_OWNER_MEMBER) {
-            return SETTING_OWNER;
+        String key = data.getStringExtra(GroupManagementRoleSettingActivity.RESULT_SETTING_KEY);
+        if (TextUtils.isEmpty(key)) {
+            return;
         }
-        if (value == SETTING_ADMIN_MEMBER) {
-            return SETTING_ADMIN_OWNER;
+        int selectedValue = data.getIntExtra(
+                GroupManagementRoleSettingActivity.RESULT_SETTING_VALUE,
+                GroupManagementRoleHelper.SETTING_ALL);
+        if (management == null) {
+            management = new GroupManagementBean();
         }
-        if (value == SETTING_ADMIN) {
-            return SETTING_ADMIN_OWNER;
+        updateManagementValue(key, selectedValue);
+        SettingRowView rowView = findPermissionRowByKey(key);
+        if (rowView != null) {
+            rowView.setSubtitle(GroupManagementRoleHelper.roleToText(selectedValue));
         }
-        if (value == SETTING_MEMBER) {
-            return SETTING_ALL;
-        }
-        return SETTING_ALL;
     }
 
-    private String roleToText(int role) {
-        int normalized = normalizeRole(role);
-        if (normalized == SETTING_OWNER) {
-            return "仅群主";
+    private SettingRowView findPermissionRowByKey(String key) {
+        switch (key) {
+            case KEY_ADD_MEMBER:
+                return rowAddMember;
+            case KEY_TOP_MSG:
+                return rowTop;
+            case KEY_MENTION_ALL:
+                return rowMention;
+            case KEY_EDIT_MSG:
+                return rowEdit;
+            case KEY_SEND_MSG:
+                return rowChat;
+            case KEY_SET_MSG_LIFE:
+                return rowLife;
+            default:
+                return null;
         }
-        if (normalized == SETTING_ADMIN_OWNER) {
-            return "群主和管理员";
-        }
-        return "全部成员";
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_ROLE_SETTING && resultCode == RESULT_OK) {
+            handleRoleSettingResult(data);
+            return;
+        }
         if (requestCode == REQ_CHANGE_OWNER && resultCode == RESULT_OK && data != null) {
             ArrayList<String> selected = data.getStringArrayListExtra(SELECTED_MEMBERS);
             if (selected == null || selected.isEmpty()) {
