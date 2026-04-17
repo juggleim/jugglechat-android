@@ -18,72 +18,32 @@
 
         <LinearLayout
             android:id="@+id/button_play_voice"
-            android:layout_width="72dp"
+            android:layout_width="0dp"
             android:layout_height="20dp"
+            android:layout_weight="1"
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <View
-                android:id="@+id/msg_wave_bar_1"
-                android:layout_width="3dp"
-                android:layout_height="10dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
 
-            <View
-                android:id="@+id/msg_wave_bar_2"
-                android:layout_width="3dp"
-                android:layout_height="14dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
+                <LinearLayout
+                    android:id="@+id/layout_voice_wave_bars"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal" />
 
-            <View
-                android:id="@+id/msg_wave_bar_3"
-                android:layout_width="3dp"
-                android:layout_height="18dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
-
-            <View
-                android:id="@+id/msg_wave_bar_4"
-                android:layout_width="3dp"
-                android:layout_height="12dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
-
-            <View
-                android:id="@+id/msg_wave_bar_5"
-                android:layout_width="3dp"
-                android:layout_height="20dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
-
-            <View
-                android:id="@+id/msg_wave_bar_6"
-                android:layout_width="3dp"
-                android:layout_height="12dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
-
-            <View
-                android:id="@+id/msg_wave_bar_7"
-                android:layout_width="3dp"
-                android:layout_height="18dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
-
-            <View
-                android:id="@+id/msg_wave_bar_8"
-                android:layout_width="3dp"
-                android:layout_height="14dp"
-                android:layout_marginEnd="3dp"
-                android:background="@drawable/bg_voice_wave_bar" />
-
-            <View
-                android:id="@+id/msg_wave_bar_9"
-                android:layout_width="3dp"
-                android:layout_height="10dp"
-                android:background="@drawable/bg_voice_wave_bar" />
+                <ProgressBar
+                    android:id="@+id/progress_voice_loading"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
+            </FrameLayout>
         </LinearLayout>
 
         <TextView
