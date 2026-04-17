@@ -65,7 +65,10 @@ public class FeedbackActivity extends AbsAppActivity {
      * @return 反馈页面 Intent（默认标题“意见反馈”）
      */
     public static Intent intentForFeedback(Context context) {
-        return new Intent(context, FeedbackActivity.class);
+        Intent intent = new Intent(context, FeedbackActivity.class);
+        intent.putExtra(EXTRA_PAGE_TITLE, DEFAULT_PAGE_TITLE);
+        intent.putExtra(EXTRA_CATEGORY, DEFAULT_CATEGORY);
+        return intent;
     }
 
     /**
@@ -242,8 +245,13 @@ public class FeedbackActivity extends AbsAppActivity {
             @Override
             public void onSuccess(Void data) {
                 setSubmitting(false);
-                Toast.makeText(FeedbackActivity.this, "反馈成功", Toast.LENGTH_SHORT).show();
-                finish();
+                String successText = isReportMode() ? "已提交举报，1s后自动返回" : "反馈成功，1s后自动返回";
+                Toast.makeText(FeedbackActivity.this, successText, Toast.LENGTH_SHORT).show();
+                inputView.postDelayed(() -> {
+                    if (!isFinishing() && !isDestroyed()) {
+                        finish();
+                    }
+                }, 1000);
             }
 
             @Override
@@ -252,6 +260,10 @@ public class FeedbackActivity extends AbsAppActivity {
                 Toast.makeText(FeedbackActivity.this, "反馈失败：" + safeText(message), Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private boolean isReportMode() {
+        return TextUtils.equals(pageTitle, REPORT_PAGE_TITLE);
     }
 
     private String buildSubmitContent(String inputContent) {
