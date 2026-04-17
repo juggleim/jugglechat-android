@@ -5,7 +5,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -112,6 +114,20 @@ public class ChatInputActionBar extends LinearLayout {
         void onKeyboardVisibilityChanged(boolean visible);
 
         void onKeyboardCreated(int h);
+
+        /**
+         * 输入框焦点变化回调。
+         *
+         * @param hasFocus 是否获得焦点
+         */
+        void onInputFocusChanged(boolean hasFocus);
+
+        /**
+         * 输入框文本变化回调。
+         *
+         * @param text 输入框当前内容
+         */
+        void onInputTextChanged(@NonNull String text);
 
         /**
          * at 触发
@@ -247,6 +263,9 @@ public class ChatInputActionBar extends LinearLayout {
                 editTextInput.setCursorVisible(true);
                 switchMode(InputMode.TEXT);
             }
+            if (listener != null) {
+                listener.onInputFocusChanged(hasFocus);
+            }
         });
 
         editTextInput.setOnClickListener(l -> {
@@ -306,6 +325,24 @@ public class ChatInputActionBar extends LinearLayout {
                 }
             }
             return false;
+        });
+
+        editTextInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (listener == null) {
+                    return;
+                }
+                listener.onInputTextChanged(s == null ? "" : s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
         });
     }
 

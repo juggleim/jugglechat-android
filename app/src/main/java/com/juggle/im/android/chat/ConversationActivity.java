@@ -46,6 +46,7 @@ import com.juggle.im.android.chat.plugin.VideoCallPlugin;
 import com.juggle.im.android.chat.plugin.VoiceCallPlugin;
 import com.juggle.im.android.chat.utils.FileUtils;
 import com.juggle.im.android.chat.message.MessageTypes;
+import com.juggle.im.android.chat.message.TypingNotifyMessage;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
@@ -95,6 +96,13 @@ public class ConversationActivity extends AbsAppActivity {
     private Conversation conversation;
     private final Handler typingHandler = new Handler(Looper.getMainLooper());
     private Runnable typingHideRunnable;
+    private long lastTypingSendTimeMs = 0L;
+    private int lastTypingTriggerLength = -1;
+    private boolean hasSentTypingStart = false;
+    private boolean inputHasFocus = false;
+    private static final long TYPING_VISIBLE_DURATION_MS = 3000L;
+    private static final long TYPING_SEND_MIN_INTERVAL_MS = 1200L;
+    private static final int TYPING_TRIGGER_STEP = 6;
 
     public static Intent intentFor(Context ctx,
             String conversationId,
@@ -195,6 +203,7 @@ public class ConversationActivity extends AbsAppActivity {
                         options.setReferredMessageId(msgId);
                         sendTextMessage(msg, options, conversation);
                     }
+                    notifyTypingStatus(TypingNotifyMessage.TYPE_END, true);
                 }
 
                 @Override
@@ -249,6 +258,16 @@ public class ConversationActivity extends AbsAppActivity {
                 @Override
                 public void onKeyboardCreated(int h) {
                     getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING);
+                }
+
+                @Override
+                public void onInputFocusChanged(boolean hasFocus) {
+                    onLocalInputFocusChanged(hasFocus);
+                }
+
+                @Override
+                public void onInputTextChanged(@NonNull String text) {
+                    onLocalInputTextChanged(text);
                 }
             });
             if (!TextUtils.isEmpty(title)) {
@@ -525,7 +544,7 @@ public class ConversationActivity extends AbsAppActivity {
         }
         // tips: typing 消息不加入消息列表，而是在 title bar 下方显示"正在输入"指示器
         if (MessageTypes.TYPING_NTF.equals(event.getMessage().getContentType())) {
-            showTypingIndicator();
+            handleTypingMessage(event.getMessage());
             return;
         }
         dispatchNewMessageToStream(event.getMessage());
@@ -540,34 +559,151 @@ public class ConversationActivity extends AbsAppActivity {
      * 显示"对方正在输入…"指示器，3秒内无新 typing 消息则自动隐藏。
      */
     private void showTypingIndicator() {
-        TextView tvTyping = findViewById(R.id.tv_typing_indicator);
-        if (tvTyping != null) {
-            tvTyping.setVisibility(VISIBLE);
-        }
+        setTypingIndicatorVisible(true);
         if (typingHideRunnable != null) {
             typingHandler.removeCallbacks(typingHideRunnable);
         }
         typingHideRunnable = () -> {
-            TextView tv = findViewById(R.id.tv_typing_indicator);
-            if (tv != null) {
-                tv.setVisibility(GONE);
-            }
-            typingHideRunnable = null;
+            hideTypingIndicator();
         };
-        typingHandler.postDelayed(typingHideRunnable, 3000L);
+        typingHandler.postDelayed(typingHideRunnable, TYPING_VISIBLE_DURATION_MS);
+    }
+
+    /**
+     * 隐藏"对方正在输入…"指示器。
+     */
+    private void hideTypingIndicator() {
+        if (typingHideRunnable != null) {
+            typingHandler.removeCallbacks(typingHideRunnable);
+            typingHideRunnable = null;
+        }
+        setTypingIndicatorVisible(false);
     }
 
     /**
      * 清理 typing 指示器定时器。
      */
     private void cleanupTypingIndicator() {
-        if (typingHideRunnable != null) {
-            typingHandler.removeCallbacks(typingHideRunnable);
-            typingHideRunnable = null;
+        hideTypingIndicator();
+    }
+
+    /**
+     * 处理收到的 typing 状态消息。
+     *
+     * <p>简要描述：严格按 START/END 控制 UI，避免 END 消息到达后仍然继续显示“正在输入”。</p>
+     *
+     * @param message typing 状态消息
+     */
+    private void handleTypingMessage(@NonNull Message message) {
+        if (isGroup || message.getDirection() == Message.MessageDirection.SEND) {
+            return;
         }
+        if (!(message.getContent() instanceof TypingNotifyMessage)) {
+            showTypingIndicator();
+            return;
+        }
+        TypingNotifyMessage typingNotifyMessage = (TypingNotifyMessage) message.getContent();
+        if (typingNotifyMessage.getType() == TypingNotifyMessage.TYPE_START) {
+            showTypingIndicator();
+            return;
+        }
+        hideTypingIndicator();
+    }
+
+    /**
+     * 输入框焦点变化处理。
+     *
+     * @param hasFocus 输入框是否获得焦点
+     */
+    private void onLocalInputFocusChanged(boolean hasFocus) {
+        if (isGroup) {
+            return;
+        }
+        inputHasFocus = hasFocus;
+        if (hasFocus) {
+            notifyTypingStatus(TypingNotifyMessage.TYPE_START, true);
+            return;
+        }
+        notifyTypingStatus(TypingNotifyMessage.TYPE_END, true);
+    }
+
+    /**
+     * 输入框文本变化处理。
+     *
+     * @param text 输入框当前文本
+     */
+    private void onLocalInputTextChanged(@NonNull String text) {
+        if (isGroup || !inputHasFocus) {
+            return;
+        }
+        if (TextUtils.isEmpty(text)) {
+            if (hasSentTypingStart) {
+                notifyTypingStatus(TypingNotifyMessage.TYPE_END, true);
+            }
+            lastTypingTriggerLength = -1;
+            return;
+        }
+        int length = text.length();
+        if (length % TYPING_TRIGGER_STEP == 0 && length != lastTypingTriggerLength) {
+            notifyTypingStatus(TypingNotifyMessage.TYPE_START, false);
+            lastTypingTriggerLength = length;
+        }
+    }
+
+    /**
+     * 发送 typing 状态消息。
+     *
+     * @param typingType 输入状态类型，0-结束输入，1-开始输入
+     * @param force 是否强制发送（忽略最小发送间隔）
+     */
+    private void notifyTypingStatus(int typingType, boolean force) {
+        if (isGroup || conversation == null) {
+            return;
+        }
+        if (typingType == TypingNotifyMessage.TYPE_END && !hasSentTypingStart) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (typingType == TypingNotifyMessage.TYPE_START
+                && !force
+                && now - lastTypingSendTimeMs < TYPING_SEND_MIN_INTERVAL_MS) {
+            return;
+        }
+        TypingNotifyMessage typingNotifyMessage = new TypingNotifyMessage();
+        typingNotifyMessage.setType(typingType);
+        MessageOptions options = new MessageOptions();
+        JIM.getInstance().getMessageManager().sendMessage(
+                typingNotifyMessage,
+                conversation,
+                options,
+                new IMessageManager.ISendMessageCallback() {
+                    @Override
+                    public void onSuccess(Message message) {
+                    }
+
+                    @Override
+                    public void onError(Message message, int errorCode) {
+                        Log.d("ConversationActivity", "send typing failed: " + errorCode);
+                    }
+                });
+        lastTypingSendTimeMs = now;
+        hasSentTypingStart = typingType == TypingNotifyMessage.TYPE_START;
+        if (!hasSentTypingStart) {
+            lastTypingTriggerLength = -1;
+        }
+    }
+
+    /**
+     * 控制顶部 typing 指示器显隐。
+     *
+     * <p>简要描述：指示器作为标题副标题，固定显示在 tv_title 下方，不再改变消息列表顶部偏移。</p>
+     *
+     * @param visible 是否显示 typing 指示器
+     */
+    private void setTypingIndicatorVisible(boolean visible) {
         TextView tvTyping = findViewById(R.id.tv_typing_indicator);
         if (tvTyping != null) {
-            tvTyping.setVisibility(GONE);
+            tvTyping.setVisibility(visible ? VISIBLE : GONE);
         }
     }
 
@@ -893,6 +1029,7 @@ public class ConversationActivity extends AbsAppActivity {
     protected void onPause() {
         super.onPause();
         syncConversationDraftFromInput();
+        onLocalInputFocusChanged(false);
     }
 
     @Override

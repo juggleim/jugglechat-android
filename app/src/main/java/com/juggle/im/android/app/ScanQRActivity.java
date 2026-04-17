@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.View;
@@ -207,11 +208,7 @@ public class ScanQRActivity extends AppCompatActivity {
         if (!isScanning) return;
         isScanning = false;
 
-        Vibrator vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-        if (vib != null) {
-            vib.vibrate(VibrationEffect.createOneShot(80,
-                    VibrationEffect.DEFAULT_AMPLITUDE));
-        }
+        safeVibrateFeedback();
 
         Intent data = new Intent();
         data.putExtra("scan_result", rawValue);
@@ -239,6 +236,32 @@ public class ScanQRActivity extends AppCompatActivity {
         }
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
+        }
+    }
+
+    /**
+     * 安全触发扫码成功震动反馈。
+     *
+     * <p>简要描述：兼容不同 Android 版本，并兜底处理无权限/厂商限制导致的异常，避免扫码后因震动崩溃。</p>
+     */
+    private void safeVibrateFeedback() {
+        Vibrator vib = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        if (vib == null || !vib.hasVibrator()) {
+            return;
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vib.vibrate(VibrationEffect.createOneShot(
+                        80,
+                        VibrationEffect.DEFAULT_AMPLITUDE
+                ));
+            } else {
+                vib.vibrate(80);
+            }
+        } catch (SecurityException ignored) {
+            // 无 VIBRATE 权限或系统限制时忽略震动，不影响扫码主流程
+        } catch (RuntimeException ignored) {
+            // 兼容部分设备在后台/快速 finish 场景下的振动服务异常
         }
     }
 }
