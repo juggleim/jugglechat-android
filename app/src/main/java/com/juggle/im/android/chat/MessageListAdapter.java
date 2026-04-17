@@ -400,18 +400,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         }
 
         private String reactionIdToEmoji(String reactionId) {
-            if (reactionId == null) return "";
-            switch (reactionId) {
-                case ":ok_hand": return "👌";
-                case ":thumb_up": return "👍";
-                case ":heart_eyes": return "😍";
-                case ":salute": return "🫡";
-                case ":heart": return "❤️";
-                case ":broken_heart": return "💔";
-                case ":poop": return "💩";
-                case ":tada": return "🎉";
-                default: return reactionId;
-            }
+            return ReactionStakerMapper.toEmoji(reactionId);
         }
 
         private void showActionPopup(View anchor, UiMessage ui) {
@@ -510,14 +499,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             bindAction(vReport, pw, ui, Action.REPORT);
             bindAction(vDelete, pw, ui, Action.DELETE);
 
-            bindAction(reactionOk, pw, ui, Action.REACTION_PREFIX + "👌");
-            bindAction(reactionThumbUp, pw, ui, Action.REACTION_PREFIX + "👍");
-            bindAction(reactionLove, pw, ui, Action.REACTION_PREFIX + "😍");
-            bindAction(reactionSalute, pw, ui, Action.REACTION_PREFIX + "🫡");
-            bindAction(reactionHeart, pw, ui, Action.REACTION_PREFIX + "❤️");
-            bindAction(reactionBrokenHeart, pw, ui, Action.REACTION_PREFIX + "💔");
-            bindAction(reactionPoop, pw, ui, Action.REACTION_PREFIX + "💩");
-            bindAction(reactionParty, pw, ui, Action.REACTION_PREFIX + "🎉");
+            bindAction(reactionOk, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_OK_HAND);
+            bindAction(reactionThumbUp, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_THUMB_UP);
+            bindAction(reactionLove, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_SMILING_FACE_WITH_HEARTS);
+            bindAction(reactionSalute, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_SALUTE);
+            bindAction(reactionHeart, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_HEART);
+            bindAction(reactionBrokenHeart, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_BROKEN_HEART);
+            bindAction(reactionPoop, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_POOP);
+            bindAction(reactionParty, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_PARTY);
         }
 
         private void bindAction(View actionView, PopupWindow popupWindow, UiMessage uiMessage, String action) {

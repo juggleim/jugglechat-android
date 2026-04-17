@@ -1039,8 +1039,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         if (message == null || action == null)
             return;
         if (action.startsWith(MessageListAdapter.Action.REACTION_PREFIX)) {
-            String emoji = action.substring(MessageListAdapter.Action.REACTION_PREFIX.length());
-            addReactionToMessage(message, emoji);
+            String reactionPayload = action.substring(MessageListAdapter.Action.REACTION_PREFIX.length());
+            addReactionToMessage(message, reactionPayload);
             return;
         }
         switch (action) {
@@ -1193,7 +1193,13 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         this.deleteMessages(Arrays.asList(message), current);
     }
 
-    private void addReactionToMessage(UiMessage message, String emoji) {
+    /**
+     * 对消息添加/取消 Reaction。
+     * <p>
+     * 简要描述：
+     * 统一使用 stakerReactionId 发送，兼容历史旧 ID 的“查重 + 取消”逻辑，防止跨端 ID 不一致导致重复回应。
+     */
+    private void addReactionToMessage(UiMessage message, String reactionPayload) {
         if (message.getMessageId() == null || message.getMessageId().trim().isEmpty()) {
             ToastUtils.show(requireContext(), R.string.operation_failed);
             return;
@@ -1204,7 +1210,11 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
                     conversationId);
         }
-        final String reactionId = toReactionId(emoji);
+        final String reactionId = ReactionStakerMapper.toCanonicalReactionId(reactionPayload);
+        if (reactionId.isEmpty()) {
+            ToastUtils.show(requireContext(), R.string.operation_failed);
+            return;
+        }
         final Conversation finalConv = conv;
 
         // Check if current user already reacted with this emoji (toggle logic)
@@ -1217,15 +1227,21 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 .getCachedMessagesReaction(messageIdList);
 
         boolean alreadyReacted = false;
+        String removeReactionId = reactionId;
         if (cachedReactions != null && !cachedReactions.isEmpty()) {
             for (MessageReaction reaction : cachedReactions) {
                 if (reaction.getItemList() != null) {
                     for (MessageReactionItem item : reaction.getItemList()) {
-                        if (reactionId.equals(item.getReactionId())) {
+                        String itemReactionId = item.getReactionId();
+                        String itemCanonicalId = ReactionStakerMapper.toCanonicalReactionId(itemReactionId);
+                        if (reactionId.equals(itemCanonicalId)) {
                             if (item.getUserInfoList() != null) {
                                 for (UserInfo user : item.getUserInfoList()) {
                                     if (currentUserId != null && currentUserId.equals(user.getUserId())) {
                                         alreadyReacted = true;
+                                        if (!TextUtils.isEmpty(itemReactionId)) {
+                                            removeReactionId = itemReactionId;
+                                        }
                                         break;
                                     }
                                 }
@@ -1243,7 +1259,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             JIM.getInstance().getMessageManager().removeMessageReaction(
                     message.getMessageId(),
                     finalConv,
-                    reactionId,
+                    removeReactionId,
                     new IMessageManager.ISimpleCallback() {
                         @Override
                         public void onSuccess() {
@@ -1265,6 +1281,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     new IMessageManager.ISimpleCallback() {
                         @Override
                         public void onSuccess() {
+                            String emoji = ReactionStakerMapper.toEmoji(reactionId);
                             ToastUtils.show(requireContext(), getString(R.string.msg_action_reaction_added, emoji));
                             // Refresh the message to update reaction display
                             refreshMessageById(message.getMessageId());
@@ -1275,29 +1292,6 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                             ToastUtils.show(requireContext(), R.string.operation_failed);
                         }
                     });
-        }
-    }
-
-    private String toReactionId(String emoji) {
-        switch (emoji) {
-            case "👌":
-                return ":ok_hand";
-            case "👍":
-                return ":thumb_up";
-            case "😍":
-                return ":heart_eyes";
-            case "🫡":
-                return ":salute";
-            case "❤️":
-                return ":heart";
-            case "💔":
-                return ":broken_heart";
-            case "💩":
-                return ":poop";
-            case "🎉":
-                return ":tada";
-            default:
-                return ":smile";
         }
     }
 

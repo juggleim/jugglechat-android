@@ -54,11 +54,14 @@
 
         <TextView
             android:id="@+id/tv_row_subtitle"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="22dp"
             android:layout_centerVertical="true"
+            android:layout_toEndOf="@id/row_left"
             android:layout_toStartOf="@id/iv_row_arrow"
+            android:layout_marginStart="12dp"
             android:layout_marginEnd="4dp"
+            android:gravity="end|center_vertical"
             android:ellipsize="end"
             android:maxLines="1"
             android:textColor="@color/search_secondary_text"

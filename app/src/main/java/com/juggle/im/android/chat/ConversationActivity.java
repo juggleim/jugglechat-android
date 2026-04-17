@@ -583,35 +583,46 @@ public class ConversationActivity extends AbsAppActivity {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onReactionUpdatedEvent(ReactionUpdatedEvent event) {
+        if (event == null || event.getConversation() == null || event.getMessageReaction() == null) {
+            return;
+        }
         if (!event.getConversation().getConversationId().equals(conversationId)) {
             return;
         }
-        // Refresh the message to get updated reactions
-        String messageId = event.getMessageReaction().getMessageId();
-        if (messageId != null) {
-            List<String> messageIdList = new ArrayList<>();
-            messageIdList.add(messageId);
-            JIM.getInstance().getMessageManager().getMessagesReaction(
-                    messageIdList,
-                    event.getConversation(),
-                    new IMessageManager.IMessageReactionListCallback() {
-                        @Override
-                        public void onSuccess(List<MessageReaction> reactionList) {
-                            // Reactions refreshed - notify adapter to update the specific message
-                            Log.d("ConversationActivity", "Reactions refreshed for message: " + messageId);
-                            MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
-                                    .findFragmentById(R.id.fragment_messages_container);
-                            if (frag != null) {
-                                frag.refreshMessageById(messageId);
-                            }
-                        }
 
-                        @Override
-                        public void onError(int errorCode) {
-                            Log.e("ConversationActivity", "Failed to refresh reactions: " + errorCode);
-                        }
-                    });
+        String messageId = event.getMessageReaction().getMessageId();
+        if (TextUtils.isEmpty(messageId)) {
+            return;
         }
+
+        MessageListFragment frag = (MessageListFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.fragment_messages_container);
+        // 简要描述：先用 SDK 本地缓存立即刷新 UI，避免等待网络拉取导致“对方已回应但本地不更新”。
+        if (frag != null) {
+            frag.refreshMessageById(messageId);
+        }
+
+        List<String> messageIdList = new ArrayList<>();
+        messageIdList.add(messageId);
+        JIM.getInstance().getMessageManager().getMessagesReaction(
+                messageIdList,
+                event.getConversation(),
+                new IMessageManager.IMessageReactionListCallback() {
+                    @Override
+                    public void onSuccess(List<MessageReaction> reactionList) {
+                        Log.d("ConversationActivity", "Reactions refreshed for message: " + messageId);
+                        MessageListFragment fragment = (MessageListFragment) getSupportFragmentManager()
+                                .findFragmentById(R.id.fragment_messages_container);
+                        if (fragment != null) {
+                            fragment.refreshMessageById(messageId);
+                        }
+                    }
+
+                    @Override
+                    public void onError(int errorCode) {
+                        Log.e("ConversationActivity", "Failed to refresh reactions: " + errorCode);
+                    }
+                });
     }
 
     private void handlePluginResult(String pluginId, String action, Object data) {
