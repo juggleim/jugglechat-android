@@ -249,7 +249,7 @@
                         android:layout_height="20dp"
                         android:layout_marginStart="8dp"
                         android:contentDescription="@string/auth_cd_show_password"
-                        android:src="@drawable/ic_auth_password_show" />
+                        android:src="@drawable/ic_auth_password_hide" />
                 </LinearLayout>
             </LinearLayout>
 

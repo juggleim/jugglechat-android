@@ -87,7 +87,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         setupRow(rowAddAccount, R.drawable.ic_add, "添加账号", "", true);
 
         rowBindEmail.setOnClickListener(v -> Toast.makeText(this, "绑定邮箱功能开发中", Toast.LENGTH_SHORT).show());
-        rowUpdatePwd.setOnClickListener(v -> Toast.makeText(this, "修改密码功能开发中", Toast.LENGTH_SHORT).show());
+        rowUpdatePwd.setOnClickListener(v -> startActivity(new Intent(this, UpdatePasswordActivity.class)));
         rowAddAccount.setOnClickListener(v -> Toast.makeText(this, "添加账号功能开发中", Toast.LENGTH_SHORT).show());
 
         findViewById(R.id.btn_logout).setOnClickListener(v -> confirmLogout());

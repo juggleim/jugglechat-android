@@ -21,6 +21,16 @@ public interface UserService {
 
     void setAccount(String account, ApiCallback<Void> callback);
 
+    /**
+     * 修改当前用户密码。
+     *
+     * @param userId       用户 ID
+     * @param password     原密码（MD5）
+     * @param newPassword  新密码（MD5）
+     * @param callback     请求回调
+     */
+    void updatePassword(String userId, String password, String newPassword, ApiCallback<Void> callback);
+
     void getUserInfo(String userId, ApiCallback<UserInfoBean> callback);
 
     void getQRCode(ApiCallback<QRCodeBean> callback);

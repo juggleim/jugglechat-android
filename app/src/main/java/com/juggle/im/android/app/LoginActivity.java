@@ -160,10 +160,10 @@ public class LoginActivity extends AbsAppActivity {
         if (passwordToggle instanceof android.widget.ImageView) {
             android.widget.ImageView toggleIcon = (android.widget.ImageView) passwordToggle;
             if (isPasswordVisible) {
-                toggleIcon.setImageResource(R.drawable.ic_auth_password_hide);
+                toggleIcon.setImageResource(R.drawable.ic_auth_password_show);
                 toggleIcon.setContentDescription(getString(R.string.auth_cd_hide_password));
             } else {
-                toggleIcon.setImageResource(R.drawable.ic_auth_password_show);
+                toggleIcon.setImageResource(R.drawable.ic_auth_password_hide);
                 toggleIcon.setContentDescription(getString(R.string.auth_cd_show_password));
             }
         }

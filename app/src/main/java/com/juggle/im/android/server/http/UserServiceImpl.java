@@ -75,6 +75,23 @@ public class UserServiceImpl extends BaseService implements UserService {
         enqueueJson("/jim/users/setaccount", body, Void.class, callback);
     }
 
+    /**
+     * 修改当前用户密码。
+     *
+     * @param userId      用户 ID
+     * @param password    原密码（MD5）
+     * @param newPassword 新密码（MD5）
+     * @param callback    请求回调
+     */
+    @Override
+    public void updatePassword(String userId, String password, String newPassword, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("user_id", userId == null ? "" : userId.trim());
+        body.put("password", password == null ? "" : password.trim());
+        body.put("new_password", newPassword == null ? "" : newPassword.trim());
+        enqueueJson("/jim/users/updatepwd", body, Void.class, callback);
+    }
+
     @Override
     public void getUserInfo(String userId, ApiCallback<UserInfoBean> callback) {
         enqueueGet("/jim/users/info?user_id=" + userId, UserInfoBean.class, callback);
