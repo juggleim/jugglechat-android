@@ -69,6 +69,14 @@ interface MessageStreamSink {
     void insertMention(ArrayList<String> userIds, ArrayList<String> userNames);
 
     void showKeyboardIfNeed();
+
+    /**
+     * 滚动到指定消息并高亮。
+     *
+     * @param messageId        目标消息 ID
+     * @param fallbackTimestamp 目标消息时间戳，用于消息未命中时兜底定位
+     */
+    void scrollToMessage(@Nullable String messageId, long fallbackTimestamp);
 }
 
 public class MessageListFragment extends Fragment implements MessageStreamSink {
@@ -113,6 +121,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private int newMessageCount = 0;
     private long mentionTargetTimestamp = 0L;
     private String mentionTargetMessageId = "";
+    private Runnable clearHighlightRunnable;
 
     private static final class ViewportAnchor {
         final int firstVisiblePosition;
@@ -495,10 +504,35 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         input.insertMention(userIds, userNames);
     }
 
+    @Override
     public void showKeyboardIfNeed() {
         ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
         if (input != null) {
             input.showKeyboardIfNeed();
+        }
+    }
+
+    /**
+     * 滚动到指定消息并高亮。
+     *
+     * <p>tips：优先使用 messageId 精确命中；若当前列表未命中，则按时间戳重新拉取附近消息，保证置顶消息可点击跳转。</p>
+     *
+     * @param messageId          目标消息 ID
+     * @param fallbackTimestamp  目标消息时间戳
+     */
+    @Override
+    public void scrollToMessage(@Nullable String messageId, long fallbackTimestamp) {
+        if (adapter == null) {
+            return;
+        }
+        List<UiMessage> display = adapter.getCurrentList();
+        int target = findTargetPosition(display, messageId, fallbackTimestamp);
+        if (target >= 0) {
+            highlightTargetMessage(display, target);
+            return;
+        }
+        if (fallbackTimestamp > 0L) {
+            loadAroundTimestamp(fallbackTimestamp, messageId);
         }
     }
 
@@ -842,9 +876,36 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             if (target < 0) {
                 return;
             }
-            int offset = recyclerView.getHeight() > 0 ? recyclerView.getHeight() / 4 : 0;
-            layoutManager.scrollToPositionWithOffset(target, offset);
+            highlightTargetMessage(display, target);
         });
+    }
+
+    /**
+     * 滚动并高亮目标消息。
+     *
+     * <p>tips：高亮状态写入 UiMessage extension，不改动 SDK Message，避免影响消息实体同步逻辑。</p>
+     *
+     * @param displayList 当前展示列表
+     * @param target      目标位置
+     */
+    private void highlightTargetMessage(@NonNull List<UiMessage> displayList, int target) {
+        if (target < 0 || target >= displayList.size()) {
+            return;
+        }
+        int offset = recyclerView.getHeight() > 0 ? recyclerView.getHeight() / 4 : 0;
+        layoutManager.scrollToPositionWithOffset(target, offset);
+        UiMessage targetMessage = displayList.get(target);
+        targetMessage.putExtension("highlight", true);
+        adapter.notifyItemChanged(target);
+        recyclerView.removeCallbacks(clearHighlightRunnable);
+        clearHighlightRunnable = () -> {
+            targetMessage.putExtension("highlight", false);
+            int latestIndex = adapter.getCurrentList().indexOf(targetMessage);
+            if (latestIndex >= 0) {
+                adapter.notifyItemChanged(latestIndex);
+            }
+        };
+        recyclerView.postDelayed(clearHighlightRunnable, 10_000L);
     }
 
     private int findTargetPosition(@NonNull List<UiMessage> displayList, @Nullable String targetMessageId,
@@ -1342,5 +1403,14 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         if (idx >= 0) {
             adapter.notifyItemChanged(idx);
         }
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (recyclerView != null && clearHighlightRunnable != null) {
+            recyclerView.removeCallbacks(clearHighlightRunnable);
+        }
+        clearHighlightRunnable = null;
+        super.onDestroyView();
     }
 }

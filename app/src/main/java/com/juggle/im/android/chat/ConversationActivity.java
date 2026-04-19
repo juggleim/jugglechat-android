@@ -396,18 +396,45 @@ public class ConversationActivity extends AbsAppActivity {
         View vPin = findViewById(R.id.layout_pin_message);
         TextView tvContent = vPin.findViewById(R.id.pin_message_content);
         TextView tvSubtitle = vPin.findViewById(R.id.pin_message_subtitle);
-        String userName = userInfo == null ? "" : userInfo.getUserName();
-        tvContent.setText(
-                userName + "：" + MessageUtils.getMessageSummary(ConversationActivity.this, message));
+        String operatorName = userInfo == null ? "" : userInfo.getUserName();
+        String senderName = resolveMessageSenderName(message);
+        tvContent.setText(senderName + "：" + MessageUtils.getMessageSummary(ConversationActivity.this, message));
         if (tvSubtitle != null) {
-            tvSubtitle.setText(getString(R.string.msg_pin_by_user, userName));
+            tvSubtitle.setText(getString(R.string.msg_pin_by_user, operatorName));
         }
         View del = findViewById(R.id.button_del_pin);
         del.setOnClickListener(v -> {
             JIM.getInstance().getMessageManager().setTop(message.getMessageId(), conversation, false, null);
             vPin.setVisibility(GONE);
         });
+        vPin.setOnClickListener(v -> {
+            MessageStreamSink streamSink = findMessageStreamSink();
+            if (streamSink != null) {
+                streamSink.scrollToMessage(message.getMessageId(), message.getTimestamp());
+            }
+        });
         vPin.setVisibility(VISIBLE);
+    }
+
+    /**
+     * 解析置顶消息的发送者名称。
+     *
+     * @param message 目标消息
+     * @return 展示名称
+     */
+    private String resolveMessageSenderName(@Nullable Message message) {
+        if (message == null) {
+            return "";
+        }
+        String senderUserId = message.getSenderUserId();
+        if (!TextUtils.isEmpty(senderUserId)) {
+            UserInfo cacheUser = JIM.getInstance().getUserInfoManager().getUserInfo(senderUserId);
+            if (cacheUser != null && !TextUtils.isEmpty(cacheUser.getUserName())) {
+                return cacheUser.getUserName();
+            }
+            return senderUserId;
+        }
+        return "";
     }
 
     private void applySystemBarStyle() {
