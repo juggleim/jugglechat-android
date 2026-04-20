@@ -22,6 +22,7 @@ import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.ImageMessage;
+import com.juggle.im.model.messages.MergeMessage;
 
 /**
  * Generic base for all message content views used by the adapter.
@@ -48,8 +49,10 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
      */
     final public void bind(T message, K content, boolean isGroup, View itemView) {
         boolean isSend = message.getDirection() == Message.MessageDirection.SEND;
-        boolean isImageMessage = content instanceof ImageMessage;
-        configureBubbleStyle(itemView, isImageMessage, isSend);
+        boolean disableBackground = content instanceof ImageMessage || content instanceof MergeMessage;
+
+        resetMessageMetaViews(itemView);
+        configureBubbleStyle(itemView, disableBackground, isSend);
 
         ImageView ivAvatar = itemView.findViewById(R.id.image_avatar);
         String senderId = message.getSenderId();
@@ -96,7 +99,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         ImageView imageStatusView = itemView.findViewById(R.id.image_msg_read_status);
 
         if (isSend) {
-            if (isImageMessage) {
+            if (disableBackground) {
                 hideStatus(msgStatusContainer, ivStatus, progressBar);
                 bindSendStatus(message, imageStatusContainer, imageStatusView, imageProgressBar);
             } else {
@@ -117,7 +120,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             spanTimeTxt = MessageUtils.formatTimestamp(message.getMessage().getTimestamp()) + spanTimeTxt;
         }
 
-        if (isImageMessage) {
+        if (disableBackground) {
             if (vMsgTime != null) {
                 vMsgTime.setVisibility(GONE);
             }
@@ -143,6 +146,55 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         this.bindItem(message, content, isGroup);
     }
 
+    private void resetMessageMetaViews(View itemView) {
+        ViewGroup msgStatusContainer = itemView.findViewById(R.id.msg_status_container);
+        ImageView msgStatusView = itemView.findViewById(R.id.msg_read_status);
+        ProgressBar msgProgressBar = itemView.findViewById(R.id.msg_send_status);
+        if (msgStatusContainer != null) {
+            msgStatusContainer.setVisibility(GONE);
+        }
+        if (msgStatusView != null) {
+            msgStatusView.setVisibility(GONE);
+            msgStatusView.setImageDrawable(null);
+            msgStatusView.clearColorFilter();
+        }
+        if (msgProgressBar != null) {
+            msgProgressBar.setVisibility(GONE);
+        }
+
+        ViewGroup imageStatusContainer = itemView.findViewById(R.id.image_msg_status_container);
+        ImageView imageStatusView = itemView.findViewById(R.id.image_msg_read_status);
+        ProgressBar imageProgressBar = itemView.findViewById(R.id.image_msg_send_status);
+        if (imageStatusContainer != null) {
+            imageStatusContainer.setVisibility(GONE);
+        }
+        if (imageStatusView != null) {
+            imageStatusView.setVisibility(GONE);
+            imageStatusView.setImageDrawable(null);
+            imageStatusView.clearColorFilter();
+        }
+        if (imageProgressBar != null) {
+            imageProgressBar.setVisibility(GONE);
+        }
+
+        TextView msgTime = itemView.findViewById(R.id.msg_sent_time);
+        if (msgTime != null) {
+            msgTime.setVisibility(GONE);
+        }
+        TextView imageMsgTime = itemView.findViewById(R.id.image_msg_time);
+        if (imageMsgTime != null) {
+            imageMsgTime.setVisibility(GONE);
+        }
+    }
+
+    /**
+     * 绑定发送状态视图。
+     *
+     * @param message 消息包装对象
+     * @param statusContainer 状态容器
+     * @param statusView 已发送/已读/失败图标
+     * @param progressBar 发送中进度条
+     */
     private void bindSendStatus(T message, ViewGroup statusContainer, ImageView statusView, ProgressBar progressBar) {
         if (statusContainer == null && statusView == null && progressBar == null) {
             return;
@@ -152,6 +204,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         }
         if (statusView != null) {
             statusView.setVisibility(GONE);
+            statusView.setImageDrawable(null);
             statusView.clearColorFilter();
         }
         if (progressBar != null) {
@@ -202,23 +255,23 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         }
     }
 
-    private void configureBubbleStyle(View itemView, boolean isImageMessage, boolean isSend) {
+    private void configureBubbleStyle(View itemView, boolean disableBackground, boolean isSend) {
         ViewGroup bubbleContainer = itemView.findViewById(R.id.message_bubble_container);
         if (bubbleContainer == null) {
             return;
         }
-        if (isImageMessage) {
+        if (disableBackground) {
             bubbleContainer.setBackground(null);
             bubbleContainer.setPadding(0, 0, 0, 0);
-            return;
+        } else {
+            bubbleContainer.setBackgroundResource(isSend ? R.drawable.bg_message_sent : R.drawable.bg_message_received);
+            bubbleContainer.setPadding(
+                    dp(itemView, 4),
+                    dp(itemView, 3),
+                    dp(itemView, 4),
+                    dp(itemView, 2)
+            );
         }
-        bubbleContainer.setBackgroundResource(isSend ? R.drawable.bg_message_sent : R.drawable.bg_message_received);
-        bubbleContainer.setPadding(
-                dp(itemView, 4),
-                dp(itemView, 3),
-                dp(itemView, 4),
-                dp(itemView, 2)
-        );
     }
 
     private int dp(View itemView, int value) {

@@ -43,8 +43,7 @@ public class MergeMessageActivity extends AbsAppActivity {
 
         // Title bar
         TextView tvTitle = findViewById(R.id.merge_title);
-        ImageView btnBack = findViewById(R.id.merge_back);
-        ImageView btnMore = findViewById(R.id.merge_more);
+        ImageView btnBack = findViewById(R.id.iv_back);
         btnBack.setOnClickListener(v -> finish());
         recyclerView = findViewById(R.id.merge_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));

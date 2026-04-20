@@ -5,7 +5,6 @@ import static android.view.View.VISIBLE;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
@@ -231,8 +230,6 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private final View reactionContainer;
         private final View msgViewContainer;
         private final TextView reactionEmojis;
-        private Drawable defaultBubbleBackground;
-        private Integer defaultReactionBackgroundColor;
         private String lastBoundStableKey = "";
         private Class<?> lastBoundContentClass = null;
         private boolean lastBoundHasReply = false;
@@ -338,28 +335,16 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         /**
          * 绑定消息高亮态。
          *
-         * <p>tips：仅在命中置顶跳转目标时临时覆盖气泡和回应条背景，10 秒后由外层清理。</p>
+         * <p>tips：高亮只做临时覆盖，非高亮时始终回退到当前消息类型应有的默认样式，避免 RecyclerView 复用导致背景串位。</p>
          */
         private void bindHighlightState(UiMessage uiMessage) {
             boolean isHighlight = Boolean.TRUE.equals(uiMessage.getExtension("highlight"));
-            if (msgViewContainer != null) {
-                if (defaultBubbleBackground == null) {
-                    defaultBubbleBackground = msgViewContainer.getBackground();
-                }
-                if (isHighlight) {
-                    msgViewContainer.setBackgroundColor(0xFFFFF3C4);
-                } else {
-                    msgViewContainer.setBackground(defaultBubbleBackground);
-                }
+            if (msgViewContainer != null && isHighlight) {
+                msgViewContainer.setBackgroundColor(0xFFFFF3C4);
             }
             if (reactionContainer != null) {
-                if (reactionContainer.getBackground() instanceof ColorDrawable) {
-                    defaultReactionBackgroundColor = ((ColorDrawable) reactionContainer.getBackground()).getColor();
-                }
                 if (isHighlight) {
                     reactionContainer.setBackgroundColor(0xFFE8B93C);
-                } else if (defaultReactionBackgroundColor != null) {
-                    reactionContainer.setBackgroundColor(defaultReactionBackgroundColor);
                 } else {
                     reactionContainer.setBackgroundResource(R.drawable.bg_reaction_pill);
                 }

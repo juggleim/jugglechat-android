@@ -34,26 +34,39 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
         TextView tvPreview = this.itemView.findViewById(R.id.merge_preview_text);
         TextView tvTitle = this.itemView.findViewById(R.id.merge_msg_title);
         tvTitle.setText(merge.getTitle());
+
         List<MergeMessagePreviewUnit> msgs = merge.getPreviewList();
         StringBuilder sb = new StringBuilder();
         int show = Math.min(4, msgs.size());
         for (int i = 0; i < show; i++) {
-            String name = msgs.get(i).getSender().getUserName();
+            MergeMessagePreviewUnit previewUnit = msgs.get(i);
+            String name = previewUnit.getSender() != null ? previewUnit.getSender().getUserName() : null;
+            if (StringUtils.isBlank(name) && previewUnit.getSender() != null) {
+                UserInfo ui = JIM.getInstance().getUserInfoManager().getUserInfo(previewUnit.getSender().getUserId());
+                if (ui != null) {
+                    name = ui.getUserName();
+                }
+            }
             if (StringUtils.isBlank(name)) {
-                UserInfo ui = JIM.getInstance().getUserInfoManager().getUserInfo(msgs.get(i).getSender().getUserId());
-                if (ui != null) name = ui.getUserName();
+                name = "未知用户";
+            }
+            String previewContent = previewUnit.getPreviewContent();
+            if (StringUtils.isBlank(previewContent)) {
+                previewContent = "[消息]";
             }
             sb.append(name)
-                    .append(": ")
-                    .append(msgs.get(i).getPreviewContent());
-            if (i < show - 1) sb.append('\n');
+                    .append("：")
+                    .append(previewContent);
+            if (i < show - 1) {
+                sb.append('\n');
+            }
         }
-        if (msgs.size() > 4) sb.append("...");
+        if (msgs.size() > 4) {
+            sb.append("\n...");
+        }
         tvPreview.setText(sb.toString());
 
-        this.itemView.setOnClickListener(v -> {
-            MergeMessageActivity.start(this.itemView.getContext(), m.getMessageId());
-        });
+        this.itemView.setOnClickListener(v -> MergeMessageActivity.start(this.itemView.getContext(), m.getMessageId()));
         this.itemView.setOnLongClickListener(v -> {
             ((ViewGroup) this.itemView.getParent()).performLongClick();
             return false;
