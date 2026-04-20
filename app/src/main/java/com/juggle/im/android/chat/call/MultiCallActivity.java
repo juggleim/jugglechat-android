@@ -42,15 +42,25 @@ public class MultiCallActivity extends BaseCallActivity {
     private TextView tvCallStatus;
     private TextView tvMicLabel;
     private TextView tvSpeakerLabel;
+    private TextView tvCameraLabel;
+    private TextView tvHangupLabel;
     private View btnHangup;
     private View btnInvite;
     private View btnAccept;
     private View btnMinimize;
+    private View btnSwitchCamera;
+    private View secondaryActionContainer;
+    private View btnMic;
+    private View btnSpeaker;
+    private View btnCamera;
     private ImageView btnMicMute;
     private ImageView btnSpeakerMute;
+    private ImageView ivCamera;
 
     private boolean isSpeakerMute;
     private boolean isMicMute;
+    private boolean isCameraEnabled = true;
+    private boolean isFrontCamera = true;
     private boolean timerStarted;
 
     @Override
@@ -69,8 +79,6 @@ public class MultiCallActivity extends BaseCallActivity {
 
         updateParticipantView(Arrays.asList(currentUserId));
         updateParticipantView(targetUserIds);
-
-        btnInvite.setVisibility(isGroupCall ? VISIBLE : GONE);
 
         if (!connected && isIncoming(direction)) {
             playCallRing();
@@ -168,57 +176,83 @@ public class MultiCallActivity extends BaseCallActivity {
         btnHangup = findViewById(R.id.btn_hangup);
         btnMicMute = findViewById(R.id.iv_mic);
         btnSpeakerMute = findViewById(R.id.iv_speaker);
+        ivCamera = findViewById(R.id.iv_camera);
         tvMicLabel = findViewById(R.id.tv_mic_label);
         tvSpeakerLabel = findViewById(R.id.tv_speaker_label);
+        tvCameraLabel = findViewById(R.id.tv_camera_label);
+        tvHangupLabel = findViewById(R.id.tv_hangup_label);
         btnAccept = findViewById(R.id.btn_accept);
         btnMinimize = findViewById(R.id.btn_minimize);
+        btnSwitchCamera = findViewById(R.id.btn_switch_camera);
+        secondaryActionContainer = findViewById(R.id.secondary_action_container);
+        btnMic = findViewById(R.id.btn_mic);
+        btnSpeaker = findViewById(R.id.btn_speaker);
+        btnCamera = findViewById(R.id.btn_camera);
     }
 
     private void initActions() {
         btnMinimize.setOnClickListener(v -> minimizeToFloating(true));
 
-        btnInvite.setOnClickListener(v -> {
-            if (!isGroupCall) {
-                Toast.makeText(this, R.string.call_invite_only_group, Toast.LENGTH_SHORT).show();
-                return;
-            }
-            Intent it = new Intent(this, SelectMemberActivity.class);
-            it.putExtra(EXTRA_IS_VIDEO_CALL, isVideoCall);
-            it.putExtra(GROUP_ID, conversationId);
-            it.putStringArrayListExtra(DISABLE_MEMBERS, targetUserIds);
-            startActivityForResult(it, REQUEST_SELECT_MEMBERS);
-        });
+        btnInvite.setOnClickListener(v -> openInvitePage());
 
         btnHangup.setOnClickListener(v -> {
             hangupCall();
             finish();
         });
 
-        btnMicMute.setOnClickListener(v -> toggleMic());
-        btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
+        btnMic.setOnClickListener(v -> toggleMic());
+        btnSpeaker.setOnClickListener(v -> toggleSpeaker());
+        btnCamera.setOnClickListener(v -> toggleCamera());
+        btnSwitchCamera.setOnClickListener(v -> switchCamera());
         btnAccept.setOnClickListener(v -> acceptCall());
+    }
+
+    /**
+     * 打开拉人页面。
+     */
+    private void openInvitePage() {
+        if (!isGroupCall) {
+            Toast.makeText(this, R.string.call_invite_only_group, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Intent it = new Intent(this, SelectMemberActivity.class);
+        it.putExtra(EXTRA_IS_VIDEO_CALL, isVideoCall);
+        it.putExtra(GROUP_ID, conversationId);
+        it.putStringArrayListExtra(DISABLE_MEMBERS, targetUserIds);
+        startActivityForResult(it, REQUEST_SELECT_MEMBERS);
     }
 
     /**
      * 刷新多人通话整体状态栏。
      *
      * 简要描述：
-     * 通话状态仅由 connected 和 direction 决定，避免“接听按钮/计时/文案”出现互相覆盖。
+     * 通话状态仅由 connected + direction + isVideoCall + isGroupCall 决定，避免“接听按钮/计时/底部操作区”互相覆盖。
      */
     private void updateCallUiState() {
-        if (!connected) {
-            tvCallTime.setVisibility(GONE);
-            if ("outgoing".equals(direction)) {
-                btnAccept.setVisibility(GONE);
-                tvCallStatus.setText(isVideoCall ? R.string.call_status_video_outgoing : R.string.call_status_voice_outgoing);
-            } else {
-                btnAccept.setVisibility(VISIBLE);
-                tvCallStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
-            }
+        boolean incomingWaiting = !connected && isIncoming(direction);
+        boolean outgoingWaiting = !connected && !incomingWaiting;
+        boolean showSecondaryActions = connected;
+        boolean showCameraAction = connected && isVideoCall;
+
+        tvCallTime.setVisibility(connected ? VISIBLE : GONE);
+        btnAccept.setVisibility(incomingWaiting ? VISIBLE : GONE);
+        secondaryActionContainer.setVisibility(showSecondaryActions ? VISIBLE : GONE);
+        btnCamera.setVisibility(showCameraAction ? VISIBLE : GONE);
+        btnSwitchCamera.setVisibility(showCameraAction ? VISIBLE : GONE);
+        btnInvite.setVisibility(connected && isGroupCall ? VISIBLE : GONE);
+        tvHangupLabel.setText(incomingWaiting ? R.string.call_action_reject : R.string.call_action_cancel);
+
+        if (outgoingWaiting) {
+            tvCallStatus.setText(isVideoCall ? R.string.call_status_video_outgoing : R.string.call_status_voice_outgoing);
             return;
         }
 
-        btnAccept.setVisibility(GONE);
+        if (incomingWaiting) {
+            tvCallStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
+            return;
+        }
+
+        stopAndRelease();
         tvCallStatus.setText(getString(R.string.call_status_member_count, gridParticipants.getChildCount()));
         ensureTimerStarted();
     }
@@ -346,6 +380,34 @@ public class MultiCallActivity extends BaseCallActivity {
         isSpeakerMute = !isSpeakerMute;
         btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_off : R.drawable.icon_speaker_on);
         tvSpeakerLabel.setText(isSpeakerMute ? R.string.call_action_speaker_off : R.string.call_action_speaker_on);
+    }
+
+    /**
+     * 切换前后摄像头。
+     *
+     * tips: 多人视频页只在视频接通态暴露切换前后摄入口，避免等待态出现无效点击。
+     */
+    private void switchCamera() {
+        if (callSession == null || !isVideoCall) {
+            return;
+        }
+        isFrontCamera = !isFrontCamera;
+        useFrontCamera(isFrontCamera);
+    }
+
+    /**
+     * 切换摄像头启用状态。
+     *
+     * tips: 多人视频场景仅在已接通时展示该操作，避免主叫/被叫等待态出现无效按钮。
+     */
+    private void toggleCamera() {
+        if (callSession == null || !isVideoCall) {
+            return;
+        }
+        isCameraEnabled = !isCameraEnabled;
+        enableCamera(isCameraEnabled);
+        ivCamera.setAlpha(isCameraEnabled ? 1f : 0.55f);
+        tvCameraLabel.setText(isCameraEnabled ? R.string.call_action_camera_on : R.string.call_action_camera_off);
     }
 
     @Override

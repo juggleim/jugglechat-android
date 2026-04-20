@@ -28,23 +28,35 @@ public class SingleCallActivity extends BaseCallActivity {
     private SurfaceView localSurfaceView;
     private SurfaceView remoteSurfaceView;
 
-    private ViewGroup connectedContainer;
     private ViewGroup userBar;
-    private View connectingContainer;
+    private View secondaryActionContainer;
+    private View audioConnectedActionContainer;
     private View btnAccept;
     private View btnHangup;
     private View btnMinimize;
+    private View btnMic;
+    private View btnSpeaker;
+    private View btnCamera;
+    private View btnAudioMic;
+    private View btnAudioHangup;
+    private View btnAudioSpeaker;
+    private View btnSwitchCamera;
     private TextView tvTime;
     private TextView tvNickname;
     private TextView tvStatus;
     private TextView tvMicLabel;
     private TextView tvSpeakerLabel;
+    private TextView tvCameraLabel;
+    private TextView tvHangupLabel;
     private ImageView imgAvatar;
     private ImageView btnMicMute;
     private ImageView btnSpeakerMute;
+    private ImageView ivCamera;
 
     private boolean isSpeakerMute;
     private boolean isMicMute;
+    private boolean isCameraEnabled = true;
+    private boolean isFrontCamera = true;
     private boolean timerStarted;
     private String remoteUserId = "";
 
@@ -137,18 +149,36 @@ public class SingleCallActivity extends BaseCallActivity {
         btnSpeakerMute = findViewById(R.id.iv_speaker);
         tvMicLabel = findViewById(R.id.tv_mic_label);
         tvSpeakerLabel = findViewById(R.id.tv_speaker_label);
-        connectedContainer = findViewById(R.id.connected_container);
+        tvCameraLabel = findViewById(R.id.tv_camera_label);
+        tvHangupLabel = findViewById(R.id.tv_hangup_label);
+        secondaryActionContainer = findViewById(R.id.secondary_action_container);
+        audioConnectedActionContainer = findViewById(R.id.audio_connected_action_container);
         userBar = findViewById(R.id.call_user_bar);
-        connectingContainer = findViewById(R.id.connecting_container);
+        btnMic = findViewById(R.id.btn_mic);
+        btnSpeaker = findViewById(R.id.btn_speaker);
+        btnCamera = findViewById(R.id.btn_camera);
+        btnAudioMic = findViewById(R.id.btn_audio_mic);
+        btnAudioHangup = findViewById(R.id.btn_audio_hangup);
+        btnAudioSpeaker = findViewById(R.id.btn_audio_speaker);
+        btnSwitchCamera = findViewById(R.id.btn_switch_camera);
         localSurfaceView = findViewById(R.id.local_surface_view);
         remoteSurfaceView = findViewById(R.id.remote_surface_view);
+        ivCamera = findViewById(R.id.iv_camera);
     }
 
     private void initClickActions() {
         btnMinimize.setOnClickListener(v -> minimizeToFloating(false));
 
-        btnMicMute.setOnClickListener(v -> toggleMic());
-        btnSpeakerMute.setOnClickListener(v -> toggleSpeaker());
+        btnMic.setOnClickListener(v -> toggleMic());
+        btnSpeaker.setOnClickListener(v -> toggleSpeaker());
+        btnCamera.setOnClickListener(v -> toggleCamera());
+        btnAudioMic.setOnClickListener(v -> toggleMic());
+        btnAudioHangup.setOnClickListener(v -> {
+            hangupCall();
+            finish();
+        });
+        btnAudioSpeaker.setOnClickListener(v -> toggleSpeaker());
+        btnSwitchCamera.setOnClickListener(v -> switchCamera());
 
         btnAccept.setOnClickListener(v -> acceptCurrentCall());
         btnHangup.setOnClickListener(v -> {
@@ -252,36 +282,38 @@ public class SingleCallActivity extends BaseCallActivity {
      * 根据通话状态刷新页面。
      *
      * 简要描述：
-     * 所有UI状态都从 connected + direction 推导，避免多个入口重复改控件导致状态错乱。
+     * 所有UI状态都从 connected + direction + isVideoCall 推导，避免多个入口重复改控件导致状态错乱。
      */
     private void updateCallUiState() {
-        if (!connected) {
-            connectedContainer.setVisibility(GONE);
-            connectingContainer.setVisibility(VISIBLE);
-            tvTime.setVisibility(GONE);
-            userBar.setVisibility(VISIBLE);
-            if ("outgoing".equals(direction)) {
-                btnAccept.setVisibility(GONE);
-                tvStatus.setText(isVideoCall ? R.string.call_status_video_outgoing : R.string.call_status_voice_outgoing);
-            } else {
-                btnAccept.setVisibility(VISIBLE);
-                tvStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
-            }
+        boolean incomingWaiting = !connected && isIncoming(direction);
+        boolean outgoingWaiting = !connected && !incomingWaiting;
+        boolean videoConnected = connected && isVideoCall;
+        boolean audioConnected = connected && !isVideoCall;
+
+        btnAccept.setVisibility(incomingWaiting ? VISIBLE : GONE);
+        tvTime.setVisibility(connected ? VISIBLE : GONE);
+        secondaryActionContainer.setVisibility(videoConnected ? VISIBLE : GONE);
+        audioConnectedActionContainer.setVisibility(audioConnected ? VISIBLE : GONE);
+        btnHangup.setVisibility(audioConnected ? GONE : VISIBLE);
+        btnCamera.setVisibility(videoConnected ? VISIBLE : GONE);
+        btnSwitchCamera.setVisibility(videoConnected ? VISIBLE : GONE);
+        userBar.setVisibility(videoConnected ? GONE : VISIBLE);
+        imgAvatar.setVisibility(videoConnected ? GONE : VISIBLE);
+        tvHangupLabel.setText(incomingWaiting ? R.string.call_action_reject : R.string.call_action_cancel);
+
+        if (outgoingWaiting) {
+            tvStatus.setText(isVideoCall ? R.string.call_status_video_outgoing : R.string.call_status_voice_outgoing);
+            return;
+        }
+
+        if (incomingWaiting) {
+            tvStatus.setText(isVideoCall ? R.string.call_status_incoming_video : R.string.call_status_incoming_voice);
             return;
         }
 
         stopAndRelease();
-        btnAccept.setVisibility(GONE);
-        connectingContainer.setVisibility(VISIBLE);
-        connectedContainer.setVisibility(VISIBLE);
         tvStatus.setText(R.string.call_status_connected);
         ensureTimerStarted();
-
-        if (isVideoCall) {
-            userBar.setVisibility(GONE);
-        } else {
-            userBar.setVisibility(VISIBLE);
-        }
     }
 
     private void ensureTimerStarted() {
@@ -299,6 +331,14 @@ public class SingleCallActivity extends BaseCallActivity {
         callSession.muteMicrophone(!isMicMute);
         isMicMute = !isMicMute;
         btnMicMute.setImageResource(isMicMute ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
+        ImageView audioMicView = findViewById(R.id.iv_audio_mic);
+        TextView audioMicLabel = findViewById(R.id.tv_audio_mic_label);
+        if (audioMicView != null) {
+            audioMicView.setImageResource(isMicMute ? R.drawable.icon_mic_off : R.drawable.icon_mic_on);
+        }
+        if (audioMicLabel != null) {
+            audioMicLabel.setText(isMicMute ? R.string.call_action_mic_off : R.string.call_action_mic_on);
+        }
         tvMicLabel.setText(isMicMute ? R.string.call_action_mic_off : R.string.call_action_mic_on);
     }
 
@@ -308,7 +348,43 @@ public class SingleCallActivity extends BaseCallActivity {
         }
         callSession.muteSpeaker(!isSpeakerMute);
         isSpeakerMute = !isSpeakerMute;
-        btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_on : R.drawable.icon_speaker_off);
+        btnSpeakerMute.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_off : R.drawable.icon_speaker_on);
+        ImageView audioSpeakerView = findViewById(R.id.iv_audio_speaker);
+        TextView audioSpeakerLabel = findViewById(R.id.tv_audio_speaker_label);
+        if (audioSpeakerView != null) {
+            audioSpeakerView.setImageResource(isSpeakerMute ? R.drawable.icon_speaker_off : R.drawable.icon_speaker_on);
+        }
+        if (audioSpeakerLabel != null) {
+            audioSpeakerLabel.setText(isSpeakerMute ? R.string.call_action_speaker_off : R.string.call_action_speaker_on);
+        }
         tvSpeakerLabel.setText(isSpeakerMute ? R.string.call_action_speaker_off : R.string.call_action_speaker_on);
+    }
+
+    /**
+     * 切换前后摄像头。
+     *
+     * tips: 仅在视频接通态展示，状态只保留当前是否前置，避免引入额外的复杂摄像头状态机。
+     */
+    private void switchCamera() {
+        if (callSession == null || !isVideoCall) {
+            return;
+        }
+        isFrontCamera = !isFrontCamera;
+        useFrontCamera(isFrontCamera);
+    }
+
+    /**
+     * 切换摄像头启用状态。
+     *
+     * tips: 仅在视频通话接通后展示，沿用 BaseCallActivity 的摄像头控制能力，不额外引入新的状态源。
+     */
+    private void toggleCamera() {
+        if (callSession == null || !isVideoCall) {
+            return;
+        }
+        isCameraEnabled = !isCameraEnabled;
+        enableCamera(isCameraEnabled);
+        ivCamera.setAlpha(isCameraEnabled ? 1f : 0.55f);
+        tvCameraLabel.setText(isCameraEnabled ? R.string.call_action_camera_on : R.string.call_action_camera_off);
     }
 }

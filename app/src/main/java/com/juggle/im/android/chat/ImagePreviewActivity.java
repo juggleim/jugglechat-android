@@ -239,7 +239,7 @@ public class ImagePreviewActivity extends AppCompatActivity {
             // Let content draw behind system bars
             WindowCompat.setDecorFitsSystemWindows(window, false);
             // Make status bar transparent so content is visible behind it
-            window.setStatusBarColor(Color.TRANSPARENT);
+            window.setStatusBarColor(Color.BLACK);
             // Hide the status bar
             WindowInsetsControllerCompat insetsController = new WindowInsetsControllerCompat(window, window.getDecorView());
             insetsController.hide(WindowInsetsCompat.Type.statusBars());

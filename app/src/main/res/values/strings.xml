@@ -37,6 +37,7 @@
     <string name="call_action_speaker_off">扬声器已关</string>
     <string name="call_action_camera_on">摄像头已开</string>
     <string name="call_action_camera_off">摄像头已关</string>
+    <string name="call_action_switch_camera">切换摄像头</string>
     <string name="call_action_cancel">取消</string>
     <string name="call_action_reject">拒接</string>
     <string name="call_invite_only_group">仅群组通话支持拉人</string>

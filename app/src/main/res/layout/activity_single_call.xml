@@ -93,6 +93,20 @@
         android:background="@drawable/bg_call_video_self_window"
         android:visibility="gone" />
 
+    <ImageView
+        android:id="@+id/btn_switch_camera"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_alignParentEnd="true"
+        android:layout_above="@id/bottom_panel"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="18dp"
+        android:background="@drawable/bg_call_top_action"
+        android:contentDescription="@string/call_action_switch_camera"
+        android:padding="10dp"
+        android:src="@drawable/icon_switch_camera"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/bottom_panel"
         android:layout_width="match_parent"
@@ -104,7 +118,7 @@
         android:paddingBottom="34dp">
 
         <LinearLayout
-            android:id="@+id/connected_container"
+            android:id="@+id/secondary_action_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
@@ -112,9 +126,10 @@
             android:visibility="gone">
 
             <LinearLayout
+                android:id="@+id/btn_mic"
                 android:layout_width="84dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="60dp"
+                android:layout_marginEnd="24dp"
                 android:gravity="center"
                 android:orientation="vertical">
 
@@ -137,8 +152,10 @@
             </LinearLayout>
 
             <LinearLayout
+                android:id="@+id/btn_speaker"
                 android:layout_width="84dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
                 android:gravity="center"
                 android:orientation="vertical">
 
@@ -159,19 +176,133 @@
                     android:textColor="@color/call_action_text"
                     android:textSize="13sp" />
             </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_camera"
+                android:layout_width="84dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/iv_camera"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:background="@drawable/gray_circle_bg"
+                    android:padding="16dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/ic_camera_white" />
+
+                <TextView
+                    android:id="@+id/tv_camera_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/call_action_camera_on"
+                    android:textColor="@color/call_action_text"
+                    android:textSize="13sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/connecting_container"
+            android:id="@+id/audio_connected_action_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="34dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:id="@+id/btn_audio_mic"
+                android:layout_width="84dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_audio_mic"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:background="@drawable/gray_circle_bg"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/icon_mic_on" />
+
+                <TextView
+                    android:id="@+id/tv_audio_mic_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/call_action_mic_on"
+                    android:textColor="@color/call_action_text"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_audio_hangup"
+                android:layout_width="84dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_audio_hangup"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:background="@drawable/red_circle_bg"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/icon_hangup" />
+
+                <TextView
+                    android:id="@+id/tv_audio_hangup_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/call_action_cancel"
+                    android:textColor="@android:color/white"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btn_audio_speaker"
+                android:layout_width="84dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/iv_audio_speaker"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:background="@drawable/gray_circle_bg"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/icon_speaker_on" />
+
+                <TextView
+                    android:id="@+id/tv_audio_speaker_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/call_action_speaker_on"
+                    android:textColor="@color/call_action_text"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/primary_action_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="26dp"
             android:gravity="center"
             android:orientation="horizontal">
 
             <LinearLayout
                 android:id="@+id/btn_hangup"
-                android:layout_width="wrap_content"
+                android:layout_width="84dp"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical">
@@ -184,6 +315,7 @@
                     android:src="@drawable/icon_hangup" />
 
                 <TextView
+                    android:id="@+id/tv_hangup_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
@@ -194,7 +326,7 @@
 
             <LinearLayout
                 android:id="@+id/btn_accept"
-                android:layout_width="wrap_content"
+                android:layout_width="84dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="64dp"
                 android:gravity="center"
