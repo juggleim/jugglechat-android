@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder> {
 
@@ -72,7 +73,23 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
     }
 
     public void clear() {
+        if (resultsMap.isEmpty()) {
+            return;
+        }
         resultsMap.clear();
+        notifyDataSetChanged();
+    }
+
+    public void submitResults(LinkedHashMap<String, List<SearchResult>> newResults, String keyword) {
+        String newKeyword = keyword == null ? "" : keyword.trim();
+        if (TextUtils.equals(this.keyword, newKeyword) && isSameResults(newResults)) {
+            return;
+        }
+        this.keyword = newKeyword;
+        resultsMap.clear();
+        if (newResults != null && !newResults.isEmpty()) {
+            resultsMap.putAll(newResults);
+        }
         notifyDataSetChanged();
     }
 
@@ -97,6 +114,69 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
             }
         }
         return ordered;
+    }
+
+    private boolean isSameResults(LinkedHashMap<String, List<SearchResult>> newResults) {
+        if (newResults == null) {
+            return resultsMap.isEmpty();
+        }
+        if (resultsMap.size() != newResults.size()) {
+            return false;
+        }
+        for (String key : TYPE_ORDER) {
+            List<SearchResult> current = resultsMap.get(key);
+            List<SearchResult> incoming = newResults.get(key);
+            if (current == null && incoming == null) {
+                continue;
+            }
+            if (current == null || incoming == null) {
+                return false;
+            }
+            if (current.size() != incoming.size()) {
+                return false;
+            }
+            for (int i = 0; i < current.size(); i++) {
+                if (!isSameResult(current.get(i), incoming.get(i))) {
+                    return false;
+                }
+            }
+        }
+        for (String key : resultsMap.keySet()) {
+            if (TYPE_ORDER.contains(key)) {
+                continue;
+            }
+            List<SearchResult> current = resultsMap.get(key);
+            List<SearchResult> incoming = newResults.get(key);
+            if (current == null && incoming == null) {
+                continue;
+            }
+            if (current == null || incoming == null) {
+                return false;
+            }
+            if (current.size() != incoming.size()) {
+                return false;
+            }
+            for (int i = 0; i < current.size(); i++) {
+                if (!isSameResult(current.get(i), incoming.get(i))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isSameResult(SearchResult left, SearchResult right) {
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        return Objects.equals(left.getId(), right.getId())
+                && Objects.equals(left.getType(), right.getType())
+                && Objects.equals(left.getName(), right.getName())
+                && Objects.equals(left.getAvatar(), right.getAvatar())
+                && Objects.equals(left.getDescription(), right.getDescription());
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

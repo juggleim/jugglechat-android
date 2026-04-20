@@ -3,6 +3,7 @@ package com.juggle.im.android.chat.view;
 import android.content.Context;
 import android.graphics.Rect;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
@@ -19,14 +20,28 @@ public class SendImeEditText extends AppCompatEditText {
 
     public SendImeEditText(Context context) {
         super(context);
+        initView();
     }
 
     public SendImeEditText(Context context, AttributeSet attrs) {
         super(context, attrs);
+        initView();
     }
 
     public SendImeEditText(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        initView();
+    }
+
+    /**
+     * 初始化输入框显示属性。
+     *
+     * <p>tips：仅限制 hint 为单行省略显示，不影响用户实际输入多行内容。</p>
+     */
+    private void initView() {
+        setHorizontallyScrolling(true);
+        setMaxLines(1);
+        setEllipsize(TextUtils.TruncateAt.END);
     }
 
     @Override
