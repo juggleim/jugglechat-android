@@ -3,18 +3,13 @@ package com.juggle.im.android.chat;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.PopupWindow;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -45,19 +40,26 @@ import java.util.Objects;
 public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.ViewHolder> {
     private final boolean isGroup;
     private final OnMessageActionListener actionListener;
+    private final OnMessageLongClickListener longClickListener;
     // selection mode state
     private boolean selectionMode = false;
     private final List<UiMessage> selectedMsg = new ArrayList<>();
     private OnSelectionChangeListener selectionChangeListener = null;
 
     protected MessageListAdapter(boolean isGroup) {
-        this(isGroup, null);
+        this(isGroup, null, null);
     }
 
     protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener) {
+        this(isGroup, listener, null);
+    }
+
+    protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener,
+            OnMessageLongClickListener longClickListener) {
         super(DIFF);
         this.isGroup = isGroup;
         this.actionListener = listener;
+        this.longClickListener = longClickListener;
     }
 
     public void setSelectionChangeListener(OnSelectionChangeListener l) {
@@ -166,7 +168,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View v = inflater.inflate(viewType, parent, false);
-        return new MessageHolder(v, actionListener);
+        return new MessageHolder(v, actionListener, longClickListener);
     }
 
     @Override
@@ -226,18 +228,22 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private final ViewGroup container;
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
+        private final OnMessageLongClickListener longClickListener;
         private final JuggleCheckBox checkBox;
         private final View reactionContainer;
         private final View msgViewContainer;
         private final TextView reactionEmojis;
+        private UiMessage boundMessage;
         private String lastBoundStableKey = "";
         private Class<?> lastBoundContentClass = null;
         private boolean lastBoundHasReply = false;
 
-        MessageHolder(@NonNull View itemView, OnMessageActionListener listener) {
+        MessageHolder(@NonNull View itemView, OnMessageActionListener listener,
+                OnMessageLongClickListener longClickListener) {
             super(itemView);
             this.container = itemView.findViewById(R.id.message_content_container);
             this.actionListener = listener;
+            this.longClickListener = longClickListener;
             this.checkBox = itemView.findViewById(R.id.checkbox);
             this.reactionContainer = itemView.findViewById(R.id.reaction_container);
             this.msgViewContainer = itemView.findViewById(R.id.message_bubble_container);
@@ -294,7 +300,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 lastBoundHasReply = hasReply;
             }
             delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
+            boundMessage = m;
             bindHighlightState(m);
+            bindPinnedState(m);
 
             // Display reactions
             bindReactions(m);
@@ -305,7 +313,9 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 if (pos == RecyclerView.NO_POSITION) return true;
                 if (inSelectionMode) return true;
                 if (!MessageUtils.shownInMessageList(m.getMessage())) return true;
-                showActionPopup(v, m);
+                if (longClickListener != null) {
+                    longClickListener.onMessageLongClick(m, v, pos);
+                }
                 return true;
             });
 
@@ -339,8 +349,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
          */
         private void bindHighlightState(UiMessage uiMessage) {
             boolean isHighlight = Boolean.TRUE.equals(uiMessage.getExtension("highlight"));
-            if (msgViewContainer != null && isHighlight) {
-                msgViewContainer.setBackgroundColor(0xFFFFF3C4);
+            if (msgViewContainer != null) {
+                if (isHighlight) {
+                    msgViewContainer.setBackgroundColor(0xFFFFF3C4);
+                } else {
+                    msgViewContainer.setBackgroundResource(uiMessage.getDirection() == Message.MessageDirection.SEND
+                            ? R.drawable.bg_message_sent
+                            : R.drawable.bg_message_received);
+                }
             }
             if (reactionContainer != null) {
                 if (isHighlight) {
@@ -349,6 +365,16 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                     reactionContainer.setBackgroundResource(R.drawable.bg_reaction_pill);
                 }
             }
+        }
+
+        /**
+         * 绑定消息 pin 态。
+         *
+         * <p>tips：pin 态只隐藏原列表中的消息内容，保留 cell 占位，避免 RecyclerView 因高度变化导致上下消息跳动。</p>
+         */
+        private void bindPinnedState(UiMessage uiMessage) {
+            boolean isPinned = Boolean.TRUE.equals(uiMessage.getExtension("context_pinned"));
+            itemView.setAlpha(isPinned ? 0f : 1f);
         }
 
         private void bindReactions(UiMessage m) {
@@ -421,81 +447,29 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             return Math.round(value * itemView.getResources().getDisplayMetrics().density);
         }
 
-        private String reactionIdToEmoji(String reactionId) {
-            return ReactionStakerMapper.toEmoji(reactionId);
-        }
-
-        private void showActionPopup(View anchor, UiMessage ui) {
-            if (anchor == null || ui == null || actionListener == null) return;
-            LayoutInflater inflater = LayoutInflater.from(anchor.getContext());
-            View popupView = inflater.inflate(R.layout.layout_message_popup, null);
-
-            final PopupWindow pw = new PopupWindow(
-                    popupView,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    true
-            );
-            pw.setOutsideTouchable(true);
-            pw.setFocusable(true);
-            pw.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-
-            int[] location = new int[2];
-            anchor.getLocationOnScreen(location);
-            int anchorX = location[0];
-            int anchorY = location[1];
-            int anchorWidth = anchor.getWidth();
-            int anchorHeight = anchor.getHeight();
-
-            popupView.measure(
-                    View.MeasureSpec.UNSPECIFIED,
-                    View.MeasureSpec.UNSPECIFIED
-            );
-            int popupWidth = popupView.getMeasuredWidth();
-            int popupHeight = popupView.getMeasuredHeight();
-
-            DisplayMetrics dm = anchor.getContext().getResources().getDisplayMetrics();
-            int screenWidth = dm.widthPixels;
-            int screenHeight = dm.heightPixels;
-
-            float centerX = anchorX + anchorWidth / 2f;
-
-            int x = (int) (centerX - popupWidth / 2);
-            int y = anchorY - popupHeight - ResourceUtils.dp2px(anchor.getContext(), 6);
-
-            if (x < ResourceUtils.dp2px(anchor.getContext(), 4)) {
-                x = ResourceUtils.dp2px(anchor.getContext(), 4);
-            } else if (x + popupWidth > screenWidth - ResourceUtils.dp2px(anchor.getContext(), 4)) {
-                x = screenWidth - popupWidth - ResourceUtils.dp2px(anchor.getContext(), 4);
+        void bindMenuState(View menuView, UiMessage ui) {
+            if (menuView == null || ui == null) {
+                return;
             }
-            if (y < ResourceUtils.dp2px(anchor.getContext(), 8)) {
-                y = anchorY + anchorHeight + ResourceUtils.dp2px(anchor.getContext(), 6);
-            }
-            if (y + popupHeight > screenHeight - ResourceUtils.dp2px(anchor.getContext(), 8)) {
-                y = screenHeight - popupHeight - ResourceUtils.dp2px(anchor.getContext(), 8);
-            }
-
-            pw.showAtLocation(anchor, Gravity.NO_GRAVITY, x, y);
-
-            View vTranslate = popupView.findViewById(R.id.action_translate);
-            View vCopy = popupView.findViewById(R.id.action_copy);
-            View vEdit = popupView.findViewById(R.id.action_edit);
-            View vRecall = popupView.findViewById(R.id.action_recall);
-            View vTop = popupView.findViewById(R.id.action_top);
-            View vFavorite = popupView.findViewById(R.id.action_favorite);
-            View vReply = popupView.findViewById(R.id.action_reply);
-            View vForward = popupView.findViewById(R.id.action_forward);
-            View vMultiSelect = popupView.findViewById(R.id.action_multi_select);
-            View vReport = popupView.findViewById(R.id.action_report);
-            View vDelete = popupView.findViewById(R.id.action_delete);
-            View reactionOk = popupView.findViewById(R.id.reaction_ok_hand);
-            View reactionThumbUp = popupView.findViewById(R.id.reaction_thumb_up);
-            View reactionLove = popupView.findViewById(R.id.reaction_love_face);
-            View reactionSalute = popupView.findViewById(R.id.reaction_salute);
-            View reactionHeart = popupView.findViewById(R.id.reaction_heart);
-            View reactionBrokenHeart = popupView.findViewById(R.id.reaction_broken_heart);
-            View reactionPoop = popupView.findViewById(R.id.reaction_poop);
-            View reactionParty = popupView.findViewById(R.id.reaction_party);
+            View vTranslate = menuView.findViewById(R.id.action_translate);
+            View vCopy = menuView.findViewById(R.id.action_copy);
+            View vEdit = menuView.findViewById(R.id.action_edit);
+            View vRecall = menuView.findViewById(R.id.action_recall);
+            View vTop = menuView.findViewById(R.id.action_top);
+            View vFavorite = menuView.findViewById(R.id.action_favorite);
+            View vReply = menuView.findViewById(R.id.action_reply);
+            View vForward = menuView.findViewById(R.id.action_forward);
+            View vMultiSelect = menuView.findViewById(R.id.action_multi_select);
+            View vReport = menuView.findViewById(R.id.action_report);
+            View vDelete = menuView.findViewById(R.id.action_delete);
+            View reactionOk = menuView.findViewById(R.id.reaction_ok_hand);
+            View reactionThumbUp = menuView.findViewById(R.id.reaction_thumb_up);
+            View reactionLove = menuView.findViewById(R.id.reaction_love_face);
+            View reactionSalute = menuView.findViewById(R.id.reaction_salute);
+            View reactionHeart = menuView.findViewById(R.id.reaction_heart);
+            View reactionBrokenHeart = menuView.findViewById(R.id.reaction_broken_heart);
+            View reactionPoop = menuView.findViewById(R.id.reaction_poop);
+            View reactionParty = menuView.findViewById(R.id.reaction_party);
 
             boolean isSend = ui.getMessage().getDirection() == Message.MessageDirection.SEND;
             boolean canRecall = isSend && ui.getMessage().getState() == Message.MessageState.SENT;
@@ -509,34 +483,40 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             setActionEnabled(vTranslate, canTranslate);
             setActionEnabled(vReport, !isSend);
 
-            bindAction(vTranslate, pw, ui, Action.TRANSLATE);
-            bindAction(vCopy, pw, ui, Action.COPY);
-            bindAction(vEdit, pw, ui, Action.EDIT);
-            bindAction(vRecall, pw, ui, Action.RECALL);
-            bindAction(vTop, pw, ui, Action.TOP);
-            bindAction(vFavorite, pw, ui, Action.FAVORITE);
-            bindAction(vReply, pw, ui, Action.REPLY);
-            bindAction(vForward, pw, ui, Action.FORWARD);
-            bindAction(vMultiSelect, pw, ui, Action.MULTI_SELECT);
-            bindAction(vReport, pw, ui, Action.REPORT);
-            bindAction(vDelete, pw, ui, Action.DELETE);
+            bindAction(vTranslate, ui, Action.TRANSLATE);
+            bindAction(vCopy, ui, Action.COPY);
+            bindAction(vEdit, ui, Action.EDIT);
+            bindAction(vRecall, ui, Action.RECALL);
+            bindAction(vTop, ui, Action.TOP);
+            bindAction(vFavorite, ui, Action.FAVORITE);
+            bindAction(vReply, ui, Action.REPLY);
+            bindAction(vForward, ui, Action.FORWARD);
+            bindAction(vMultiSelect, ui, Action.MULTI_SELECT);
+            bindAction(vReport, ui, Action.REPORT);
+            bindAction(vDelete, ui, Action.DELETE);
 
-            bindAction(reactionOk, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_OK_HAND);
-            bindAction(reactionThumbUp, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_THUMB_UP);
-            bindAction(reactionLove, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_SMILING_FACE_WITH_HEARTS);
-            bindAction(reactionSalute, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_SALUTE);
-            bindAction(reactionHeart, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_HEART);
-            bindAction(reactionBrokenHeart, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_BROKEN_HEART);
-            bindAction(reactionPoop, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_POOP);
-            bindAction(reactionParty, pw, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_PARTY);
+            bindAction(reactionOk, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_OK_HAND);
+            bindAction(reactionThumbUp, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_THUMB_UP);
+            bindAction(reactionLove, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_SMILING_FACE_WITH_HEARTS);
+            bindAction(reactionSalute, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_SALUTE);
+            bindAction(reactionHeart, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_HEART);
+            bindAction(reactionBrokenHeart, ui,
+                    Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_BROKEN_HEART);
+            bindAction(reactionPoop, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_POOP);
+            bindAction(reactionParty, ui, Action.REACTION_PREFIX + ReactionStakerMapper.REACTION_ID_PARTY);
         }
 
-        private void bindAction(View actionView, PopupWindow popupWindow, UiMessage uiMessage, String action) {
+        String reactionIdToEmoji(String reactionId) {
+            return ReactionStakerMapper.toEmoji(reactionId);
+        }
+
+        private void bindAction(View actionView, UiMessage uiMessage, String action) {
             if (actionView == null) return;
             actionView.setOnClickListener(v -> {
                 if (!actionView.isEnabled()) return;
-                popupWindow.dismiss();
-                actionListener.onMessageAction(uiMessage, action);
+                if (actionListener != null) {
+                    actionListener.onMessageAction(uiMessage, action);
+                }
             });
         }
 
@@ -545,6 +525,83 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             actionView.setEnabled(enabled);
             actionView.setAlpha(enabled ? 1f : 0.35f);
         }
+    }
+
+    public void setContextPinnedMessageId(String messageId) {
+        List<UiMessage> current = getCurrentList();
+        for (int i = 0; i < current.size(); i++) {
+            UiMessage uiMessage = current.get(i);
+            boolean shouldPin = !TextUtils.isEmpty(messageId) && TextUtils.equals(messageId, uiMessage.getMessageId());
+            boolean before = Boolean.TRUE.equals(uiMessage.getExtension("context_pinned"));
+            if (before == shouldPin) {
+                continue;
+            }
+            uiMessage.putExtension("context_pinned", shouldPin);
+            notifyItemChanged(i);
+        }
+    }
+
+    public View createContextPinnedMessageView(@NonNull ViewGroup parent, @NonNull UiMessage uiMessage) {
+        View itemView = LayoutInflater.from(parent.getContext())
+                .inflate(getMessageViewTemplate(uiMessage.getStableKey()), parent, false);
+        MessageHolder holder = new MessageHolder(itemView, actionListener, null);
+        holder.bind(uiMessage, isGroup,
+                uiMessage.getDirection() == Message.MessageDirection.SEND,
+                false,
+                false);
+        itemView.setAlpha(1f);
+        return itemView;
+    }
+
+    /**
+     * 绑定长按浮层菜单状态。
+     *
+     * @param menuView 长按浮层菜单根视图
+     * @param uiMessage 当前消息
+     */
+    public void bindContextMenu(@NonNull View menuView, @NonNull UiMessage uiMessage) {
+        MessageHolder holder = new MessageHolder(menuView, actionListener, null);
+        holder.bindMenuState(menuView, uiMessage);
+    }
+
+    /**
+     * 根据稳定键获取消息模板。
+     *
+     * @param stableKey 消息稳定键
+     * @return 对应消息 item 布局
+     */
+    public int getMessageViewTemplate(@NonNull String stableKey) {
+        int index = getIndexByStableKey(stableKey);
+        if (index >= 0) {
+            return getItemViewType(index);
+        }
+        for (UiMessage uiMessage : getCurrentList()) {
+            if (stableKey.equals(uiMessage.getStableKey())) {
+                return MessageUtils.getMessageViewTemplate(uiMessage);
+            }
+        }
+        throw new IllegalArgumentException("unknown stableKey: " + stableKey);
+    }
+
+    private int getIndexByStableKey(@NonNull String stableKey) {
+        List<UiMessage> current = getCurrentList();
+        for (int i = 0; i < current.size(); i++) {
+            if (stableKey.equals(current.get(i).getStableKey())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public interface OnMessageLongClickListener {
+        /**
+         * 长按消息回调。
+         *
+         * @param message 被长按的消息
+         * @param anchor  被长按的消息气泡锚点
+         * @param position 当前适配器位置
+         */
+        void onMessageLongClick(UiMessage message, View anchor, int position);
     }
 
     public interface OnMessageActionListener {

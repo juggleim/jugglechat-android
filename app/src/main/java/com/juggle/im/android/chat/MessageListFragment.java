@@ -1,17 +1,22 @@
 package com.juggle.im.android.chat;
 
 import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 
 import static com.juggle.im.android.chat.ConversationActivity.EXTRA_TITLE;
 
+import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import android.content.Intent;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -113,6 +118,12 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private ImageView btnForwardSelected;
     private ImageView btnDeleteSelected;
     private FrameLayout overlayForwardContainer;
+    private FrameLayout overlayMessageContextContainer;
+    private View messageContextOverlayView;
+    private View messageContextPopupView;
+    private FrameLayout pinnedMessageContainer;
+    private UiMessage contextPinnedMessage;
+    private String contextPinnedMessageId = "";
     // New Message Bubble
     private View layoutNewMessageBubble;
     private TextView tvNewMessageCount;
@@ -176,7 +187,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             // handle message actions here on UI thread (position is adapter/display
             // position)
             requireActivity().runOnUiThread(() -> onMessageAction(message, action));
-        });
+        }, (message, anchor, position) -> requireActivity()
+                .runOnUiThread(() -> showMessageContextMenu(message, anchor, position)));
         adapter.setSelectionChangeListener(new MessageListAdapter.OnSelectionChangeListener() {
             @Override
             public void onSelectionModeChanged(boolean inSelectionMode) {
@@ -304,6 +316,9 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 }
                 
                 atBottom = nowAtBottom;
+                if (isMessageContextVisible()) {
+                    dismissMessageContextMenu();
+                }
                 if (atBottom) {
                     if (layoutNewMessageBubble != null && layoutNewMessageBubble.getVisibility() == VISIBLE) {
                         layoutNewMessageBubble.setVisibility(GONE);
@@ -338,6 +353,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         btnForwardSelected = getActivity().findViewById(R.id.btn_forward_selected);
         btnDeleteSelected = getActivity().findViewById(R.id.btn_delete_selected);
         overlayForwardContainer = getActivity().findViewById(R.id.overlay_forward_container);
+        overlayMessageContextContainer = getActivity().findViewById(R.id.overlay_message_context_container);
+        initMessageContextOverlay();
 
         // option bar actions
         if (btnForwardSelected != null) {
@@ -424,6 +441,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private void hideSelectionUi() {
         if (selectionOptionBar != null)
             selectionOptionBar.setVisibility(GONE);
+        dismissMessageContextMenu();
         // show input bar
         ConversationActivity act = (ConversationActivity) getActivity();
         if (act != null) {
@@ -460,6 +478,219 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         }
     }
 
+    private void initMessageContextOverlay() {
+        if (overlayMessageContextContainer == null || getActivity() == null) {
+            return;
+        }
+        overlayMessageContextContainer.removeAllViews();
+        overlayMessageContextContainer.setClickable(true);
+        overlayMessageContextContainer.setFocusable(true);
+        messageContextOverlayView = new View(requireContext());
+        messageContextOverlayView.setClickable(true);
+        messageContextOverlayView.setFocusable(true);
+        messageContextOverlayView.setLayoutParams(new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        messageContextOverlayView.setBackgroundColor(0x4D0F172A);
+        messageContextOverlayView.setOnClickListener(v -> dismissMessageContextMenu());
+        overlayMessageContextContainer.addView(messageContextOverlayView);
+
+        messageContextPopupView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.layout_message_popup, overlayMessageContextContainer, false);
+        messageContextPopupView.setClickable(true);
+        messageContextPopupView.setFocusable(true);
+        FrameLayout.LayoutParams popupLayoutParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        messageContextPopupView.setLayoutParams(popupLayoutParams);
+        messageContextPopupView.setOnClickListener(v -> {
+        });
+        messageContextPopupView.setVisibility(GONE);
+        pinnedMessageContainer = messageContextPopupView.findViewById(R.id.pinned_message_container);
+        overlayMessageContextContainer.addView(messageContextPopupView);
+        overlayMessageContextContainer.setVisibility(GONE);
+    }
+
+    /**
+     * 展示消息长按浮层。
+     *
+     * <p>tips：浮层中的中间消息使用镜像渲染，原列表 cell 只做透明占位，避免 RecyclerView 因摘取 View 导致复用错乱。</p>
+     *
+     * @param message 被长按消息
+     * @param anchor 锚点 view
+     * @param position 当前列表位置
+     */
+    private void showMessageContextMenu(@NonNull UiMessage message, @NonNull View anchor, int position) {
+        if (getActivity() == null || overlayForwardContainer == null || overlayMessageContextContainer == null
+                || messageContextPopupView == null || pinnedMessageContainer == null) {
+            return;
+        }
+        if (selectionMode) {
+            return;
+        }
+        dismissMessageContextMenu();
+        contextPinnedMessage = message;
+        contextPinnedMessageId = message.getMessageId();
+        adapter.setContextPinnedMessageId(contextPinnedMessageId);
+        pinnedMessageContainer.removeAllViews();
+        pinnedMessageContainer.addView(adapter.createContextPinnedMessageView(pinnedMessageContainer, message));
+        adapter.bindContextMenu(messageContextPopupView, message);
+
+        overlayForwardContainer.setVisibility(VISIBLE);
+        overlayForwardContainer.bringToFront();
+        overlayForwardContainer.setClickable(true);
+        overlayForwardContainer.setFocusable(true);
+        overlayMessageContextContainer.setVisibility(VISIBLE);
+        overlayMessageContextContainer.bringToFront();
+        overlayMessageContextContainer.setOnTouchListener((v, event) -> handleMessageContextTouch(event));
+        messageContextPopupView.setVisibility(INVISIBLE);
+        applyMessageContextBackgroundEffect(true);
+        messageContextPopupView.post(() -> positionMessageContextPopup(anchor));
+    }
+
+    private void positionMessageContextPopup(@NonNull View anchor) {
+        if (messageContextPopupView == null || overlayMessageContextContainer == null) {
+            return;
+        }
+        int[] anchorLocation = new int[2];
+        int[] overlayLocation = new int[2];
+        anchor.getLocationOnScreen(anchorLocation);
+        overlayMessageContextContainer.getLocationOnScreen(overlayLocation);
+        Rect anchorRect = new Rect(
+                anchorLocation[0] - overlayLocation[0],
+                anchorLocation[1] - overlayLocation[1],
+                anchorLocation[0] - overlayLocation[0] + anchor.getWidth(),
+                anchorLocation[1] - overlayLocation[1] + anchor.getHeight());
+
+        int popupWidth = messageContextPopupView.getMeasuredWidth();
+        int popupHeight = messageContextPopupView.getMeasuredHeight();
+        int overlayWidth = overlayMessageContextContainer.getWidth();
+        int overlayHeight = overlayMessageContextContainer.getHeight();
+        int margin = dp(8);
+
+        int left = anchorRect.centerX() - popupWidth / 2;
+        left = Math.max(margin, Math.min(left, overlayWidth - popupWidth - margin));
+
+        int top = anchorRect.top - messageContextPopupView.findViewById(R.id.layout_reaction_bar).getMeasuredHeight() - margin;
+        int minTop = margin;
+        int maxTop = Math.max(margin, overlayHeight - popupHeight - margin);
+        top = Math.max(minTop, Math.min(top, maxTop));
+
+        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) messageContextPopupView.getLayoutParams();
+        lp.width = popupWidth;
+        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        lp.leftMargin = left;
+        lp.topMargin = top;
+        messageContextPopupView.setLayoutParams(lp);
+        messageContextPopupView.setVisibility(VISIBLE);
+    }
+
+    private void dismissMessageContextMenu() {
+        if (!isMessageContextVisible()) {
+            contextPinnedMessage = null;
+            contextPinnedMessageId = "";
+            if (adapter != null) {
+                adapter.setContextPinnedMessageId("");
+            }
+            return;
+        }
+        contextPinnedMessage = null;
+        contextPinnedMessageId = "";
+        if (adapter != null) {
+            adapter.setContextPinnedMessageId("");
+        }
+        if (pinnedMessageContainer != null) {
+            pinnedMessageContainer.removeAllViews();
+        }
+        if (messageContextPopupView != null) {
+            messageContextPopupView.setVisibility(GONE);
+        }
+        if (overlayMessageContextContainer != null) {
+            overlayMessageContextContainer.setOnTouchListener(null);
+            overlayMessageContextContainer.setVisibility(GONE);
+        }
+        if (overlayForwardContainer != null && !selectionMode) {
+            overlayForwardContainer.setVisibility(GONE);
+            overlayForwardContainer.setClickable(false);
+            overlayForwardContainer.setFocusable(false);
+        }
+        applyMessageContextBackgroundEffect(false);
+    }
+
+    private boolean isMessageContextVisible() {
+        return overlayMessageContextContainer != null && overlayMessageContextContainer.getVisibility() == VISIBLE;
+    }
+
+    private void applyMessageContextBackgroundEffect(boolean active) {
+        if (recyclerView != null) {
+            recyclerView.setAlpha(active ? 0.35f : 1f);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                recyclerView.setRenderEffect(active
+                        ? android.graphics.RenderEffect.createBlurEffect(6f, 6f, android.graphics.Shader.TileMode.CLAMP)
+                        : null);
+            }
+        }
+        if (messageContextOverlayView == null) {
+            return;
+        }
+        if (!active) {
+            if (getActivity() != null) {
+                Window window = getActivity().getWindow();
+                if (window != null) {
+                    window.setStatusBarColor(requireContext().getColor(R.color.white));
+                    window.setNavigationBarColor(requireContext().getColor(R.color.input_bg_light));
+                }
+            }
+            messageContextOverlayView.setBackgroundColor(0x00000000);
+            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) messageContextOverlayView.getLayoutParams();
+            lp.topMargin = 0;
+            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            messageContextOverlayView.setLayoutParams(lp);
+            return;
+        }
+        messageContextOverlayView.setBackgroundColor(0x73FFFFFF);
+        if (getActivity() != null) {
+            Window window = getActivity().getWindow();
+            if (window != null) {
+                window.setStatusBarColor(0x73FFFFFF);
+                window.setNavigationBarColor(0x73FFFFFF);
+                View decorView = window.getDecorView();
+                messageContextOverlayView.post(() -> {
+                    int[] decorLocation = new int[2];
+                    int[] overlayLocation = new int[2];
+                    decorView.getLocationOnScreen(decorLocation);
+                    overlayMessageContextContainer.getLocationOnScreen(overlayLocation);
+                    int decorHeight = decorView.getHeight();
+                    int topInset = Math.max(0, overlayLocation[1] - decorLocation[1]);
+                    FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) messageContextOverlayView.getLayoutParams();
+                    lp.topMargin = -topInset;
+                    lp.height = decorHeight;
+                    messageContextOverlayView.setLayoutParams(lp);
+                });
+            }
+        }
+    }
+
+    private int dp(int value) {
+        return Math.round(value * requireContext().getResources().getDisplayMetrics().density);
+    }
+
+    private boolean handleMessageContextTouch(@NonNull MotionEvent event) {
+        if (!isMessageContextVisible()) {
+            return false;
+        }
+        if (event.getAction() == MotionEvent.ACTION_DOWN && messageContextPopupView != null) {
+            float x = event.getX();
+            float y = event.getY();
+            if (x < messageContextPopupView.getLeft() || x > messageContextPopupView.getRight()
+                    || y < messageContextPopupView.getTop() || y > messageContextPopupView.getBottom()) {
+                dismissMessageContextMenu();
+            }
+            return true;
+        }
+        return true;
+    }
+
     private void showForwardMenu() {
         BottomActionSheet.builder(requireContext())
                 .addItem(getString(R.string.forward_single_message), () -> {
@@ -476,6 +707,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 })
                 .show();
     }
+
 
     /**
      * Return currently selected messages (used by ConversationActivity when
@@ -1099,6 +1331,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private void onMessageAction(UiMessage message, String action) {
         if (message == null || action == null)
             return;
+        dismissMessageContextMenu();
         if (action.startsWith(MessageListAdapter.Action.REACTION_PREFIX)) {
             String reactionPayload = action.substring(MessageListAdapter.Action.REACTION_PREFIX.length());
             addReactionToMessage(message, reactionPayload);
@@ -1243,6 +1476,12 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             return ((TextMessage) content).getContent();
         }
         return null;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        dismissMessageContextMenu();
     }
 
     private void deleteSingleMessage(UiMessage message) {

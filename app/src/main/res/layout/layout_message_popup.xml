@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_message_context_root"
     android:layout_width="330dp"
     android:layout_height="wrap_content"
     android:orientation="vertical">
@@ -23,8 +24,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="👌"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -34,8 +35,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="👍"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -45,8 +46,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="🥰"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -56,8 +57,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="🫡"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -67,8 +68,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="❤️"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -78,8 +79,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="💔"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -89,8 +90,8 @@
             android:layout_marginEnd="4dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="💩"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
 
         <TextView
@@ -99,16 +100,35 @@
             android:layout_height="30dp"
             android:background="@drawable/bg_message_reaction_item"
             android:gravity="center"
-            android:textColor="@color/auth_text_secondary"
             android:text="🎉"
+            android:textColor="@color/auth_text_secondary"
             android:textSize="16sp" />
     </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/layout_pinned_message_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="1dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <FrameLayout
+            android:id="@+id/pinned_message_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp" />
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/layout_action_panel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:background="@drawable/bg_message_action_panel"
         android:orientation="vertical"
         android:paddingStart="4dp"
@@ -163,150 +183,150 @@
                 android:paddingTop="2dp"
                 android:paddingBottom="2dp">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_copy" />
-            </FrameLayout>
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_copy" />
+                </FrameLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/txt_copy"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/action_edit"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/txt_copy"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_edit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_edit" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_edit" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/msg_edit"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_recall"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/msg_edit"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_recall"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_recall" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_recall" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/recall"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_top"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/recall"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_top"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_top" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_top" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/msg_top"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_favorite"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/msg_top"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_favorite"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_favorite" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_favorite" />
-            </FrameLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/msg_action_favorite"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/msg_action_favorite"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <View
@@ -321,166 +341,166 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-        <LinearLayout
-            android:id="@+id/action_reply"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
-
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_reply" />
-            </FrameLayout>
-
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_reply"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/txt_reply"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_forward"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_reply" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_forward" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/txt_reply"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_forward"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/forward"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_multi_select"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_forward" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_multi" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/forward"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_multi_select"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/msg_action_multi_select"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_report"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_multi" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_report" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/msg_action_multi_select"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_report"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/msg_action_report"
-                android:textColor="#25282D"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <LinearLayout
-            android:id="@+id/action_delete"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp">
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
 
-            <FrameLayout
-                android:layout_width="28dp"
-                android:layout_height="28dp"
-                android:background="@drawable/bg_message_action_icon">
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_report" />
+                </FrameLayout>
 
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_msg_action_delete"
-                    android:tint="#F04438" />
-            </FrameLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/msg_action_report"
+                    android:textColor="#25282D"
+                    android:textSize="11sp" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/action_delete"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/txt_del"
-                android:textColor="#F04438"
-                android:textSize="11sp" />
-        </LinearLayout>
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
+                <FrameLayout
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:background="@drawable/bg_message_action_icon">
+
+                    <ImageView
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_msg_action_delete"
+                        android:tint="#F04438" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/txt_del"
+                    android:textColor="#F04438"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

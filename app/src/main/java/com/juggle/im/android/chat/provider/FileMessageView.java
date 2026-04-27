@@ -90,7 +90,7 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
             if (parent != null) {
                 parent.performLongClick();
             }
-            return false;
+            return true;
         });
     }
 

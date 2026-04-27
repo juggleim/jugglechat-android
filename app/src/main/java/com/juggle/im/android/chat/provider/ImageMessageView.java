@@ -73,7 +73,7 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
             if (parent != null) {
                 parent.performLongClick();
             }
-            return false;
+            return true;
         });
     }
 

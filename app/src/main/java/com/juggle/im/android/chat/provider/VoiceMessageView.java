@@ -132,7 +132,7 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
             if (parent != null) {
                 parent.performLongClick();
             }
-            return false;
+            return true;
         });
     }
 

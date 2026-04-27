@@ -69,7 +69,7 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
         this.itemView.setOnClickListener(v -> MergeMessageActivity.start(this.itemView.getContext(), m.getMessageId()));
         this.itemView.setOnLongClickListener(v -> {
             ((ViewGroup) this.itemView.getParent()).performLongClick();
-            return false;
+            return true;
         });
     }
 }
