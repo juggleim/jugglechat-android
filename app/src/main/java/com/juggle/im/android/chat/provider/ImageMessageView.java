@@ -33,6 +33,11 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
     }
 
     @Override
+    protected boolean shouldShowBubble(UiMessage message, ImageMessage content) {
+        return false;
+    }
+
+    @Override
     public void bindItem(UiMessage m, ImageMessage img, boolean isGroup) {
         ImageView imageView = this.itemView.findViewById(R.id.image_message_thumb);
         applyBestSize(imageView, img);

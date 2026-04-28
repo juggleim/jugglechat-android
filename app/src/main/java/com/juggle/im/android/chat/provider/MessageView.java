@@ -21,8 +21,6 @@ import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
-import com.juggle.im.model.messages.ImageMessage;
-import com.juggle.im.model.messages.MergeMessage;
 
 /**
  * Generic base for all message content views used by the adapter.
@@ -40,6 +38,17 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
     public abstract void bindItem(T message, K content, boolean isGroup);
 
     /**
+     * 是否显示消息气泡背景。
+     *
+     * @param message 消息包装对象
+     * @param content 消息内容
+     * @return true 显示气泡，false 不显示气泡
+     */
+    protected boolean shouldShowBubble(T message, K content) {
+        return true;
+    }
+
+    /**
      * Bind UI wrapper to the view.
      *
      * @param message  UiMessage wrapper
@@ -49,10 +58,10 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
      */
     final public void bind(T message, K content, boolean isGroup, View itemView) {
         boolean isSend = message.getDirection() == Message.MessageDirection.SEND;
-        boolean disableBackground = content instanceof ImageMessage || content instanceof MergeMessage;
+        boolean showBubble = shouldShowBubble(message, content);
 
         resetMessageMetaViews(itemView);
-        configureBubbleStyle(itemView, disableBackground, isSend);
+        configureBubbleStyle(itemView, showBubble, isSend);
 
         ImageView ivAvatar = itemView.findViewById(R.id.image_avatar);
         String senderId = message.getSenderId();
@@ -99,12 +108,12 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         ImageView imageStatusView = itemView.findViewById(R.id.image_msg_read_status);
 
         if (isSend) {
-            if (disableBackground) {
-                hideStatus(msgStatusContainer, ivStatus, progressBar);
-                bindSendStatus(message, imageStatusContainer, imageStatusView, imageProgressBar);
-            } else {
+            if (showBubble) {
                 hideStatus(imageStatusContainer, imageStatusView, imageProgressBar);
                 bindSendStatus(message, msgStatusContainer, ivStatus, progressBar);
+            } else {
+                hideStatus(msgStatusContainer, ivStatus, progressBar);
+                bindSendStatus(message, imageStatusContainer, imageStatusView, imageProgressBar);
             }
         } else {
             hideStatus(msgStatusContainer, ivStatus, progressBar);
@@ -120,16 +129,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
             spanTimeTxt = MessageUtils.formatTimestamp(message.getMessage().getTimestamp()) + spanTimeTxt;
         }
 
-        if (disableBackground) {
-            if (vMsgTime != null) {
-                vMsgTime.setVisibility(GONE);
-            }
-            if (imageMsgTime != null) {
-                imageMsgTime.setVisibility(VISIBLE);
-                imageMsgTime.setText(spanTimeTxt);
-                imageMsgTime.setTextColor(0xF2FFFFFF);
-            }
-        } else {
+        if (showBubble) {
             if (imageMsgTime != null) {
                 imageMsgTime.setVisibility(GONE);
             }
@@ -141,6 +141,15 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                 } else {
                     vMsgTime.setTextColor(0xFF9AA0AB);
                 }
+            }
+        } else {
+            if (vMsgTime != null) {
+                vMsgTime.setVisibility(GONE);
+            }
+            if (imageMsgTime != null) {
+                imageMsgTime.setVisibility(VISIBLE);
+                imageMsgTime.setText(spanTimeTxt);
+                imageMsgTime.setTextColor(0xF2FFFFFF);
             }
         }
         this.bindItem(message, content, isGroup);
@@ -255,14 +264,27 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         }
     }
 
-    private void configureBubbleStyle(View itemView, boolean disableBackground, boolean isSend) {
+    /**
+     * 根据消息类型设置气泡背景与内边距。
+     *
+     * @param itemView 消息根视图
+     * @param showBubble true 显示气泡，false 不显示气泡
+     * @param isSend 是否发送消息
+     */
+    private void configureBubbleStyle(View itemView, boolean showBubble, boolean isSend) {
         ViewGroup bubbleContainer = itemView.findViewById(R.id.message_bubble_container);
+        ViewGroup contentContainer = itemView.findViewById(R.id.message_content_container);
         if (bubbleContainer == null) {
             return;
         }
-        if (disableBackground) {
-            bubbleContainer.setBackground(null);
+        if (!showBubble) {
+            bubbleContainer.setBackgroundResource(R.drawable.bg_message_none);
             bubbleContainer.setPadding(0, 0, 0, 0);
+            bubbleContainer.setMinimumWidth(0);
+            bubbleContainer.setMinimumHeight(0);
+            if (contentContainer != null) {
+                contentContainer.setMinimumWidth(0);
+            }
         } else {
             bubbleContainer.setBackgroundResource(isSend ? R.drawable.bg_message_sent : R.drawable.bg_message_received);
             bubbleContainer.setPadding(
@@ -271,6 +293,10 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
                     dp(itemView, 4),
                     dp(itemView, 2)
             );
+            bubbleContainer.setMinimumWidth(dp(itemView, 50));
+            if (contentContainer != null) {
+                contentContainer.setMinimumWidth(dp(itemView, 50));
+            }
         }
     }
 

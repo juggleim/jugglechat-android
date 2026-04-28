@@ -350,13 +350,13 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private void bindHighlightState(UiMessage uiMessage) {
             boolean isHighlight = Boolean.TRUE.equals(uiMessage.getExtension("highlight"));
             if (msgViewContainer != null) {
-                if (isHighlight) {
-                    msgViewContainer.setBackgroundColor(0xFFFFF3C4);
-                } else {
-                    msgViewContainer.setBackgroundResource(uiMessage.getDirection() == Message.MessageDirection.SEND
-                            ? R.drawable.bg_message_sent
-                            : R.drawable.bg_message_received);
-                }
+//                if (isHighlight) {
+//                    msgViewContainer.setBackgroundColor(0xFFFFF3C4);
+//                } else {
+//                    msgViewContainer.setBackgroundResource(uiMessage.getDirection() == Message.MessageDirection.SEND
+//                            ? R.drawable.bg_message_sent
+//                            : R.drawable.bg_message_received);
+//                }
             }
             if (reactionContainer != null) {
                 if (isHighlight) {

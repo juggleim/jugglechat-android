@@ -30,6 +30,11 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
     }
 
     @Override
+    protected boolean shouldShowBubble(UiMessage message, MergeMessage content) {
+        return false;
+    }
+
+    @Override
     public void bindItem(UiMessage m, MergeMessage merge, boolean isGroup) {
         TextView tvPreview = this.itemView.findViewById(R.id.merge_preview_text);
         TextView tvTitle = this.itemView.findViewById(R.id.merge_msg_title);
