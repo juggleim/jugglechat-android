@@ -2,57 +2,38 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
+    android:layout_height="26dp"
     android:layout_gravity="start"
-    android:layout_marginBottom="4dp"
+    android:background="@drawable/bg_reply_preview"
     android:gravity="center_vertical"
-    android:minHeight="40dp"
     android:orientation="horizontal"
-    android:paddingStart="2dp"
-    android:paddingTop="4dp"
-    android:paddingEnd="2dp"
-    android:paddingBottom="4dp">
+    android:padding="4dp">
 
-    <View
-        android:layout_width="3dp"
-        android:layout_height="match_parent"
-        android:layout_marginEnd="8dp"
-        android:background="@color/app_primary" />
-
-    <LinearLayout
+    <TextView
+        android:id="@+id/text_message_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="0"
-        android:orientation="vertical">
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/conversation_secondary_text"
+        android:textSize="12sp"
+        tools:text="丹尼斯：" />
 
-        <TextView
-            android:id="@+id/text_message_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="@color/conversation_primary_text"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            tools:text="回复：张三" />
-
-        <TextView
-            android:id="@+id/reply_text_message_content"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textColor="@color/conversation_secondary_text"
-            android:textSize="12sp"
-            tools:text="原消息内容预览原消息内容预览" />
-    </LinearLayout>
+    <TextView
+        android:id="@+id/reply_text_message_content"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="@color/conversation_secondary_text"
+        android:textSize="12sp"
+        tools:text="你最近在干什么呢？" />
 
     <ImageView
         android:id="@+id/reply_image_id"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginStart="8dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:scaleType="centerCrop"
         android:src="@drawable/default_image"
         android:visibility="gone" />

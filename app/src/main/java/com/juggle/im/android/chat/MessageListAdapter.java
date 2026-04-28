@@ -31,6 +31,7 @@ import com.juggle.im.model.MessageReaction;
 import com.juggle.im.model.MessageReactionItem;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.ImageMessage;
+import com.juggle.im.model.messages.MergeMessage;
 import com.juggle.im.model.messages.TextMessage;
 
 import java.util.ArrayList;
@@ -233,6 +234,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private final View reactionContainer;
         private final View msgViewContainer;
         private final TextView reactionEmojis;
+        private final ViewGroup replyPreviewContainer;
         private UiMessage boundMessage;
         private String lastBoundStableKey = "";
         private Class<?> lastBoundContentClass = null;
@@ -248,11 +250,16 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             this.reactionContainer = itemView.findViewById(R.id.reaction_container);
             this.msgViewContainer = itemView.findViewById(R.id.message_bubble_container);
             this.reactionEmojis = itemView.findViewById(R.id.reaction_emojis);
+            this.replyPreviewContainer = itemView.findViewById(R.id.reply_preview_container);
         }
 
         void bind(UiMessage m, boolean isGroup, boolean isSend, boolean inSelectionMode, boolean selected) {
             if (container == null) return;
             container.setVisibility(VISIBLE);
+            if (replyPreviewContainer != null) {
+                replyPreviewContainer.setVisibility(GONE);
+                replyPreviewContainer.removeAllViews();
+            }
             if (!(container instanceof ViewGroup)) {
                 container.setVisibility(GONE);
                 return;
@@ -273,33 +280,13 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
             if (needReinflate) {
                 container.removeAllViews();
-                // 回复消息
-                if (hasReply) {
-                    LayoutInflater inflater = LayoutInflater.from(itemView.getContext());
-                    View vReply = inflater.inflate(R.layout.content_reply, container, false);
-                    Message replyMsg = m.getMessage().getReferredMessage();
-                    TextView vTitle = vReply.findViewById(R.id.text_message_title);
-                    TextView vContent = vReply.findViewById(R.id.reply_text_message_content);
-                    ImageView ivImage = vReply.findViewById(R.id.reply_image_id);
-                    UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(replyMsg.getSenderUserId());
-                    if (sendUser != null) {
-                        vTitle.setText("回复：" + sendUser.getUserName());
-                    }
-                    vContent.setText(MessageUtils.getMessageSummary(itemView.getContext(), replyMsg));
-                    if (replyMsg.getContent() instanceof ImageMessage) {
-                        ivImage.setVisibility(VISIBLE);
-                        AvatarUtils.loadImage(ivImage, ((ImageMessage) replyMsg.getContent()).getThumbnailUrl());
-                    } else {
-                        ivImage.setVisibility(GONE);
-                    }
-                    container.addView(vReply);
-                }
                 delegate = MessageUtils.createMessageViewHolder(m, container);
                 lastBoundStableKey = stableKey;
                 lastBoundContentClass = contentClass;
                 lastBoundHasReply = hasReply;
             }
             delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
+            bindReplyPreview(m);
             boundMessage = m;
             bindHighlightState(m);
             bindPinnedState(m);
@@ -372,6 +359,46 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
          *
          * <p>tips：pin 态只隐藏原列表中的消息内容，保留 cell 占位，避免 RecyclerView 因高度变化导致上下消息跳动。</p>
          */
+        private void bindReplyPreview(UiMessage message) {
+            if (replyPreviewContainer == null) {
+                return;
+            }
+            replyPreviewContainer.removeAllViews();
+            Message replyMsg = message.getMessage().getReferredMessage();
+            if (replyMsg == null) {
+                replyPreviewContainer.setVisibility(GONE);
+                return;
+            }
+
+            View vReply = LayoutInflater.from(itemView.getContext()).inflate(R.layout.content_reply, replyPreviewContainer, false);
+            TextView vTitle = vReply.findViewById(R.id.text_message_title);
+            TextView vContent = vReply.findViewById(R.id.reply_text_message_content);
+            ImageView ivImage = vReply.findViewById(R.id.reply_image_id);
+            UserInfo sendUser = JIM.getInstance().getUserInfoManager().getUserInfo(replyMsg.getSenderUserId());
+            String senderName = sendUser != null && !TextUtils.isEmpty(sendUser.getUserName())
+                    ? sendUser.getUserName()
+                    : replyMsg.getSenderUserId();
+            vTitle.setText((TextUtils.isEmpty(senderName) ? "" : senderName) + "：");
+            if (!(replyMsg.getContent() instanceof ImageMessage)) {
+                vContent.setText(MessageUtils.getMessageSummary(itemView.getContext(), replyMsg));
+            }
+            if (replyMsg.getContent() instanceof ImageMessage) {
+                ivImage.setVisibility(VISIBLE);
+                String thumbnailUrl = ((ImageMessage) replyMsg.getContent()).getThumbnailUrl();
+                if (TextUtils.isEmpty(thumbnailUrl)) {
+                    thumbnailUrl = ((ImageMessage) replyMsg.getContent()).getLocalPath();
+                }
+                if (TextUtils.isEmpty(thumbnailUrl)) {
+                    thumbnailUrl = ((ImageMessage) replyMsg.getContent()).getUrl();
+                }
+                AvatarUtils.loadImage(ivImage, thumbnailUrl);
+            } else {
+                ivImage.setVisibility(GONE);
+            }
+            replyPreviewContainer.addView(vReply);
+            replyPreviewContainer.setVisibility(VISIBLE);
+        }
+
         private void bindPinnedState(UiMessage uiMessage) {
             boolean isPinned = Boolean.TRUE.equals(uiMessage.getExtension("context_pinned"));
             itemView.setAlpha(isPinned ? 0f : 1f);
