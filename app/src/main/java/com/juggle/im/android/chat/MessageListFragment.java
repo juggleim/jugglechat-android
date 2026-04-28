@@ -17,6 +17,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowInsetsController;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -562,22 +563,22 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 anchorLocation[0] - overlayLocation[0] + anchor.getWidth(),
                 anchorLocation[1] - overlayLocation[1] + anchor.getHeight());
 
-        int popupWidth = messageContextPopupView.getMeasuredWidth();
         int popupHeight = messageContextPopupView.getMeasuredHeight();
         int overlayWidth = overlayMessageContextContainer.getWidth();
         int overlayHeight = overlayMessageContextContainer.getHeight();
-        int margin = dp(8);
+        int horizontalMargin = dp(10);
+        int verticalMargin = dp(8);
+        int targetWidth = Math.max(0, overlayWidth - horizontalMargin * 2);
 
-        int left = anchorRect.centerX() - popupWidth / 2;
-        left = Math.max(margin, Math.min(left, overlayWidth - popupWidth - margin));
+        int left = horizontalMargin;
 
-        int top = anchorRect.top - messageContextPopupView.findViewById(R.id.layout_reaction_bar).getMeasuredHeight() - margin;
-        int minTop = margin;
-        int maxTop = Math.max(margin, overlayHeight - popupHeight - margin);
+        int top = anchorRect.top - messageContextPopupView.findViewById(R.id.layout_reaction_bar).getMeasuredHeight() - verticalMargin;
+        int minTop = verticalMargin;
+        int maxTop = Math.max(verticalMargin, overlayHeight - popupHeight - verticalMargin);
         top = Math.max(minTop, Math.min(top, maxTop));
 
         FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) messageContextPopupView.getLayoutParams();
-        lp.width = popupWidth;
+        lp.width = targetWidth;
         lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         lp.leftMargin = left;
         lp.topMargin = top;
@@ -639,21 +640,45 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 if (window != null) {
                     window.setStatusBarColor(requireContext().getColor(R.color.white));
                     window.setNavigationBarColor(requireContext().getColor(R.color.input_bg_light));
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        WindowInsetsController controller = window.getInsetsController();
+                        if (controller != null) {
+                            controller.setSystemBarsAppearance(
+                                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                                            | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
+                                    WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                                            | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                        }
+                    }
                 }
             }
-            messageContextOverlayView.setBackgroundColor(0x00000000);
+            messageContextOverlayView.setAlpha(1f);
+            messageContextOverlayView.setBackgroundColor(0x730F172A);
             FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) messageContextOverlayView.getLayoutParams();
             lp.topMargin = 0;
             lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
             messageContextOverlayView.setLayoutParams(lp);
             return;
         }
-        messageContextOverlayView.setBackgroundColor(0x73FFFFFF);
+        messageContextOverlayView.setAlpha(1f);
+        messageContextOverlayView.setBackgroundColor(0x730F172A);
         if (getActivity() != null) {
             Window window = getActivity().getWindow();
             if (window != null) {
-                window.setStatusBarColor(0x73FFFFFF);
-                window.setNavigationBarColor(0x73FFFFFF);
+                window.setStatusBarColor(0x730F172A);
+                window.setNavigationBarColor(0x730F172A);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    window.setNavigationBarContrastEnforced(false);
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    WindowInsetsController controller = window.getInsetsController();
+                    if (controller != null) {
+                        controller.setSystemBarsAppearance(
+                                0,
+                                WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
+                    }
+                }
                 View decorView = window.getDecorView();
                 messageContextOverlayView.post(() -> {
                     int[] decorLocation = new int[2];
