@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -30,10 +31,10 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
     private static final int VOICE_WIDTH_LONG_DP = 245;
     private static final int VOICE_WIDTH_MAX_DP = 300;
 
-    private static final int WAVE_COUNT_SHORT = 16;
-    private static final int WAVE_COUNT_MEDIUM = 20;
-    private static final int WAVE_COUNT_LONG = 30;
-    private static final int WAVE_COUNT_MAX = 39;
+    private static final int WAVE_COUNT_SHORT = 28;
+    private static final int WAVE_COUNT_MEDIUM = 34;
+    private static final int WAVE_COUNT_LONG = 42;
+    private static final int WAVE_COUNT_MAX = 50;
 
     private static final int WAVE_BAR_WIDTH_DP = 2;
     private static final int WAVE_BAR_MARGIN_END_DP = 2;
@@ -77,10 +78,11 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
     public void bindItem(UiMessage m, VoiceMessage voice, boolean isGroup) {
         View voiceContainer = this.itemView.findViewById(R.id.layout_voice_container);
         LinearLayout btnPlay = this.itemView.findViewById(R.id.button_play_voice);
+        FrameLayout waveArea = this.itemView.findViewById(R.id.layout_voice_wave_area);
         LinearLayout waveBarsContainer = this.itemView.findViewById(R.id.layout_voice_wave_bars);
         ProgressBar loadingView = this.itemView.findViewById(R.id.progress_voice_loading);
         TextView tvDuration = this.itemView.findViewById(R.id.text_voice_duration);
-        if (voiceContainer == null || btnPlay == null || waveBarsContainer == null
+        if (voiceContainer == null || btnPlay == null || waveArea == null || waveBarsContainer == null
                 || loadingView == null || tvDuration == null) {
             return;
         }
@@ -98,6 +100,14 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
             containerParams.width = dp(voiceContainer, visualSpec.bubbleWidthDp);
             voiceContainer.setLayoutParams(containerParams);
         }
+        // tips：语音条展示区要扣掉时长文本和左右留白，宽度跟随气泡主体铺满，避免短条悬空在左侧。
+        ViewGroup.LayoutParams waveAreaParams = waveArea.getLayoutParams();
+        if (waveAreaParams instanceof LinearLayout.LayoutParams) {
+            ((LinearLayout.LayoutParams) waveAreaParams).width = 0;
+            ((LinearLayout.LayoutParams) waveAreaParams).weight = 1f;
+            waveArea.setLayoutParams(waveAreaParams);
+        }
+        adjustWaveBarWidths(waveArea, waveBars);
 
         int waveColor = isSend ? 0xFFFFFFFF : ContextCompat.getColor(itemView.getContext(), R.color.app_primary);
         updateWaveBarColor(waveBars, waveColor);
@@ -276,6 +286,36 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
             waveBars[i] = waveBar;
         }
         return waveBars;
+    }
+
+    /**
+     * tips：保持波形条本身纤细，通过分配间距来铺满可用宽度，避免每根条被拉得过宽影响观感。
+     *
+     * @param waveArea 波形展示区域
+     * @param waveBars 波形条数组
+     */
+    private void adjustWaveBarWidths(@NonNull View waveArea, @NonNull View[] waveBars) {
+        waveArea.post(() -> {
+            int availableWidth = waveArea.getWidth();
+            if (availableWidth <= 0 || waveBars.length == 0) {
+                return;
+            }
+            int barWidth = dp(waveArea, WAVE_BAR_WIDTH_DP);
+            int totalBarWidth = barWidth * waveBars.length;
+            int gapCount = Math.max(0, waveBars.length - 1);
+            int margin = gapCount == 0 ? 0 : Math.max(dp(waveArea, WAVE_BAR_MARGIN_END_DP),
+                    (availableWidth - totalBarWidth) / gapCount);
+            for (int i = 0; i < waveBars.length; i++) {
+                View waveBar = waveBars[i];
+                if (waveBar == null) {
+                    continue;
+                }
+                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) waveBar.getLayoutParams();
+                params.width = barWidth;
+                params.setMarginEnd(i < waveBars.length - 1 ? margin : 0);
+                waveBar.setLayoutParams(params);
+            }
+        });
     }
 
     private void updateWaveBarColor(@NonNull View[] waveBars, int color) {

@@ -208,6 +208,9 @@ public class ConversationActivity extends AbsAppActivity {
 
                 @Override
                 public void onMentionTrigger(MentionManager mentionManager) {
+                    if (!isGroup) {
+                        return;
+                    }
                     showMentionMemberSheet();
                 }
 
@@ -385,6 +388,9 @@ public class ConversationActivity extends AbsAppActivity {
     }
 
     private void showMentionMemberSheet() {
+        if (!isGroup) {
+            return;
+        }
         if (getSupportFragmentManager().findFragmentByTag(MentionMemberSheetDialog.TAG) != null) {
             return;
         }
