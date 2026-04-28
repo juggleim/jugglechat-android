@@ -41,6 +41,7 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
     private static final int WAVE_BAR_MIN_HEIGHT_DP = 8;
     private static final int WAVE_BAR_MAX_HEIGHT_DP = 20;
     private static final int WAVE_ANIMATE_INTERVAL_MS = 120;
+    private static final int WAVE_PREPARING_INTERVAL_MS = 90;
 
     private static MediaPlayer currentPlayer;
     private static Runnable currentStopAnimation;
@@ -80,10 +81,9 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
         LinearLayout btnPlay = this.itemView.findViewById(R.id.button_play_voice);
         FrameLayout waveArea = this.itemView.findViewById(R.id.layout_voice_wave_area);
         LinearLayout waveBarsContainer = this.itemView.findViewById(R.id.layout_voice_wave_bars);
-        ProgressBar loadingView = this.itemView.findViewById(R.id.progress_voice_loading);
         TextView tvDuration = this.itemView.findViewById(R.id.text_voice_duration);
         if (voiceContainer == null || btnPlay == null || waveArea == null || waveBarsContainer == null
-                || loadingView == null || tvDuration == null) {
+                || tvDuration == null) {
             return;
         }
 
@@ -111,8 +111,6 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
 
         int waveColor = isSend ? 0xFFFFFFFF : ContextCompat.getColor(itemView.getContext(), R.color.app_primary);
         updateWaveBarColor(waveBars, waveColor);
-        updateLoadingColor(loadingView, waveColor);
-        setLoadingState(loadingView, waveBarsContainer, false);
         resetWaveAnimation(waveBars);
         if (isSend) {
             tvDuration.setTextColor(0xFFFFFFFF);
@@ -134,8 +132,7 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
                 url,
                 waveBars,
                 waveColor,
-                waveBarsContainer,
-                loadingView
+                btnPlay
         ));
         voiceContainer.setOnLongClickListener(v -> {
             View parent = (View) this.itemView.getParent();
@@ -152,14 +149,12 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
      * @param url 语音地址
      * @param waveBars 音波条
      * @param waveColor 音波颜色
-     * @param waveBarsContainer 音波容器
-     * @param loadingView 加载态控件
+     * @param playButton 播放点击区域
      */
     private void togglePlay(@NonNull String url,
                             @NonNull View[] waveBars,
                             int waveColor,
-                            @NonNull View waveBarsContainer,
-                            @NonNull ProgressBar loadingView) {
+                            @NonNull View playButton) {
         if (currentPlayer != null && currentPreparing) {
             stopCurrentPlay();
             return;
@@ -172,13 +167,15 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
 
         final Runnable[] animationHolder = new Runnable[1];
         currentPreparing = true;
-        setLoadingState(loadingView, waveBarsContainer, true);
+        playButton.setAlpha(0.82f);
+        animationHolder[0] = createPreparingAnimationRunnable(waveBars, waveColor);
+        itemView.post(animationHolder[0]);
         currentStopAnimation = () -> {
             if (animationHolder[0] != null) {
                 itemView.removeCallbacks(animationHolder[0]);
             }
             currentPreparing = false;
-            setLoadingState(loadingView, waveBarsContainer, false);
+            playButton.setAlpha(1f);
             resetWaveAnimation(waveBars);
             updateWaveBarColor(waveBars, waveColor);
         };
@@ -192,7 +189,7 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
                     return;
                 }
                 currentPreparing = false;
-                setLoadingState(loadingView, waveBarsContainer, false);
+                playButton.setAlpha(1f);
                 mp.start();
                 animationHolder[0] = createWaveAnimationRunnable(waveBars);
                 itemView.post(animationHolder[0]);
@@ -211,6 +208,36 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
         } catch (IOException e) {
             stopCurrentPlay();
         }
+    }
+
+    private Runnable createPreparingAnimationRunnable(@NonNull View[] waveBars, int waveColor) {
+        return new Runnable() {
+            private int tick;
+
+            @Override
+            public void run() {
+                if (!currentPreparing) {
+                    return;
+                }
+                for (int i = 0; i < waveBars.length; i++) {
+                    View waveBar = waveBars[i];
+                    if (waveBar == null) {
+                        continue;
+                    }
+                    int phase = (tick + i) % 6;
+                    int targetHeight = dp(waveBar, WAVE_BAR_MIN_HEIGHT_DP + Math.min(phase, 5 - phase) * 2);
+                    ViewGroup.LayoutParams params = waveBar.getLayoutParams();
+                    if (params.height != targetHeight) {
+                        params.height = targetHeight;
+                        waveBar.setLayoutParams(params);
+                    }
+                    waveBar.setAlpha(0.45f + Math.min(phase, 5 - phase) * 0.08f);
+                    waveBar.setBackgroundTintList(ColorStateList.valueOf(waveColor));
+                }
+                tick = (tick + 1) % 6;
+                itemView.postDelayed(this, WAVE_PREPARING_INTERVAL_MS);
+            }
+        };
     }
 
     private Runnable createWaveAnimationRunnable(@NonNull View[] waveBars) {

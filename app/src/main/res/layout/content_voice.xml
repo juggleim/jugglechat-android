@@ -37,14 +37,6 @@
                     android:orientation="horizontal" />
             </LinearLayout>
 
-            <ProgressBar
-                android:id="@+id/progress_voice_loading"
-                style="?android:attr/progressBarStyleSmall"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:layout_gravity="center"
-                android:indeterminate="true"
-                android:visibility="gone" />
         </FrameLayout>
 
         <TextView
