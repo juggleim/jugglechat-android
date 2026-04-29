@@ -147,8 +147,11 @@ public final class CallIncomingFloatingManager {
                 if (info == null) {
                     return;
                 }
+                // 简要描述：
+                // 连接事件到达时统一以“真实接通时刻”作为计时起点，修复未接通最小化后计时起点错误问题。
+                boolean resetConnectedStartAt = !info.connected || info.connectedStartAt <= 0L;
                 info.connected = true;
-                if (info.connectedStartAt <= 0L) {
+                if (resetConnectedStartAt) {
                     info.connectedStartAt = System.currentTimeMillis();
                 }
                 CallUiStateStore.saveFloatingCallInfo(info);
@@ -456,15 +459,15 @@ public final class CallIncomingFloatingManager {
         tvOngoingTimer = ongoingFloatView.findViewById(R.id.tv_float_time);
 
         ImageView ivAvatar = ongoingFloatView.findViewById(R.id.iv_float_avatar);
-        TextView tvName = ongoingFloatView.findViewById(R.id.tv_float_name);
+        TextView tvStatus = ongoingFloatView.findViewById(R.id.tv_float_name);
         String displayUserId = resolveFloatingDisplayUserId(info);
         UserInfo userInfo = JIM.getInstance().getUserInfoManager().getUserInfo(displayUserId);
         String displayName = userInfo == null || StringUtils.isNullOrEmpty(userInfo.getUserName())
                 ? getSafeString(R.string.call_status_float_ongoing)
                 : userInfo.getUserName();
         String displayAvatar = userInfo == null ? "" : userInfo.getPortrait();
-        tvName.setText(displayName);
         AvatarUtils.loadAvatar(ivAvatar, displayAvatar, displayName, displayUserId);
+        bindOngoingFloatState(info, tvStatus, tvOngoingTimer);
 
         ongoingFloatView.setOnClickListener(v -> {
             Activity current = currentActivityRef.get();
@@ -486,8 +489,6 @@ public final class CallIncomingFloatingManager {
         ((ViewGroup) decorView).addView(ongoingFloatView, params);
         attachedOngoingActivity = activity;
 
-        long startAt = info.connectedStartAt > 0L ? info.connectedStartAt : System.currentTimeMillis();
-        startOngoingTimer(startAt);
         bindOngoingCallSession(info.callId);
     }
 
@@ -549,6 +550,53 @@ public final class CallIncomingFloatingManager {
             }
         };
         mainHandler.post(ongoingTimerRunnable);
+    }
+
+    /**
+     * 绑定通话中浮窗的状态和计时展示。
+     *
+     * <p>简要描述：未接通显示“呼叫中/被叫中”文案并隐藏计时；接通后显示“通话中”并开始计时。</p>
+     *
+     * @param info 浮窗通话快照
+     * @param tvStatus 状态文案控件
+     * @param tvTimer 计时控件
+     */
+    private void bindOngoingFloatState(CallUiStateStore.FloatingCallInfo info, TextView tvStatus, TextView tvTimer) {
+        if (tvStatus != null) {
+            tvStatus.setVisibility(View.VISIBLE);
+        }
+        if (info == null || !info.connected) {
+            if (tvStatus != null) {
+                tvStatus.setText(resolveFloatWaitingStatusText(info));
+            }
+            if (tvTimer != null) {
+                tvTimer.setVisibility(View.GONE);
+            }
+            stopOngoingTimer();
+            return;
+        }
+
+        if (tvStatus != null) {
+            tvStatus.setText(getSafeString(R.string.call_status_float_ongoing));
+        }
+        if (tvTimer != null) {
+            tvTimer.setVisibility(View.VISIBLE);
+        }
+        long startAt = info.connectedStartAt > 0L ? info.connectedStartAt : System.currentTimeMillis();
+        startOngoingTimer(startAt);
+    }
+
+    /**
+     * 解析未接通时浮窗状态文案。
+     *
+     * @param info 浮窗通话快照
+     * @return 状态文案
+     */
+    private String resolveFloatWaitingStatusText(CallUiStateStore.FloatingCallInfo info) {
+        if (info != null && "incoming".equals(info.direction)) {
+            return getSafeString(R.string.call_status_float_waiting_incoming);
+        }
+        return getSafeString(R.string.call_status_waiting_answer);
     }
 
     /**

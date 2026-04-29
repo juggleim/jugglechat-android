@@ -554,7 +554,13 @@ public abstract class BaseCallActivity extends AppCompatActivity {
         info.isGroupCall = isGroupCall;
         info.direction = direction;
         info.connected = connected;
-        info.connectedStartAt = startTime > 0L ? startTime : System.currentTimeMillis();
+        // 简要描述：
+        // 未接通最小化时不写入 connectedStartAt，避免后续把“等待接听时长”误算为通话时长。
+        if (connected) {
+            info.connectedStartAt = startTime > 0L ? startTime : System.currentTimeMillis();
+        } else {
+            info.connectedStartAt = 0L;
+        }
         CallUiStateStore.saveFloatingCallInfo(info);
 
         Intent mainIntent = new Intent(this, MainActivity.class);

@@ -28,6 +28,7 @@
     <string name="call_status_connected">通话中</string>
     <string name="call_status_finished">通话结束</string>
     <string name="call_status_float_ongoing">通话中</string>
+    <string name="call_status_float_waiting_incoming">被叫中...</string>
     <string name="call_status_voice_outgoing">等待对方接听...</string>
     <string name="call_status_video_outgoing">发起视频通话...</string>
     <string name="call_status_member_count">%1$d 人通话中</string>
