@@ -14,7 +14,6 @@
     <com.juggle.im.android.chat.widget.IndexBar
         android:id="@+id/ll_contact_index_bar"
         android:layout_width="20dp"
-        android:layout_marginTop="100dp"
         android:layout_height="wrap_content"
         android:layout_gravity="end|center_vertical"
         android:layout_marginEnd="6dp" />

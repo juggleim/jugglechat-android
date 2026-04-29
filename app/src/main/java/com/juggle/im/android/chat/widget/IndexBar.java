@@ -27,6 +27,8 @@ public class IndexBar extends View {
     private OnIndexSelectedListener listener;
     private Paint paint;
     private final List<String> letters = new ArrayList<>(DEFAULT_LETTERS);
+    private float contentTop = 0f;
+    private float itemHeight = 0f;
 
     public IndexBar(Context context) {
         this(context, null);
@@ -54,11 +56,15 @@ public class IndexBar extends View {
         if (letters.isEmpty()) {
             return;
         }
-        int itemHeight = getHeight() / letters.size();
+
+        IndexLayout layout = buildIndexLayout();
+        contentTop = layout.contentTop;
+        itemHeight = layout.itemHeight;
+
         for (int i = 0; i < letters.size(); i++) {
             float x = getWidth() / 2f;
-            float y = (i + 1) * itemHeight - itemHeight / 2f +
-                    (paint.descent() - paint.ascent()) / 2f - paint.descent();
+            float y = contentTop + (i + 0.5f) * itemHeight
+                    + (paint.descent() - paint.ascent()) / 2f - paint.descent();
 
             paint.setColor(i == selectedIndex ?
                     ContextCompat.getColor(getContext(), R.color.group_primary) :
@@ -76,7 +82,16 @@ public class IndexBar extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
-                int index = (int) (event.getY() / getHeight() * letters.size());
+                IndexLayout layout = buildIndexLayout();
+                contentTop = layout.contentTop;
+                itemHeight = layout.itemHeight;
+
+                if (itemHeight <= 0f) {
+                    return true;
+                }
+
+                float relativeY = event.getY() - contentTop;
+                int index = (int) Math.floor(relativeY / itemHeight);
                 index = Math.max(0, Math.min(index, letters.size() - 1));
                 if (index != selectedIndex) {
                     selectedIndex = index;
@@ -132,5 +147,54 @@ public class IndexBar extends View {
 
     private float spToPx(float sp) {
         return sp * getResources().getDisplayMetrics().scaledDensity;
+    }
+
+    /**
+     * 计算索引字母在当前 View 内的垂直布局。
+     *
+     * <p>简要描述：优先使用“文字高度 + 固定间距”形成紧凑字母块，并在可用高度内垂直居中；若空间不足则按可用高度均分，保证可见与可点。</p>
+     *
+     * @return 字母布局信息
+     */
+    private IndexLayout buildIndexLayout() {
+        if (letters.isEmpty()) {
+            return new IndexLayout(0f, 0f);
+        }
+        float availableHeight = Math.max(0f, getHeight() - getPaddingTop() - getPaddingBottom());
+        if (availableHeight <= 0f) {
+            return new IndexLayout(getPaddingTop(), 0f);
+        }
+        float textHeight = paint.descent() - paint.ascent();
+        float targetItemHeight = textHeight + dpToPx(6f);
+        float totalTargetHeight = targetItemHeight * letters.size();
+        if (totalTargetHeight <= availableHeight) {
+            float top = getPaddingTop() + (availableHeight - totalTargetHeight) / 2f;
+            return new IndexLayout(top, targetItemHeight);
+        }
+        float compactItemHeight = availableHeight / letters.size();
+        return new IndexLayout(getPaddingTop(), compactItemHeight);
+    }
+
+    /**
+     * dp 转 px。
+     *
+     * @param dp dp 值
+     * @return 像素值
+     */
+    private float dpToPx(float dp) {
+        return dp * getResources().getDisplayMetrics().density;
+    }
+
+    /**
+     * 索引字母布局结果。
+     */
+    private static final class IndexLayout {
+        final float contentTop;
+        final float itemHeight;
+
+        IndexLayout(float contentTop, float itemHeight) {
+            this.contentTop = contentTop;
+            this.itemHeight = itemHeight;
+        }
     }
 }
