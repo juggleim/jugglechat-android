@@ -35,6 +35,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.app.ContactDetailActivity;
 import com.juggle.im.android.chat.message.InsertTimeStatusMessage;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
@@ -189,7 +190,18 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             // position)
             requireActivity().runOnUiThread(() -> onMessageAction(message, action));
         }, (message, anchor, position) -> requireActivity()
-                .runOnUiThread(() -> showMessageContextMenu(message, anchor, position)));
+                .runOnUiThread(() -> showMessageContextMenu(message, anchor, position)),
+                new MessageListAdapter.OnAvatarInteractionListener() {
+                    @Override
+                    public void onAvatarClick(UiMessage message, String userId, String displayName) {
+                        requireActivity().runOnUiThread(() -> openContactDetail(userId));
+                    }
+
+                    @Override
+                    public void onAvatarLongClick(UiMessage message, String userId, String displayName) {
+                        requireActivity().runOnUiThread(() -> insertMentionFromAvatar(userId, displayName));
+                    }
+                });
         adapter.setSelectionChangeListener(new MessageListAdapter.OnSelectionChangeListener() {
             @Override
             public void onSelectionModeChanged(boolean inSelectionMode) {
@@ -758,6 +770,41 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
         if (input == null)
             return;
+        input.insertMention(userIds, userNames);
+    }
+
+    /**
+     * 跳转联系人详情页。
+     *
+     * @param userId 目标用户 ID
+     */
+    private void openContactDetail(@Nullable String userId) {
+        if (getContext() == null || TextUtils.isEmpty(userId)) {
+            return;
+        }
+        Intent intent = new Intent(requireContext(), ContactDetailActivity.class);
+        intent.putExtra(ContactDetailActivity.EXTRA_USER_ID, userId);
+        startActivity(intent);
+    }
+
+    /**
+     * 通过头像长按插入 @ 提及。
+     *
+     * @param userId 目标用户 ID
+     * @param displayName 目标用户展示名
+     */
+    private void insertMentionFromAvatar(@Nullable String userId, @Nullable String displayName) {
+        if (!isGroup || TextUtils.isEmpty(userId) || TextUtils.isEmpty(displayName)) {
+            return;
+        }
+        ChatInputActionBar input = getActivity().findViewById(R.id.input_bar);
+        if (input == null) {
+            return;
+        }
+        ArrayList<String> userIds = new ArrayList<>();
+        userIds.add(userId);
+        ArrayList<String> userNames = new ArrayList<>();
+        userNames.add(displayName);
         input.insertMention(userIds, userNames);
     }
 

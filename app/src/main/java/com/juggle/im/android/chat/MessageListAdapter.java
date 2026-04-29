@@ -42,25 +42,33 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     private final boolean isGroup;
     private final OnMessageActionListener actionListener;
     private final OnMessageLongClickListener longClickListener;
+    private final OnAvatarInteractionListener avatarInteractionListener;
     // selection mode state
     private boolean selectionMode = false;
     private final List<UiMessage> selectedMsg = new ArrayList<>();
     private OnSelectionChangeListener selectionChangeListener = null;
 
     protected MessageListAdapter(boolean isGroup) {
-        this(isGroup, null, null);
+        this(isGroup, null, null, null);
     }
 
     protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener) {
-        this(isGroup, listener, null);
+        this(isGroup, listener, null, null);
     }
 
     protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener,
             OnMessageLongClickListener longClickListener) {
+        this(isGroup, listener, longClickListener, null);
+    }
+
+    protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener,
+            OnMessageLongClickListener longClickListener,
+            OnAvatarInteractionListener avatarInteractionListener) {
         super(DIFF);
         this.isGroup = isGroup;
         this.actionListener = listener;
         this.longClickListener = longClickListener;
+        this.avatarInteractionListener = avatarInteractionListener;
     }
 
     public void setSelectionChangeListener(OnSelectionChangeListener l) {
@@ -169,7 +177,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View v = inflater.inflate(viewType, parent, false);
-        return new MessageHolder(v, actionListener, longClickListener);
+        return new MessageHolder(v, actionListener, longClickListener, avatarInteractionListener);
     }
 
     @Override
@@ -230,6 +238,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final OnMessageLongClickListener longClickListener;
+        private final OnAvatarInteractionListener avatarInteractionListener;
         private final JuggleCheckBox checkBox;
         private final View reactionContainer;
         private final View msgViewContainer;
@@ -241,11 +250,13 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         private boolean lastBoundHasReply = false;
 
         MessageHolder(@NonNull View itemView, OnMessageActionListener listener,
-                OnMessageLongClickListener longClickListener) {
+                OnMessageLongClickListener longClickListener,
+                OnAvatarInteractionListener avatarInteractionListener) {
             super(itemView);
             this.container = itemView.findViewById(R.id.message_content_container);
             this.actionListener = listener;
             this.longClickListener = longClickListener;
+            this.avatarInteractionListener = avatarInteractionListener;
             this.checkBox = itemView.findViewById(R.id.checkbox);
             this.reactionContainer = itemView.findViewById(R.id.reaction_container);
             this.msgViewContainer = itemView.findViewById(R.id.message_bubble_container);
@@ -285,7 +296,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 lastBoundContentClass = contentClass;
                 lastBoundHasReply = hasReply;
             }
-            delegate.bind(m, m.getMessage().getContent(), isGroup, itemView);
+            delegate.bind(m, m.getMessage().getContent(), isGroup, itemView, this.avatarInteractionListener);
             bindReplyPreview(m);
             boundMessage = m;
             bindHighlightState(m);
@@ -571,7 +582,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     public View createContextPinnedMessageView(@NonNull ViewGroup parent, @NonNull UiMessage uiMessage) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(getMessageViewTemplate(uiMessage.getStableKey()), parent, false);
-        MessageHolder holder = new MessageHolder(itemView, actionListener, null);
+        MessageHolder holder = new MessageHolder(itemView, actionListener, null, avatarInteractionListener);
         holder.bind(uiMessage, isGroup,
                 uiMessage.getDirection() == Message.MessageDirection.SEND,
                 false,
@@ -587,7 +598,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
      * @param uiMessage 当前消息
      */
     public void bindContextMenu(@NonNull View menuView, @NonNull UiMessage uiMessage) {
-        MessageHolder holder = new MessageHolder(menuView, actionListener, null);
+        MessageHolder holder = new MessageHolder(menuView, actionListener, null, avatarInteractionListener);
         holder.bindMenuState(menuView, uiMessage);
     }
 
@@ -629,6 +640,26 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
          * @param position 当前适配器位置
          */
         void onMessageLongClick(UiMessage message, View anchor, int position);
+    }
+
+    public interface OnAvatarInteractionListener {
+        /**
+         * 点击消息头像。
+         *
+         * @param message 当前消息
+         * @param userId 头像所属用户 ID
+         * @param displayName 头像所属用户展示名
+         */
+        void onAvatarClick(UiMessage message, String userId, String displayName);
+
+        /**
+         * 长按消息头像。
+         *
+         * @param message 当前消息
+         * @param userId 头像所属用户 ID
+         * @param displayName 头像所属用户展示名
+         */
+        void onAvatarLongClick(UiMessage message, String userId, String displayName);
     }
 
     public interface OnMessageActionListener {

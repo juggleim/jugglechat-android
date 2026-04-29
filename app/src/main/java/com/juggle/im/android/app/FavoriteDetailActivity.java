@@ -131,7 +131,7 @@ public class FavoriteDetailActivity extends AbsAppActivity {
 
             // tips: 收藏预览统一以接收消息样式展示，不显示发送状态
             UiMessage displayMessage = createDisplayMessage(uiMessage);
-            messageView.bind(displayMessage, content, false, messageView.itemView);
+            messageView.bind(displayMessage, content, false, messageView.itemView, null);
 
             // tips: 特殊类型点击行为：图片→全屏预览，合并消息→合并详情页
             handleSpecialClick(contentContainer, content, uiMessage);

@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 import com.juggle.im.android.app.BlockUsersActivity;
+import com.juggle.im.android.app.ContactDetailActivity;
 import com.juggle.im.android.app.FriendApplicationsActivity;
 import com.juggle.im.android.app.MyGroupsActivity;
 import com.juggle.im.android.chat.widget.IndexBar;
@@ -84,7 +85,7 @@ public class FriendsFragment extends Fragment {
     private void setupRecyclerView() {
         layoutManager = new LinearLayoutManager(requireContext());
         recyclerView.setLayoutManager(layoutManager);
-        adapter = new ContactListAdapter(this::openFriendConversation, this::onActionEntryClick);
+        adapter = new ContactListAdapter(this::openFriendDetail, this::onActionEntryClick);
         recyclerView.setAdapter(adapter);
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -125,11 +126,9 @@ public class FriendsFragment extends Fragment {
         }
     }
 
-    private void openFriendConversation(@NonNull ContactListAdapter.FriendRow row) {
-        Conversation conversation = new Conversation(Conversation.ConversationType.PRIVATE, row.userId);
-        JIM.getInstance().getConversationManager().clearUnreadCount(conversation, null);
-        Intent intent = ConversationActivity.intentFor(
-                requireContext(), row.userId, false, row.displayName);
+    private void openFriendDetail(@NonNull ContactListAdapter.FriendRow row) {
+        Intent intent = new Intent(requireContext(), ContactDetailActivity.class);
+        intent.putExtra(ContactDetailActivity.EXTRA_USER_ID, row.userId);
         startActivity(intent);
     }
 

@@ -56,7 +56,8 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
      * @param isGroup  whether the conversation is a group
      * @param itemView
      */
-    final public void bind(T message, K content, boolean isGroup, View itemView) {
+    final public void bind(T message, K content, boolean isGroup, View itemView,
+            @androidx.annotation.Nullable com.juggle.im.android.chat.MessageListAdapter.OnAvatarInteractionListener avatarInteractionListener) {
         boolean isSend = message.getDirection() == Message.MessageDirection.SEND;
         boolean showBubble = shouldShowBubble(message, content);
 
@@ -81,10 +82,23 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
         }
         String senderName = sendUser != null ? sendUser.getUserName() : message.getSenderName();
         String senderPortrait = sendUser != null ? sendUser.getPortrait() : null;
+        final String finalSenderId = senderId;
+        final String finalSenderName = senderName;
 
         if (ivAvatar != null) {
             ivAvatar.setVisibility(VISIBLE);
             AvatarUtils.loadAvatar(ivAvatar, senderPortrait, senderName, senderId);
+            ivAvatar.setOnClickListener(null);
+            ivAvatar.setOnLongClickListener(null);
+            if (avatarInteractionListener != null && !TextUtils.isEmpty(finalSenderId)) {
+                ivAvatar.setOnClickListener(v -> avatarInteractionListener.onAvatarClick(message, finalSenderId, finalSenderName));
+                if (isGroup && !isSend) {
+                    ivAvatar.setOnLongClickListener(v -> {
+                        avatarInteractionListener.onAvatarLongClick(message, finalSenderId, finalSenderName);
+                        return true;
+                    });
+                }
+            }
         }
         if (!TextUtils.isEmpty(senderName)) {
             message.setSenderName(senderName);
