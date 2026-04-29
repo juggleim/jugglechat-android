@@ -69,6 +69,24 @@
                     android:orientation="vertical"
                     android:minWidth="50dp" />
 
+                <LinearLayout
+                    android:id="@+id/reaction_container"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:id="@+id/reaction_chip_container"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="start"
+                        android:orientation="vertical" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/msg_sent_time"
                     android:layout_width="wrap_content"
@@ -78,31 +96,6 @@
                     android:textColor="#A1A7B3"
                     tools:text="12:00"
                     android:textSize="11sp" />
-            </LinearLayout>
-
-            <!-- 上层：reaction，盖住 bubble 一部分 -->
-            <LinearLayout
-                android:id="@+id/reaction_container"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="top|start"
-                android:background="@drawable/bg_reaction_pill"
-                android:elevation="2dp"
-                android:orientation="horizontal"
-                android:paddingStart="5dp"
-                android:paddingTop="3dp"
-                android:paddingEnd="8dp"
-                android:gravity="center_vertical"
-                android:paddingBottom="3dp"
-                android:visibility="visible">
-
-                <TextView
-                    android:id="@+id/reaction_emojis"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="@android:color/white"
-                    tools:text="xxxxx"
-                    android:textSize="13sp" />
             </LinearLayout>
 
         </FrameLayout>

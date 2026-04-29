@@ -52,10 +52,22 @@ public interface UserService {
 
     public void myGroups(ApiCallback<GroupListData> callback);
     /**
-     * Apply (send friend request) to a user. POST /jim/friends/apply {friend_id:
-     * "..."}
+     * 发送好友申请。
+     * POST /jim/friends/apply {friend_id: "..."}
+     *
+     * @param friendId 目标好友 ID
+     * @param callback 请求回调
      */
     void applyFriend(String friendId, ApiCallback<com.juggle.im.android.server.beans.FriendApplicationBean> callback);
+
+    /**
+     * 删除联系人。
+     * POST /jim/friends/del {friend_ids: ["..."]}
+     *
+     * @param friendIds 待删除的联系人 ID 列表
+     * @param callback 请求回调
+     */
+    void removeFriends(List<String> friendIds, ApiCallback<Void> callback);
 
     /**
      * Create a group with name, portrait and members. POST /jim/groups/add

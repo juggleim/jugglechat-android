@@ -123,7 +123,8 @@
     <string name="contact_detail_report_contact">投诉联系人</string>
     <string name="contact_detail_delete_title">删除联系人</string>
     <string name="contact_detail_delete_message">确认删除“%1$s”吗？</string>
-    <string name="contact_detail_delete_todo">删除联系人功能暂未接入</string>
+    <string name="contact_detail_delete_success">已删除联系人</string>
+    <string name="contact_detail_delete_failed">删除失败：%1$s</string>
     <string name="scan_qr_flash_on">闪光灯已开</string>
     <string name="scan_qr_flash_off">闪光灯已关</string>
     <string name="msg_text">[文本]</string>

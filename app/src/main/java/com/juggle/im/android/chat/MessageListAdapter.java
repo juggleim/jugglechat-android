@@ -7,7 +7,6 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -43,32 +42,41 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     private final OnMessageActionListener actionListener;
     private final OnMessageLongClickListener longClickListener;
     private final OnAvatarInteractionListener avatarInteractionListener;
+    private final OnMessageStatusClickListener statusClickListener;
     // selection mode state
     private boolean selectionMode = false;
     private final List<UiMessage> selectedMsg = new ArrayList<>();
     private OnSelectionChangeListener selectionChangeListener = null;
 
     protected MessageListAdapter(boolean isGroup) {
-        this(isGroup, null, null, null);
+        this(isGroup, null, null, null, null);
     }
 
     protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener) {
-        this(isGroup, listener, null, null);
+        this(isGroup, listener, null, null, null);
     }
 
     protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener,
             OnMessageLongClickListener longClickListener) {
-        this(isGroup, listener, longClickListener, null);
+        this(isGroup, listener, longClickListener, null, null);
     }
 
     protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener,
             OnMessageLongClickListener longClickListener,
             OnAvatarInteractionListener avatarInteractionListener) {
+        this(isGroup, listener, longClickListener, avatarInteractionListener, null);
+    }
+
+    protected MessageListAdapter(boolean isGroup, OnMessageActionListener listener,
+            OnMessageLongClickListener longClickListener,
+            OnAvatarInteractionListener avatarInteractionListener,
+            OnMessageStatusClickListener statusClickListener) {
         super(DIFF);
         this.isGroup = isGroup;
         this.actionListener = listener;
         this.longClickListener = longClickListener;
         this.avatarInteractionListener = avatarInteractionListener;
+        this.statusClickListener = statusClickListener;
     }
 
     public void setSelectionChangeListener(OnSelectionChangeListener l) {
@@ -177,7 +185,7 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View v = inflater.inflate(viewType, parent, false);
-        return new MessageHolder(v, actionListener, longClickListener, avatarInteractionListener);
+        return new MessageHolder(v, actionListener, longClickListener, avatarInteractionListener, statusClickListener);
     }
 
     @Override
@@ -234,15 +242,16 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     }
 
     static class MessageHolder extends RecyclerView.ViewHolder {
+        private static final int MAX_REACTION_PER_ROW = 5;
         private final ViewGroup container;
         private MessageView delegate;
         private final OnMessageActionListener actionListener;
         private final OnMessageLongClickListener longClickListener;
         private final OnAvatarInteractionListener avatarInteractionListener;
+        private final OnMessageStatusClickListener statusClickListener;
         private final JuggleCheckBox checkBox;
         private final View reactionContainer;
-        private final View msgViewContainer;
-        private final TextView reactionEmojis;
+        private final LinearLayout reactionChipContainer;
         private final ViewGroup replyPreviewContainer;
         private UiMessage boundMessage;
         private String lastBoundStableKey = "";
@@ -251,16 +260,17 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         MessageHolder(@NonNull View itemView, OnMessageActionListener listener,
                 OnMessageLongClickListener longClickListener,
-                OnAvatarInteractionListener avatarInteractionListener) {
+                OnAvatarInteractionListener avatarInteractionListener,
+                OnMessageStatusClickListener statusClickListener) {
             super(itemView);
             this.container = itemView.findViewById(R.id.message_content_container);
             this.actionListener = listener;
             this.longClickListener = longClickListener;
             this.avatarInteractionListener = avatarInteractionListener;
+            this.statusClickListener = statusClickListener;
             this.checkBox = itemView.findViewById(R.id.checkbox);
             this.reactionContainer = itemView.findViewById(R.id.reaction_container);
-            this.msgViewContainer = itemView.findViewById(R.id.message_bubble_container);
-            this.reactionEmojis = itemView.findViewById(R.id.reaction_emojis);
+            this.reactionChipContainer = itemView.findViewById(R.id.reaction_chip_container);
             this.replyPreviewContainer = itemView.findViewById(R.id.reply_preview_container);
         }
 
@@ -297,13 +307,14 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
                 lastBoundHasReply = hasReply;
             }
             delegate.bind(m, m.getMessage().getContent(), isGroup, itemView, this.avatarInteractionListener);
+            bindSendStatusClick(m);
             bindReplyPreview(m);
             boundMessage = m;
-            bindHighlightState(m);
             bindPinnedState(m);
 
             // Display reactions
-            bindReactions(m);
+            bindReactions(m, isSend);
+            bindHighlightState(m);
 
             // set long click to either enter selection mode (if supported) or show actions
             container.setOnLongClickListener(v -> {
@@ -341,26 +352,52 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
         }
 
         /**
-         * 绑定消息高亮态。
+         * 绑定发送失败状态点击事件。
+         *
+         * @param message 当前消息
+         */
+        private void bindSendStatusClick(UiMessage message) {
+            bindStatusClick(itemView.findViewById(R.id.msg_read_status), message);
+            bindStatusClick(itemView.findViewById(R.id.image_msg_read_status), message);
+        }
+
+        /**
+         * 绑定单个状态图标的点击事件。
+         * tips: 仅发送失败时响应点击，避免影响已发送/已读状态展示。
+         *
+         * @param statusView 状态图标
+         * @param message 当前消息
+         */
+        private void bindStatusClick(View statusView, UiMessage message) {
+            if (statusView == null) {
+                return;
+            }
+            statusView.setOnClickListener(null);
+            statusView.setClickable(false);
+            boolean isFail = message.getDirection() == Message.MessageDirection.SEND
+                    && message.getMessage().getState() != null
+                    && message.getMessage().getState().getValue() == Message.MessageState.FAIL.getValue();
+            if (!isFail || statusClickListener == null) {
+                return;
+            }
+            statusView.setClickable(true);
+            statusView.setOnClickListener(v -> statusClickListener.onStatusClick(message));
+        }
+
+        /**
          *
          * <p>tips：高亮只做临时覆盖，非高亮时始终回退到当前消息类型应有的默认样式，避免 RecyclerView 复用导致背景串位。</p>
          */
         private void bindHighlightState(UiMessage uiMessage) {
             boolean isHighlight = Boolean.TRUE.equals(uiMessage.getExtension("highlight"));
-            if (msgViewContainer != null) {
-//                if (isHighlight) {
-//                    msgViewContainer.setBackgroundColor(0xFFFFF3C4);
-//                } else {
-//                    msgViewContainer.setBackgroundResource(uiMessage.getDirection() == Message.MessageDirection.SEND
-//                            ? R.drawable.bg_message_sent
-//                            : R.drawable.bg_message_received);
-//                }
-            }
-            if (reactionContainer != null) {
-                if (isHighlight) {
-                    reactionContainer.setBackgroundColor(0xFFE8B93C);
-                } else {
-                    reactionContainer.setBackgroundResource(R.drawable.bg_reaction_pill);
+            if (reactionChipContainer != null) {
+                // reaction 使用多 chip 后，使用透明度做弱高亮，避免覆盖 chip 自身样式。
+                float chipAlpha = isHighlight ? 0.88f : 1f;
+                for (int i = 0; i < reactionChipContainer.getChildCount(); i++) {
+                    View child = reactionChipContainer.getChildAt(i);
+                    if (child != null) {
+                        child.setAlpha(chipAlpha);
+                    }
                 }
             }
         }
@@ -415,27 +452,33 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             itemView.setAlpha(isPinned ? 0f : 1f);
         }
 
-        private void bindReactions(UiMessage m) {
-            if (reactionContainer == null || reactionEmojis == null) {
+        /**
+         * 绑定消息 Reaction 展示。
+         * <p>
+         * 简要描述：
+         * 将每个 reaction 类型渲染为独立 chip，满足“同类型多人显示计数，单人显示头像”的产品规则。
+         *
+         * @param message 当前消息
+         * @param isSendDirection 是否发送方消息（用于切换 chip 颜色）
+         */
+        private void bindReactions(UiMessage message, boolean isSendDirection) {
+            if (reactionContainer == null || reactionChipContainer == null) {
                 return;
             }
+            reactionChipContainer.removeAllViews();
 
-            String messageId = m.getMessageId();
-            if (messageId == null || messageId.isEmpty()) {
+            String messageId = message.getMessageId();
+            if (TextUtils.isEmpty(messageId)) {
                 reactionContainer.setVisibility(GONE);
-                setupMessageBubble(false);
                 return;
             }
 
-            // Get cached reactions
             List<String> messageIdList = new ArrayList<>();
             messageIdList.add(messageId);
             List<MessageReaction> reactions = JIM.getInstance().getMessageManager()
                     .getCachedMessagesReaction(messageIdList);
-
             if (reactions == null || reactions.isEmpty()) {
                 reactionContainer.setVisibility(GONE);
-                setupMessageBubble(false);
                 return;
             }
 
@@ -443,46 +486,135 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
             List<MessageReactionItem> items = reaction.getItemList();
             if (items == null || items.isEmpty()) {
                 reactionContainer.setVisibility(GONE);
-                setupMessageBubble(false);
                 return;
             }
 
-            // Build reaction display string
-            StringBuilder sb = new StringBuilder();
+            int visibleChipCount = 0;
+            LayoutInflater inflater = LayoutInflater.from(itemView.getContext());
+            LinearLayout currentRow = null;
+            int currentRowChipCount = 0;
             for (MessageReactionItem item : items) {
-                String emoji = reactionIdToEmoji(item.getReactionId());
-                int count = item.getUserInfoList() != null ? item.getUserInfoList().size() : 0;
-                if (sb.length() > 0) sb.append(" ");
-                sb.append(emoji);
-                if (count > 1) {
-                    sb.append(count);
+                int userCount = getReactionUserCount(item);
+                if (userCount <= 0) {
+                    continue;
                 }
+                View chipView = inflater.inflate(R.layout.item_message_reaction_chip, reactionChipContainer, false);
+                LinearLayout chipRoot = chipView.findViewById(R.id.layout_reaction_chip);
+                TextView emojiView = chipView.findViewById(R.id.tv_reaction_emoji);
+                TextView countView = chipView.findViewById(R.id.tv_reaction_count);
+                ImageView avatarView = chipView.findViewById(R.id.iv_reaction_avatar);
+
+                emojiView.setText(reactionIdToEmoji(item.getReactionId()));
+                if (chipRoot != null) {
+                    chipRoot.setBackgroundResource(isSendDirection
+                            ? R.drawable.bg_reaction_chip_sent
+                            : R.drawable.bg_reaction_chip_received);
+                }
+
+                if (userCount > 1) {
+                    countView.setVisibility(VISIBLE);
+                    countView.setText(String.valueOf(userCount));
+                    avatarView.setVisibility(GONE);
+                } else {
+                    countView.setVisibility(GONE);
+                    UserInfo reactor = getFirstReactionUser(item);
+                    if (reactor == null) {
+                        // 理论上单人 reaction 会带 userInfo；兜底避免出现空头像占位。
+                        avatarView.setVisibility(GONE);
+                        countView.setVisibility(VISIBLE);
+                        countView.setText("1");
+                    } else {
+                        avatarView.setVisibility(VISIBLE);
+                        bindReactionAvatar(avatarView, reactor);
+                    }
+                }
+
+                LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) chipView.getLayoutParams();
+                if (layoutParams == null) {
+                    layoutParams = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                }
+                if (currentRow == null || currentRowChipCount >= MAX_REACTION_PER_ROW) {
+                    currentRow = createReactionRow(isSendDirection);
+                    LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                    if (reactionChipContainer.getChildCount() > 0) {
+                        rowParams.topMargin = ResourceUtils.dp2px(itemView.getContext(), 4f);
+                    }
+                    currentRow.setLayoutParams(rowParams);
+                    reactionChipContainer.addView(currentRow);
+                    currentRowChipCount = 0;
+                }
+                if (currentRowChipCount > 0) {
+                    layoutParams.setMarginStart(ResourceUtils.dp2px(itemView.getContext(), 4f));
+                } else {
+                    layoutParams.setMarginStart(0);
+                }
+                chipView.setLayoutParams(layoutParams);
+                currentRow.addView(chipView);
+                currentRowChipCount++;
+                visibleChipCount++;
             }
 
-            if (sb.length() > 0) {
-                reactionEmojis.setText(sb.toString());
-                reactionContainer.setVisibility(VISIBLE);
-                setupMessageBubble(true);
-            } else {
-                reactionContainer.setVisibility(GONE);
-                setupMessageBubble(false);
-            }
+            reactionContainer.setVisibility(visibleChipCount > 0 ? VISIBLE : GONE);
         }
 
-        private void setupMessageBubble(boolean hasReaction) {
-            if (hasReaction) {
-                FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) msgViewContainer.getLayoutParams();
-                p.setMargins(0, dp(msgViewContainer, 15), 0, 0);
-                msgViewContainer.setLayoutParams(p);
-            } else {
-                FrameLayout.LayoutParams p = (FrameLayout.LayoutParams) msgViewContainer.getLayoutParams();
-                p.setMargins(0, 0, 0, 0);
-                msgViewContainer.setLayoutParams(p);
-            }
+        /**
+         * 创建 reaction 的单行容器。
+         * <p>
+         * 简要描述：
+         * 每行最多放置 5 个表情 chip；发送方右对齐，接收方左对齐，和消息气泡方向一致。
+         *
+         * @param isSendDirection 是否发送方消息
+         * @return 单行容器
+         */
+        private LinearLayout createReactionRow(boolean isSendDirection) {
+            LinearLayout row = new LinearLayout(itemView.getContext());
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(isSendDirection ? android.view.Gravity.END : android.view.Gravity.START);
+            return row;
         }
 
-        private int dp(View itemView, int value) {
-            return Math.round(value * itemView.getResources().getDisplayMetrics().density);
+        /**
+         * 获取单个 Reaction 类型的参与人数。
+         *
+         * @param item Reaction 项
+         * @return 人数
+         */
+        private int getReactionUserCount(MessageReactionItem item) {
+            if (item == null || item.getUserInfoList() == null) {
+                return 0;
+            }
+            return item.getUserInfoList().size();
+        }
+
+        /**
+         * 取当前 Reaction 类型的第一个参与用户。
+         *
+         * @param item Reaction 项
+         * @return 用户信息，若不存在则返回 null
+         */
+        private UserInfo getFirstReactionUser(MessageReactionItem item) {
+            if (item == null || item.getUserInfoList() == null || item.getUserInfoList().isEmpty()) {
+                return null;
+            }
+            return item.getUserInfoList().get(0);
+        }
+
+        /**
+         * 绑定 reaction 用户头像。
+         *
+         * @param avatarView 头像控件
+         * @param user 用户信息
+         */
+        private void bindReactionAvatar(ImageView avatarView, UserInfo user) {
+            AvatarUtils.loadAvatar(
+                    avatarView,
+                    user.getPortrait(),
+                    user.getUserName(),
+                    user.getUserId());
         }
 
         void bindMenuState(View menuView, UiMessage ui) {
@@ -582,7 +714,8 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
     public View createContextPinnedMessageView(@NonNull ViewGroup parent, @NonNull UiMessage uiMessage) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(getMessageViewTemplate(uiMessage.getStableKey()), parent, false);
-        MessageHolder holder = new MessageHolder(itemView, actionListener, null, avatarInteractionListener);
+        MessageHolder holder = new MessageHolder(itemView, actionListener, null, avatarInteractionListener,
+                statusClickListener);
         holder.bind(uiMessage, isGroup,
                 uiMessage.getDirection() == Message.MessageDirection.SEND,
                 false,
@@ -598,7 +731,8 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
      * @param uiMessage 当前消息
      */
     public void bindContextMenu(@NonNull View menuView, @NonNull UiMessage uiMessage) {
-        MessageHolder holder = new MessageHolder(menuView, actionListener, null, avatarInteractionListener);
+        MessageHolder holder = new MessageHolder(menuView, actionListener, null, avatarInteractionListener,
+                statusClickListener);
         holder.bindMenuState(menuView, uiMessage);
     }
 
@@ -664,6 +798,15 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
     public interface OnMessageActionListener {
         void onMessageAction(UiMessage message, String action);
+    }
+
+    public interface OnMessageStatusClickListener {
+        /**
+         * 点击消息发送状态。
+         *
+         * @param message 当前消息
+         */
+        void onStatusClick(UiMessage message);
     }
 
     public static class Action {

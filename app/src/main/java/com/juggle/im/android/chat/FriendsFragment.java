@@ -1,5 +1,6 @@
 package com.juggle.im.android.chat;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.icu.text.Transliterator;
 import android.os.Bundle;
@@ -39,6 +40,7 @@ import java.util.Locale;
 
 public class FriendsFragment extends Fragment {
     private static final String FRIEND_APPLY = "friend_apply";
+    private static final int REQ_CONTACT_DETAIL = 3001;
     private static final int PAGE_SIZE = 50;
     private static final Transliterator HAN_TO_LATIN = Transliterator.getInstance(
             "Han-Latin; NFD; [:Nonspacing Mark:] Remove; NFC");
@@ -80,6 +82,19 @@ public class FriendsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         refreshNewFriendBadge();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_CONTACT_DETAIL || resultCode != Activity.RESULT_OK || data == null) {
+            return;
+        }
+        String removedUserId = data.getStringExtra(ContactDetailActivity.RESULT_REMOVED_USER_ID);
+        if (TextUtils.isEmpty(removedUserId)) {
+            return;
+        }
+        removeFriendLocally(removedUserId);
     }
 
     private void setupRecyclerView() {
@@ -129,7 +144,7 @@ public class FriendsFragment extends Fragment {
     private void openFriendDetail(@NonNull ContactListAdapter.FriendRow row) {
         Intent intent = new Intent(requireContext(), ContactDetailActivity.class);
         intent.putExtra(ContactDetailActivity.EXTRA_USER_ID, row.userId);
-        startActivity(intent);
+        startActivityForResult(intent, REQ_CONTACT_DETAIL);
     }
 
     private void loadFriendsRecursively(int page, @NonNull List<ContactEntry> container) {
@@ -164,6 +179,19 @@ public class FriendsFragment extends Fragment {
                 Toast.makeText(requireContext(), "加载好友失败：" + message, Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    /**
+     * 本地移除已删除联系人，并刷新列表。
+     *
+     * @param userId 已删除的联系人 ID
+     */
+    private void removeFriendLocally(@NonNull String userId) {
+        boolean removed = allFriends.removeIf(item -> TextUtils.equals(item.userId, userId));
+        if (!removed) {
+            return;
+        }
+        renderRows(buildRows(sortedFriends(allFriends)));
     }
 
     @Nullable

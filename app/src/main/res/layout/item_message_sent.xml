@@ -56,7 +56,6 @@
                         android:id="@+id/message_bubble_container"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
                         android:background="@drawable/bg_message_sent"
                         android:gravity="end"
                         android:orientation="vertical"
@@ -72,6 +71,24 @@
                             android:layout_height="wrap_content"
                             android:minWidth="50dp"
                             android:orientation="vertical" />
+
+                        <LinearLayout
+                            android:id="@+id/reaction_container"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="end"
+                            android:layout_marginTop="4dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:id="@+id/reaction_chip_container"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:orientation="vertical" />
+                        </LinearLayout>
 
                         <LinearLayout
                             android:id="@+id/msg_status_container"
@@ -118,31 +135,6 @@
                             </FrameLayout>
 
                         </LinearLayout>
-                    </LinearLayout>
-
-                    <!-- 上层：reaction，压住 bubble 一部分 -->
-                    <LinearLayout
-                        android:id="@+id/reaction_container"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|end"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_reaction_pill"
-                        android:elevation="2dp"
-                        android:orientation="horizontal"
-                        android:paddingStart="8dp"
-                        android:paddingTop="3dp"
-                        android:paddingEnd="8dp"
-                        android:paddingBottom="3dp"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/reaction_emojis"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text=""
-                            android:textColor="@android:color/white"
-                            android:textSize="13sp" />
                     </LinearLayout>
 
                 </FrameLayout>

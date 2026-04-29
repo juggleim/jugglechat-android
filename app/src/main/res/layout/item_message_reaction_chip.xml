@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_reaction_chip"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_reaction_chip_received"
+    android:gravity="center_vertical"
+    android:minHeight="20dp"
+    android:orientation="horizontal"
+    android:paddingStart="6dp"
+    android:paddingTop="2dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="2dp">
+
+    <TextView
+        android:id="@+id/tv_reaction_emoji"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/tv_reaction_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:textColor="#2E3440"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/iv_reaction_avatar"
+        android:layout_width="14dp"
+        android:layout_height="14dp"
+        android:layout_marginStart="4dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/icon_default_avatar"
+        android:visibility="gone" />
+
+</LinearLayout>

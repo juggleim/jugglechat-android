@@ -245,13 +245,21 @@ public class JIMChatCore {
 
             @Override
             public void onMessageReactionAdd(Conversation conversation, MessageReaction messageReaction) {
-                Log.d(tag, "onMessageReactionAdd: " + messageReaction.toString());
+                // 简要描述：部分端侧或弱网场景下 SDK 可能回调空 reaction，这里先做兜底避免 NPE。
+                Log.d(tag, "onMessageReactionAdd: " + String.valueOf(messageReaction));
+                if (conversation == null || messageReaction == null) {
+                    return;
+                }
                 EventBus.getDefault().post(new ReactionUpdatedEvent(conversation, messageReaction, true));
             }
 
             @Override
             public void onMessageReactionRemove(Conversation conversation, MessageReaction messageReaction) {
-                Log.d(tag, "onMessageReactionRemove: " + messageReaction.toString());
+                // 简要描述：与 add 保持一致，避免 remove 回调出现空对象导致崩溃。
+                Log.d(tag, "onMessageReactionRemove: " + String.valueOf(messageReaction));
+                if (conversation == null || messageReaction == null) {
+                    return;
+                }
                 EventBus.getDefault().post(new ReactionUpdatedEvent(conversation, messageReaction, false));
             }
 

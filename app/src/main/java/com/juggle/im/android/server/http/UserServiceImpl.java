@@ -155,6 +155,19 @@ public class UserServiceImpl extends BaseService implements UserService {
                 callback);
     }
 
+    /**
+     * 删除联系人。
+     *
+     * @param friendIds 待删除的联系人 ID 列表
+     * @param callback 请求回调
+     */
+    @Override
+    public void removeFriends(List<String> friendIds, ApiCallback<Void> callback) {
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("friend_ids", friendIds == null ? new ArrayList<>() : friendIds);
+        enqueueJson("/jim/friends/del", body, Void.class, callback);
+    }
+
     @Override
     public void createGroup(Object body, ApiCallback<com.juggle.im.android.server.beans.CreateGroupResult> callback) {
         enqueueJson("/jim/groups/add", body, com.juggle.im.android.server.beans.CreateGroupResult.class, callback);

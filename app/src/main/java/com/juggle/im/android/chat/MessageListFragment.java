@@ -51,6 +51,10 @@ import com.juggle.im.model.MessageReaction;
 import com.juggle.im.model.MessageReactionItem;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.TextMessage;
+import com.juggle.im.model.messages.ImageMessage;
+import com.juggle.im.model.messages.FileMessage;
+import com.juggle.im.model.messages.MergeMessage;
+import com.juggle.im.model.messages.VoiceMessage;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -201,7 +205,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     public void onAvatarLongClick(UiMessage message, String userId, String displayName) {
                         requireActivity().runOnUiThread(() -> insertMentionFromAvatar(userId, displayName));
                     }
-                });
+                },
+                message -> requireActivity().runOnUiThread(() -> resendFailedMessage(message)));
         adapter.setSelectionChangeListener(new MessageListAdapter.OnSelectionChangeListener() {
             @Override
             public void onSelectionModeChanged(boolean inSelectionMode) {
@@ -1641,6 +1646,9 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
 
                         @Override
                         public void onError(int i) {
+                            Log.e("MessageListFragment", "removeMessageReaction failed, code=" + i
+                                    + ", messageId=" + message.getMessageId()
+                                    + ", reactionId=");
                             ToastUtils.show(requireContext(), R.string.operation_failed);
                         }
                     });
@@ -1661,10 +1669,25 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
 
                         @Override
                         public void onError(int i) {
+                            Log.e("MessageListFragment", "addMessageReaction failed, code=" + i
+                                    + ", messageId=" + message.getMessageId()
+                                    + ", reactionId=" + reactionId);
                             ToastUtils.show(requireContext(), R.string.operation_failed);
                         }
                     });
         }
+    }
+
+    /**
+     * 主线程刷新消息状态。
+     *
+     * @param messages 待刷新的消息列表
+     */
+    private void updateMessagesOnMainThread(@NonNull List<Message> messages) {
+        if (messages.isEmpty() || getActivity() == null) {
+            return;
+        }
+        requireActivity().runOnUiThread(() -> onUpdateMessage(messages));
     }
 
     private void recallMessage(UiMessage message) {
@@ -1683,6 +1706,66 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                         Toast.makeText(getActivity(), "Recall failed: " + i, Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    /**
+     * 重发发送失败的消息。
+     * tips: 文本/合并消息走 resendMessage，多媒体消息走 resendMediaMessage，保持和 SDK 能力一致。
+     *
+     * @param uiMessage 当前失败消息
+     */
+    private void resendFailedMessage(@Nullable UiMessage uiMessage) {
+        if (uiMessage == null || uiMessage.getMessage() == null) {
+            return;
+        }
+        Message message = uiMessage.getMessage();
+        if (message.getDirection() != Message.MessageDirection.SEND
+                || message.getState() == null
+                || message.getState().getValue() != Message.MessageState.FAIL.getValue()) {
+            return;
+        }
+        MessageContent content = message.getContent();
+        if (content instanceof ImageMessage || content instanceof VoiceMessage || content instanceof FileMessage) {
+            JIM.getInstance().getMessageManager().resendMediaMessage(message,
+                    new IMessageManager.ISendMediaMessageCallback() {
+                        @Override
+                        public void onProgress(int progress, Message message) {
+                            updateMessagesOnMainThread(Arrays.asList(message));
+                        }
+
+                        @Override
+                        public void onSuccess(Message message) {
+                            updateMessagesOnMainThread(Arrays.asList(message));
+                        }
+
+                        @Override
+                        public void onError(Message message, int errorCode) {
+                            updateMessagesOnMainThread(Arrays.asList(message));
+                        }
+
+                        @Override
+                        public void onCancel(Message message) {
+                            updateMessagesOnMainThread(Arrays.asList(message));
+                        }
+                    });
+            return;
+        }
+        if (content instanceof TextMessage || content instanceof MergeMessage) {
+            JIM.getInstance().getMessageManager().resendMessage(message,
+                    new IMessageManager.ISendMessageCallback() {
+                        @Override
+                        public void onSuccess(Message message) {
+                            updateMessagesOnMainThread(Arrays.asList(message));
+                        }
+
+                        @Override
+                        public void onError(Message message, int errorCode) {
+                            updateMessagesOnMainThread(Arrays.asList(message));
+                        }
+                    });
+            return;
+        }
+        ToastUtils.show(requireContext(), R.string.operation_failed);
     }
 
     private void deleteMessages(List<UiMessage> messages, List<UiMessage> newDataSet) {

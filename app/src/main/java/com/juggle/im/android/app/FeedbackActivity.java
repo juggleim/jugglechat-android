@@ -81,7 +81,7 @@ public class FeedbackActivity extends AbsAppActivity {
     public static Intent intentForReport(Context context, String reportContentSeed) {
         Intent intent = new Intent(context, FeedbackActivity.class);
         intent.putExtra(EXTRA_PAGE_TITLE, REPORT_PAGE_TITLE);
-        intent.putExtra(EXTRA_CATEGORY, DEFAULT_CATEGORY);
+        intent.putExtra(EXTRA_CATEGORY, REPORT_PAGE_TITLE);
         intent.putExtra(EXTRA_CONTENT_PREFIX, reportContentSeed == null ? "" : reportContentSeed.trim());
         return intent;
     }

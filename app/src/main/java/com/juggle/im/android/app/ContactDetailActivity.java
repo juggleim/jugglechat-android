@@ -22,6 +22,7 @@ import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * 联系人详情页面。
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 public class ContactDetailActivity extends AbsAppActivity {
 
     public static final String EXTRA_USER_ID = "user_id";
+    public static final String RESULT_REMOVED_USER_ID = "removed_user_id";
 
     private ImageView ivAvatar;
     private TextView tvNickname;
@@ -48,6 +50,7 @@ public class ContactDetailActivity extends AbsAppActivity {
     private String displayName;
     private boolean isFriend = false;
     private boolean addRequestSent = false;
+    private boolean isRemovingFriend = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -259,17 +262,63 @@ public class ContactDetailActivity extends AbsAppActivity {
      * 展示删除联系人确认框。
      */
     private void confirmDeleteContact() {
+        if (TextUtils.isEmpty(userId) || isRemovingFriend) {
+            return;
+        }
         AppConfirmDialog.builder(this)
                 .setTitle(getString(R.string.contact_detail_delete_title))
                 .setMessage(getString(R.string.contact_detail_delete_message, displayName))
                 .setNegativeText(getString(R.string.txt_cancel))
-                .setPositiveText(getString(R.string.delete))
-                .setOnPositiveClick(() -> Toast.makeText(
-                        this,
-                        R.string.contact_detail_delete_todo,
-                        Toast.LENGTH_SHORT
-                ).show())
+                .setPositiveText(getString(R.string.txt_del))
+                .setOnPositiveClick(this::removeContact)
                 .show();
+    }
+
+    /**
+     * 删除当前联系人。
+     * tips: 对齐 snailchat 的 removeFriend([userId]) 调用方式，Android 侧也按 friend_ids 数组提交。
+     */
+    private void removeContact() {
+        if (TextUtils.isEmpty(userId) || isRemovingFriend) {
+            return;
+        }
+        isRemovingFriend = true;
+        rowDeleteContact.setEnabled(false);
+        ServiceManager.getUserService().removeFriends(Collections.singletonList(userId), new ApiCallback<Void>() {
+            @Override
+            public void onSuccess(Void data) {
+                isRemovingFriend = false;
+                rowDeleteContact.setEnabled(true);
+                Toast.makeText(ContactDetailActivity.this,
+                        R.string.contact_detail_delete_success, Toast.LENGTH_SHORT).show();
+                Intent result = new Intent();
+                result.putExtra(RESULT_REMOVED_USER_ID, userId);
+                setResult(RESULT_OK, result);
+                finish();
+            }
+
+            @Override
+            public void onError(int code, String message) {
+                isRemovingFriend = false;
+                rowDeleteContact.setEnabled(true);
+                Toast.makeText(ContactDetailActivity.this,
+                        getString(R.string.contact_detail_delete_failed, safeMessage(message)),
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    /**
+     * 返回可展示的错误文案。
+     *
+     * @param message 服务端返回的错误信息
+     * @return 非空提示文案
+     */
+    private String safeMessage(String message) {
+        if (TextUtils.isEmpty(message)) {
+            return "未知错误";
+        }
+        return message.trim();
     }
 
     /**
