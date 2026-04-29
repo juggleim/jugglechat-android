@@ -3,7 +3,6 @@ package com.juggle.im.android.chat.provider;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
-import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -11,7 +10,6 @@ import android.widget.ImageView;
 import androidx.annotation.NonNull;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners;
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.ImagePreviewActivity;
 import com.juggle.im.android.model.UiMessage;
@@ -21,12 +19,15 @@ import com.juggle.im.model.messages.ImageMessage;
  * Image message view powered by Glide. Avoids reflection by using ImageMessage APIs.
  */
 public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
-    private static final float BUBBLE_SCALE = 0.7f;
-    private static final int DEFAULT_WIDTH_DP = 160;
-    private static final int DEFAULT_HEIGHT_DP = 120;
-    private static final int MAX_WIDTH_DP = 220;
+    private static final int DEFAULT_WIDTH_DP = 176;
+    private static final int DEFAULT_HEIGHT_DP = 132;
+    private static final int MAX_WIDTH_DP = 240;
     private static final int MAX_HEIGHT_DP = 260;
     private static final int MIN_EDGE_DP = 92;
+    private static final float MAX_WIDTH_SCREEN_RATIO = 0.58f;
+    private static final float LANDSCAPE_RATIO_THRESHOLD = 1.35f;
+    private static final float PORTRAIT_RATIO_THRESHOLD = 0.75f;
+    private static final float EXTREME_RATIO_LIMIT = 2.80f;
 
     public ImageMessageView(@NonNull ViewGroup root) {
         super(root, R.layout.content_image);
@@ -41,21 +42,16 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
     public void bindItem(UiMessage m, ImageMessage img, boolean isGroup) {
         ImageView imageView = this.itemView.findViewById(R.id.image_message_thumb);
         applyBestSize(imageView, img);
+        imageView.setClipToOutline(true);
 
-        String url = img.getLocalPath() != null ? img.getLocalPath() : (img.getThumbnailUrl() != null ? img.getThumbnailUrl() : img.getUrl());
+        String url = resolveImageSource(img);
         if (TextUtils.isEmpty(url)) {
             imageView.setImageResource(R.drawable.ic_default_img);
         } else {
-            int cornerRadius = Math.round(TypedValue.applyDimension(
-                    TypedValue.COMPLEX_UNIT_DIP,
-                    12f,
-                    imageView.getResources().getDisplayMetrics()
-            ));
             Glide.with(imageView)
                     .load(url)
-                    .fitCenter()
+                    .centerCrop()
                     .placeholder(R.drawable.ic_default_img)
-                    .transform(new RoundedCorners(cornerRadius))
                     .dontAnimate()
                     .into(imageView);
         }
@@ -80,6 +76,25 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
             }
             return true;
         });
+    }
+
+    /**
+     * 解析图片消息可用的数据源。
+     *
+     * @param img 图片消息
+     * @return 优先使用本地原图，再回退缩略图和远端地址
+     */
+    private String resolveImageSource(ImageMessage img) {
+        if (!TextUtils.isEmpty(img.getLocalPath())) {
+            return img.getLocalPath();
+        }
+        if (!TextUtils.isEmpty(img.getThumbnailLocalPath())) {
+            return img.getThumbnailLocalPath();
+        }
+        if (!TextUtils.isEmpty(img.getThumbnailUrl())) {
+            return img.getThumbnailUrl();
+        }
+        return img.getUrl();
     }
 
     private void applyBestSize(ImageView imageView, ImageMessage img) {
@@ -117,8 +132,21 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
         return null;
     }
 
+    /**
+     * 计算图片消息展示尺寸。
+     * <p>
+     * 简要描述：
+     * 按「横图 / 竖图 / 近方图」三种展示策略计算尺寸，目标是像微信一样在保留主视觉比例的同时，
+     * 保证气泡宽高不会过大或过小。
+     *
+     * @param imageView 图片控件
+     * @param rawWidth 原始宽
+     * @param rawHeight 原始高
+     * @return 目标宽高（px）
+     */
     private int[] calculateDisplaySize(ImageView imageView, int rawWidth, int rawHeight) {
-        int maxWidth = dp(imageView, MAX_WIDTH_DP);
+        int screenWidth = imageView.getResources().getDisplayMetrics().widthPixels;
+        int maxWidth = Math.min(dp(imageView, MAX_WIDTH_DP), Math.round(screenWidth * MAX_WIDTH_SCREEN_RATIO));
         int maxHeight = dp(imageView, MAX_HEIGHT_DP);
         int minEdge = dp(imageView, MIN_EDGE_DP);
         int defaultWidth = dp(imageView, DEFAULT_WIDTH_DP);
@@ -128,25 +156,49 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
             return new int[] { defaultWidth, defaultHeight };
         }
 
-        float scale = Math.min(maxWidth / (float) rawWidth, maxHeight / (float) rawHeight);
-        int targetWidth = Math.max(1, Math.round(rawWidth * scale));
-        int targetHeight = Math.max(1, Math.round(rawHeight * scale));
+        float originRatio = rawWidth / (float) rawHeight;
+        float safeRatio = clamp(originRatio, 1f / EXTREME_RATIO_LIMIT, EXTREME_RATIO_LIMIT);
+        int targetWidth;
+        int targetHeight;
 
-        int shorterEdge = Math.min(targetWidth, targetHeight);
-        if (shorterEdge < minEdge) {
-            float upscale = minEdge / (float) shorterEdge;
-            targetWidth = Math.round(targetWidth * upscale);
-            targetHeight = Math.round(targetHeight * upscale);
-
-            if (targetWidth > maxWidth || targetHeight > maxHeight) {
-                float downscale = Math.min(maxWidth / (float) targetWidth, maxHeight / (float) targetHeight);
-                targetWidth = Math.max(1, Math.round(targetWidth * downscale));
-                targetHeight = Math.max(1, Math.round(targetHeight * downscale));
+        if (safeRatio >= LANDSCAPE_RATIO_THRESHOLD) {
+            // 横图：优先拉满宽度，再按比例反算高度。
+            targetWidth = maxWidth;
+            targetHeight = Math.round(targetWidth / safeRatio);
+            if (targetHeight < minEdge) {
+                targetHeight = minEdge;
+                targetWidth = Math.min(maxWidth, Math.round(targetHeight * safeRatio));
             }
+        } else if (safeRatio <= PORTRAIT_RATIO_THRESHOLD) {
+            // 竖图：优先拉满高度，再按比例反算宽度。
+            targetHeight = maxHeight;
+            targetWidth = Math.round(targetHeight * safeRatio);
+            if (targetWidth < minEdge) {
+                targetWidth = minEdge;
+                targetHeight = Math.min(maxHeight, Math.round(targetWidth / safeRatio));
+            }
+        } else {
+            // 近方图：使用统一基准边，保证视觉整齐。
+            int baseEdge = Math.min(maxWidth, maxHeight);
+            if (safeRatio >= 1f) {
+                targetWidth = baseEdge;
+                targetHeight = Math.round(baseEdge / safeRatio);
+            } else {
+                targetHeight = baseEdge;
+                targetWidth = Math.round(baseEdge * safeRatio);
+            }
+            targetWidth = Math.max(minEdge, targetWidth);
+            targetHeight = Math.max(minEdge, targetHeight);
         }
-        targetWidth = Math.max(1, Math.round(targetWidth * BUBBLE_SCALE));
-        targetHeight = Math.max(1, Math.round(targetHeight * BUBBLE_SCALE));
+
+        float boundScale = Math.min(1f, Math.min(maxWidth / (float) targetWidth, maxHeight / (float) targetHeight));
+        targetWidth = Math.max(1, Math.round(targetWidth * boundScale));
+        targetHeight = Math.max(1, Math.round(targetHeight * boundScale));
         return new int[] { targetWidth, targetHeight };
+    }
+
+    private float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private int dp(ImageView imageView, int value) {
