@@ -18,8 +18,8 @@ JuggleIM Android Demo 是一个基于 [JuggleIM SDK](https://juggle.im) 开发�
 
 ## 功能如图所示
 ## 功能如图所示
-<img src="images/chat.png" alt="输入图片说明" style="width: 20%; max-width: 300px; height: 20%;">
-<img src="images/call.png" alt="输入图片说明" style="width: 20%; max-width: 300px; height: 20%;">
+<img src="images/img.png" alt="输入图片说明" style="width: 20%; max-width: 300px; height: 20%;">
+<img src="images/img_1.png" alt="输入图片说明" style="width: 20%; max-width: 300px; height: 20%;">
 
 
 
