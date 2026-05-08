@@ -441,7 +441,7 @@ public class MessageUtils {
         // 替换 {userId} 为 @用户名
         final java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
         final java.util.regex.Matcher matcher = pattern.matcher(content);
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         java.util.List<int[]> mentionRanges = new java.util.ArrayList<>();
 
         while (matcher.find()) {
@@ -450,11 +450,11 @@ public class MessageUtils {
             if (userName != null) {
                 int start = sb.length();
                 String replacement = "@" + userName + " ";
-                matcher.appendReplacement(sb, replacement);
+                matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(replacement));
                 mentionRanges.add(new int[]{start, start + replacement.length()});
             } else {
-                // 如果找不到对应的用户名，保留原始内容
-                matcher.appendReplacement(sb, matcher.group(0));
+                // tips: 保留原始占位符时同样需要转义 replacement，避免用户名或占位内容中的特殊字符导致替换异常
+                matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(matcher.group(0)));
             }
         }
         matcher.appendTail(sb);
@@ -507,15 +507,15 @@ public class MessageUtils {
         // 替换 {userId} 为 @用户名
         final java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\{([^}]+)\\}");
         final java.util.regex.Matcher matcher = pattern.matcher(content);
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
 
         while (matcher.find()) {
             String userId = matcher.group(1);
             String userName = idToNameMap.get(userId);
             if (userName != null) {
-                matcher.appendReplacement(sb, "@" + userName + " ");
+                matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement("@" + userName + " "));
             } else {
-                matcher.appendReplacement(sb, matcher.group(0));
+                matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(matcher.group(0)));
             }
         }
         matcher.appendTail(sb);
