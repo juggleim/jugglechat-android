@@ -265,6 +265,16 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     }
 
     /**
+     * 远端用户收到邀请回调。
+     *
+     * @param inviterUserId 发起邀请的用户ID
+     * @param invitedUserIds 被邀请用户ID列表
+     */
+    public void onRemoteUsersInvite(String inviterUserId, List<String> invitedUserIds) {
+        // 默认空实现，子类按场景处理
+    }
+
+    /**
      * 远端用户离开回调。
      */
     public void onRemoteUserLeave(List<String> remoteUserIds) {
@@ -299,7 +309,8 @@ public abstract class BaseCallActivity extends AppCompatActivity {
 
         @Override
         public void onUsersInvite(String userId, List<String> users) {
-            Log.d("CallActivity", "onUsersInvite: " + userId);
+            Log.d("CallActivity", "onUsersInvite: " + userId + " -> " + users);
+            onRemoteUsersInvite(userId, users);
         }
 
         @Override

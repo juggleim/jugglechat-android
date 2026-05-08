@@ -23,4 +23,21 @@
         android:text="成员昵称"
         android:textColor="@android:color/white"
         android:textSize="14sp" />
+
+    <TextView
+        android:id="@+id/tv_member_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@color/call_card_name_bg"
+        android:gravity="center"
+        android:paddingStart="10dp"
+        android:paddingTop="4dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="4dp"
+        android:text="邀请中"
+        android:textColor="@android:color/white"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 </LinearLayout>

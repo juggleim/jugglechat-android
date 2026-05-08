@@ -843,6 +843,9 @@ public class ConversationActivity extends AbsAppActivity {
             if (isGroup) {
                 Intent it = new Intent(this, SelectMemberActivity.class);
                 it.putExtra("GROUP_ID", conversationId);
+                ArrayList<String> disabledMembers = new ArrayList<>();
+                disabledMembers.add(JIM.getInstance().getCurrentUserId());
+                it.putStringArrayListExtra(DISABLE_MEMBERS, disabledMembers);
                 startActivityForResult(it,
                         pluginId.equals(VideoCallPlugin.ID) ? REQ_MULTI_CALL_VIDEO : REQ_MULTI_CALL_VOICE);
             } else {

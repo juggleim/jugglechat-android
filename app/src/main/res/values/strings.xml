@@ -32,6 +32,9 @@
     <string name="call_status_voice_outgoing">等待对方接听...</string>
     <string name="call_status_video_outgoing">发起视频通话...</string>
     <string name="call_status_member_count">%1$d 人通话中</string>
+    <string name="call_status_inviting">邀请中</string>
+    <string name="call_status_inviting_countdown">邀请中 %1$ds</string>
+    <string name="call_status_invite_timeout">邀请超时，已移除</string>
     <string name="call_action_mic_on">麦克风已开</string>
     <string name="call_action_mic_off">麦克风已关</string>
     <string name="call_action_speaker_on">扬声器已开</string>

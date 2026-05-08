@@ -106,6 +106,9 @@ public class SingleCallActivity extends BaseCallActivity {
     public void onCallConnected() {
         super.onCallConnected();
         stopAndRelease();
+        // tips: 单聊视频在接通后会从“等待态小窗预览”切到“已接通态主界面”。
+        // 这里需要像多人通话一样重新绑定本地预览，避免首帧或 Surface 重建后本地画面丢失。
+        startLocalPreviewIfNeed();
         updateCallUiState();
         bindRemoteVideoIfNeed();
     }
@@ -164,6 +167,13 @@ public class SingleCallActivity extends BaseCallActivity {
         localSurfaceView = findViewById(R.id.local_surface_view);
         remoteSurfaceView = findViewById(R.id.remote_surface_view);
         ivCamera = findViewById(R.id.iv_camera);
+
+        // tips: 单聊接通后远端全屏 SurfaceView 需要保持在底层，本地预览小窗提升为 overlay。
+        // 这样远端大画面和本地悬浮小窗的层级才稳定，不会在接通态被底层视频平面覆盖。
+        remoteSurfaceView.setZOrderMediaOverlay(false);
+        remoteSurfaceView.setZOrderOnTop(false);
+        localSurfaceView.setZOrderMediaOverlay(true);
+        localSurfaceView.setZOrderOnTop(true);
     }
 
     private void initClickActions() {

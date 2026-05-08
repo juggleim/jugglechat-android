@@ -11,9 +11,34 @@
         android:layout_height="match_parent" />
 
     <View
+        android:id="@+id/v_member_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/call_surface_overlay" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_member_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@color/call_card_name_bg"
+            android:gravity="center"
+            android:paddingStart="14dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="8dp"
+            android:text="邀请中"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tv_name"
