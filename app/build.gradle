@@ -10,8 +10,8 @@ android {
         applicationId "com.juggle.im.android"
         minSdk 24
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.1"
         multiDexEnabled true
         namespace "com.juggle.im.android"
         ndk {

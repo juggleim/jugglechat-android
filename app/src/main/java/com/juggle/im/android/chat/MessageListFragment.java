@@ -97,7 +97,18 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private static final String ARG_UNREAD_COUNT = "arg_unread_count";
     public static final String ARG_MENTION = "arg_mention";
 
-    private static final int msgPageCount = 20;
+    /**
+     * 常规分页条数（用于未读跳转、定点拉取、向下续拉等场景）。
+     */
+    private static final int DEFAULT_PAGE_COUNT = 20;
+    /**
+     * 首屏加载条数（进入会话时优先拉取更多最近消息，减少首次翻页次数）。
+     */
+    private static final int INITIAL_PAGE_COUNT = 50;
+    /**
+     * 下拉刷新加载条数（对齐微信式体验：一次补齐较大批次历史消息）。
+     */
+    private static final int PULL_REFRESH_PAGE_COUNT = 50;
 
     private String conversationId;
     private boolean isGroup;
@@ -133,8 +144,6 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private String contextPinnedMessageId = "";
     private View layoutUnreadBubble;
     private boolean unreadJumpInProgress = false;
-    private int unreadJumpLoadedBatches = 0;
-    private int unreadJumpMaxBatches = 0;
     // New Message Bubble
     private View layoutNewMessageBubble;
     private TextView tvNewMessageCount;
@@ -144,6 +153,12 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private long mentionTargetTimestamp = 0L;
     private String mentionTargetMessageId = "";
     private Runnable clearHighlightRunnable;
+    /**
+     * 简要描述：记录一次下拉刷新开始时的可视锚点，刷新完成后恢复该锚点，
+     * 保证“当前看到的消息”不被拉到最旧位置。
+     */
+    @Nullable
+    private ViewportAnchor pullRefreshAnchor;
 
     private static final class ViewportAnchor {
         final int firstVisiblePosition;
@@ -357,7 +372,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     }
                 }
                 if (dy > 0 && itemCount > 0 && lastVisiblePos >= itemCount - 1) {
-                    loadNewerMessages(msgPageCount, null);
+                    loadNewerMessages(DEFAULT_PAGE_COUNT, null);
                 }
             }
 
@@ -418,7 +433,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         }
 
         // initial load: msgTime = 0 -> SDK should return latest page
-        loadOlderMessages(msgPageCount, false, null);
+        loadOlderMessages(INITIAL_PAGE_COUNT, false, null);
     }
 
     private void updateOptionBarState(int selectedCount) {
@@ -897,8 +912,12 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             swipeRefreshLayout.setRefreshing(false);
             return;
         }
+        pullRefreshAnchor = captureViewportAnchor();
         swipeRefreshLayout.setRefreshing(true);
-        loadOlderMessages(msgPageCount, false, () -> setPullRefreshing(false), false);
+        loadOlderMessages(PULL_REFRESH_PAGE_COUNT, false, () -> {
+            setPullRefreshing(false);
+            restorePullRefreshAnchorIfNeed();
+        }, false);
     }
 
     /**
@@ -907,9 +926,28 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
      * @param refreshing true 表示显示 progress，false 表示隐藏 progress
      */
     private void setPullRefreshing(boolean refreshing) {
-        if (swipeRefreshLayout != null) {
-            swipeRefreshLayout.setRefreshing(refreshing);
+        if (swipeRefreshLayout == null) {
+            return;
         }
+        swipeRefreshLayout.setRefreshing(refreshing);
+    }
+
+    /**
+     * 恢复下拉刷新前的可视锚点。
+     *
+     * <p>简要描述：以“刷新开始时”记录的锚点作为唯一恢复基准，避免刷新结束时错误取到顶部项导致跳到最旧消息。</p>
+     */
+    private void restorePullRefreshAnchorIfNeed() {
+        if (pullRefreshAnchor == null || recyclerView == null || adapter == null) {
+            pullRefreshAnchor = null;
+            return;
+        }
+        ViewportAnchor anchor = pullRefreshAnchor;
+        pullRefreshAnchor = null;
+        recyclerView.post(() -> {
+            restoreViewportAnchor(anchor, adapter.getCurrentList());
+            recyclerView.post(() -> restoreViewportAnchor(anchor, adapter.getCurrentList()));
+        });
     }
 
     private void updateLoadingIndicator(@NonNull JIMConst.PullDirection direction, boolean loading) {
@@ -970,13 +1008,13 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         hasMoreOlder = true;
         hasMoreNewer = true;
         adapter.submitList(new ArrayList<>(), () -> loadMessages(
-                msgPageCount,
+                DEFAULT_PAGE_COUNT,
                 targetTimestamp,
                 JIMConst.PullDirection.OLDER,
                 false,
                 true,
                 () -> loadMessages(
-                        msgPageCount,
+                        DEFAULT_PAGE_COUNT,
                         targetTimestamp,
                         JIMConst.PullDirection.NEWER,
                         false,
@@ -1133,14 +1171,31 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         if (first < 0) {
             return null;
         }
-        View firstView = layoutManager.findViewByPosition(first);
-        int topOffset = firstView == null ? 0 : (firstView.getTop() - recyclerView.getPaddingTop());
         List<UiMessage> current = adapter.getCurrentList();
-        String stableKey = "";
-        if (first < current.size()) {
-            stableKey = current.get(first).getStableKey();
+        int last = layoutManager.findLastVisibleItemPosition();
+        int anchorPos = first;
+        /**
+         * 简要描述：时间分割项是临时构建的 UI 消息，稳定 key 在刷新后可能变化；
+         * 锚点优先使用首个可见“真实消息”，可避免恢复时丢锚造成页面偏移。
+         */
+        for (int i = Math.max(first, 0); i <= last && i < current.size(); i++) {
+            UiMessage candidate = current.get(i);
+            if (!isTimeStatus(candidate)) {
+                anchorPos = i;
+                break;
+            }
         }
-        return new ViewportAnchor(first, topOffset, stableKey);
+        View anchorView = layoutManager.findViewByPosition(anchorPos);
+        if (anchorView == null) {
+            anchorPos = first;
+            anchorView = layoutManager.findViewByPosition(anchorPos);
+        }
+        int topOffset = anchorView == null ? 0 : (anchorView.getTop() - recyclerView.getPaddingTop());
+        String stableKey = "";
+        if (anchorPos >= 0 && anchorPos < current.size()) {
+            stableKey = current.get(anchorPos).getStableKey();
+        }
+        return new ViewportAnchor(anchorPos, topOffset, stableKey);
     }
 
     private void restoreViewportAnchor(@Nullable ViewportAnchor anchor, @NonNull List<UiMessage> newDisplay) {
@@ -1327,7 +1382,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     /**
      * 点击“新消息”气泡后按分页定位到首条未读消息。
      *
-     * <p>简要描述：每次仅拉取一页，避免按未读总数一次性拉取全部历史；定位成功后，后续上下拉继续按当前窗口首尾游标分页，保证消息连续。</p>
+     * <p>简要描述：点击后只拉取“首条未读附近的一页消息”并跳转，不做循环补齐；后续由用户上滑/下滑再按分页按需拉取，避免一次性迭代拉全量。</p>
      */
     private void jumpToUnreadBoundary() {
         if (adapter == null || layoutManager == null || recyclerView == null || unreadCount <= 0) {
@@ -1343,59 +1398,134 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             return;
         }
         unreadJumpInProgress = true;
-        unreadJumpLoadedBatches = 0;
-        int estimatedBatches = (int) Math.ceil(unreadCount * 1.0d / msgPageCount);
-        unreadJumpMaxBatches = Math.max(3, estimatedBatches + 3);
         Log.d(TAG, "[未读跳转] start"
                 + ", unreadCount=" + unreadCount
-                + ", estimatedBatches=" + estimatedBatches
-                + ", maxBatches=" + unreadJumpMaxBatches
                 + ", window=" + formatDataWindow(captureDataWindow()));
-        continueLoadUnreadBoundary();
+
+        JIM.getInstance().getMessageManager().getFirstUnreadMessage(
+                getCurrentConversation(),
+                new IMessageManager.IGetMessagesCallback() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        if (getActivity() == null) {
+                            unreadJumpInProgress = false;
+                            Log.d(TAG, "[未读跳转] stop, reason=activity_null_after_first_unread");
+                            return;
+                        }
+                        requireActivity().runOnUiThread(() -> {
+                            Message anchor = findEarliestMessage(messages);
+                            if (anchor == null || anchor.getTimestamp() <= 0L) {
+                                unreadJumpInProgress = false;
+                                Log.d(TAG, "[未读跳转] first_unread_empty, fallback=local_position");
+                                jumpToLoadedUnreadOrTop();
+                                return;
+                            }
+                            String anchorMessageId = anchor.getMessageId() == null ? "" : anchor.getMessageId();
+                            long anchorTimestamp = anchor.getTimestamp();
+                            Log.d(TAG, "[未读跳转] first_unread_anchor"
+                                    + ", messageId=" + anchorMessageId
+                                    + ", timestamp=" + anchorTimestamp);
+                            loadUnreadFirstPageAndJump(anchorTimestamp, anchorMessageId);
+                        });
+                    }
+
+                    @Override
+                    public void onError(int code) {
+                        if (getActivity() == null) {
+                            unreadJumpInProgress = false;
+                            Log.d(TAG, "[未读跳转] stop, reason=activity_null_after_first_unread_error, code=" + code);
+                            return;
+                        }
+                        requireActivity().runOnUiThread(() -> {
+                            unreadJumpInProgress = false;
+                            Log.d(TAG, "[未读跳转] first_unread_error, code=" + code + ", fallback=local_position");
+                            jumpToLoadedUnreadOrTop();
+                        });
+                    }
+                });
     }
 
     /**
-     * 递进加载历史消息，直到命中首条未读。
+     * 从候选消息中挑选时间最早的一条，作为首条未读锚点。
+     *
+     * @param messages SDK 返回的候选消息
+     * @return 时间最早的消息；无可用数据时返回 null
      */
-    private void continueLoadUnreadBoundary() {
-        if (adapter == null || layoutManager == null || recyclerView == null) {
+    @Nullable
+    private Message findEarliestMessage(@Nullable List<Message> messages) {
+        if (messages == null || messages.isEmpty()) {
+            Log.d(TAG, "findEarliestMessage empty");
+            return null;
+        }
+        Message earliest = null;
+        for (Message message : messages) {
+            if (message == null) {
+                continue;
+            }
+            if (earliest == null || message.getTimestamp() < earliest.getTimestamp()) {
+                earliest = message;
+            }
+        }
+        return earliest;
+    }
+
+    /**
+     * 拉取首条未读所在页并跳转到目标消息。
+     *
+     * <p>简要描述：用“首条未读时间戳 - 1”作为 NEWER 游标，确保该首条未读落入返回页；仅请求一页，避免循环加载。</p>
+     */
+    private void loadUnreadFirstPageAndJump(long firstUnreadTimestamp, @Nullable String firstUnreadMessageId) {
+        if (adapter == null || layoutManager == null || recyclerView == null || firstUnreadTimestamp <= 0L) {
             unreadJumpInProgress = false;
-            Log.d(TAG, "[未读跳转] stop, reason=component_null");
+            Log.d(TAG, "[未读跳转] stop, reason=invalid_anchor_or_component"
+                    + ", timestamp=" + firstUnreadTimestamp);
+            return;
+        }
+        long startTime = Math.max(firstUnreadTimestamp - 1L, 0L);
+        Log.d(TAG, "[未读跳转] load_first_page"
+                + ", startTime=" + startTime
+                + ", anchorTimestamp=" + firstUnreadTimestamp
+                + ", anchorMessageId=" + (firstUnreadMessageId == null ? "" : firstUnreadMessageId));
+        uiMessages.clear();
+        hasMoreOlder = true;
+        hasMoreNewer = true;
+        adapter.submitList(new ArrayList<>(), () -> loadMessages(
+                DEFAULT_PAGE_COUNT,
+                startTime,
+                JIMConst.PullDirection.NEWER,
+                false,
+                true,
+                () -> {
+                    unreadJumpInProgress = false;
+                    scrollToTargetMessage(firstUnreadMessageId, firstUnreadTimestamp);
+                    maybeDismissUnreadBubbleWhenTargetVisible();
+                    Log.d(TAG, "[未读跳转] first_page_loaded"
+                            + ", window=" + formatDataWindow(captureDataWindow())
+                            + ", hasMoreOlder=" + hasMoreOlder
+                            + ", hasMoreNewer=" + hasMoreNewer);
+                }));
+    }
+
+    /**
+     * 本地兜底跳转：优先跳到当前已加载数据中的首条未读，否则回到列表顶部。
+     */
+    private void jumpToLoadedUnreadOrTop() {
+        if (adapter == null || layoutManager == null || recyclerView == null) {
             return;
         }
         int target = resolveFirstUnreadPosition(adapter.getCurrentList());
         if (target >= 0) {
             int offset = recyclerView.getHeight() > 0 ? recyclerView.getHeight() / 4 : 0;
             layoutManager.scrollToPositionWithOffset(target, offset);
-            unreadJumpInProgress = false;
-            Log.d(TAG, "[未读跳转] hit_target"
-                    + ", batch=" + unreadJumpLoadedBatches + "/" + unreadJumpMaxBatches
+            Log.d(TAG, "[未读跳转] fallback_hit_target"
                     + ", targetPos=" + target
-                    + ", offset=" + offset
-                    + ", window=" + formatDataWindow(captureDataWindow()));
-            maybeDismissUnreadBubbleWhenTargetVisible();
+                    + ", offset=" + offset);
             return;
         }
-        if (!hasMoreOlder || unreadJumpLoadedBatches >= unreadJumpMaxBatches) {
-            unreadJumpInProgress = false;
+        if (adapter.getItemCount() > 0) {
             layoutManager.scrollToPositionWithOffset(0, 0);
-            Log.d(TAG, "[未读跳转] stop, reason=" + (!hasMoreOlder ? "no_more_older" : "reach_max_batches")
-                    + ", batch=" + unreadJumpLoadedBatches + "/" + unreadJumpMaxBatches
-                    + ", window=" + formatDataWindow(captureDataWindow()));
-            return;
+            Log.d(TAG, "[未读跳转] fallback_to_top");
         }
-        if (isLoadingOlder) {
-            Log.d(TAG, "[未读跳转] wait_loading, batch="
-                    + unreadJumpLoadedBatches + "/" + unreadJumpMaxBatches);
-            recyclerView.postDelayed(this::continueLoadUnreadBoundary, 120L);
-            return;
-        }
-        unreadJumpLoadedBatches++;
-        Log.d(TAG, "[未读跳转] load_next_batch"
-                + ", batch=" + unreadJumpLoadedBatches + "/" + unreadJumpMaxBatches
-                + ", pageSize=" + msgPageCount
-                + ", windowBefore=" + formatDataWindow(captureDataWindow()));
-        loadOlderMessages(msgPageCount, false, this::continueLoadUnreadBoundary, true);
     }
 
     /**
@@ -2091,8 +2221,6 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         clearHighlightRunnable = null;
         layoutUnreadBubble = null;
         unreadJumpInProgress = false;
-        unreadJumpLoadedBatches = 0;
-        unreadJumpMaxBatches = 0;
         super.onDestroyView();
     }
 }

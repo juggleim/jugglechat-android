@@ -70,6 +70,7 @@ public abstract class BaseCallActivity extends AppCompatActivity {
     protected long startTime = 0L;
     private Runnable timerRunnable;
     protected String direction;
+    protected String inviterUserId;
     protected UserInfo inviterUserInfo;
     protected ArrayList<String> targetUserIds;
     protected boolean isVideoCall;
@@ -174,12 +175,12 @@ public abstract class BaseCallActivity extends AppCompatActivity {
         conversationId = getIntent().getStringExtra(EXTRA_CONVERSATION_ID);
         String callId = getIntent().getStringExtra(EXTRA_CALL_ID);
         direction = safeDirection(getIntent().getStringExtra(EXTRA_DIRECTION));
-        String inviter = getIntent().getStringExtra(EXTRA_INVITER);
+        inviterUserId = getIntent().getStringExtra(EXTRA_INVITER);
         targetUserIds = getIntent().getStringArrayListExtra(EXTRA_TARGET_USER_IDS);
         if (targetUserIds == null) {
             targetUserIds = new ArrayList<>();
         }
-        inviterUserInfo = JIM.getInstance().getUserInfoManager().getUserInfo(inviter);
+        inviterUserInfo = JIM.getInstance().getUserInfoManager().getUserInfo(inviterUserId);
         isVideoCall = getIntent().getBooleanExtra(EXTRA_IS_VIDEO_CALL, false);
         isGroupCall = getIntent().getBooleanExtra(EXTRA_IS_GROUP_CALL, false);
         autoAccept = getIntent().getBooleanExtra(EXTRA_AUTO_ACCEPT, false);

@@ -212,13 +212,24 @@ public class MultiCallActivity extends BaseCallActivity {
             removeParticipantView(userId);
         }
 
-        if (getConnectedParticipantCount() < 2) {
+        if (shouldFinishCallAfterMemberLeave()) {
             Toast.makeText(this, R.string.call_status_finished, Toast.LENGTH_SHORT).show();
             hangupCall();
             finish();
             return;
         }
         gridParticipants.requestLayout();
+        updateCallUiState();
+    }
+
+    @Override
+    public void onCallFinished(CallConst.CallFinishReason callFinishReason) {
+        syncConnectedParticipantsFromSession();
+        if (shouldFinishCallBecauseOnlySelfConnected()) {
+            CallUiStateStore.clearFloatingCallInfo();
+            finish();
+            return;
+        }
         updateCallUiState();
     }
 
@@ -619,6 +630,74 @@ public class MultiCallActivity extends BaseCallActivity {
 
     private int getConnectedParticipantCount() {
         return 1 + (targetUserIds == null ? 0 : targetUserIds.size());
+    }
+
+    /**
+     * 计算当前页面仍应展示的已接通远端成员。
+     *
+     * tips：多人通话的真实成员以 SDK 当前会话 members 为准。
+     * 当主叫直接挂断而 onUsersLeave 事件未完整覆盖时，这里可以兜底清掉已不在会话中的卡片，避免残留冻结画面。
+     */
+    private ArrayList<String> resolveActiveRemoteUserIds() {
+        ArrayList<String> activeUserIds = new ArrayList<>();
+        if (callSession == null || callSession.getMembers() == null) {
+            return activeUserIds;
+        }
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        activeUserIds.addAll(callSession.getMembers().stream()
+                .filter(member -> member != null && member.getUserInfo() != null)
+                .map(member -> member.getUserInfo().getUserId())
+                .filter(userId -> !TextUtils.isEmpty(userId)
+                        && !TextUtils.equals(userId, currentUserId)
+                        && !pendingInviteUserIds.contains(userId))
+                .collect(java.util.stream.Collectors.toList()));
+        return activeUserIds;
+    }
+
+    /**
+     * 以当前会话成员快照同步页面中的正式成员。
+     *
+     * tips：这里不动邀请中成员，只校正已接通成员列表，避免 onCallFinish/onUsersLeave 乱序时留下无效视频卡片。
+     */
+    private void syncConnectedParticipantsFromSession() {
+        ArrayList<String> activeRemoteUserIds = resolveActiveRemoteUserIds();
+        ArrayList<String> staleUserIds = new ArrayList<>();
+        for (String userId : new ArrayList<>(targetUserIds)) {
+            if (!activeRemoteUserIds.contains(userId)) {
+                staleUserIds.add(userId);
+            }
+        }
+        for (String userId : staleUserIds) {
+            targetUserIds.remove(userId);
+            removeParticipantView(userId);
+        }
+        for (String userId : activeRemoteUserIds) {
+            if (!targetUserIds.contains(userId)) {
+                targetUserIds.add(userId);
+                updateParticipantView(Arrays.asList(userId), false);
+                bindRemoteVideoViews(Arrays.asList(userId));
+            }
+        }
+    }
+
+    /**
+     * 判断当前会话是否已经只剩自己。
+     *
+     * tips：多人通话远端离开后，若正式成员只剩当前用户自己，应直接结束页面，避免停留在无远端的假连接态。
+     */
+    private boolean shouldFinishCallBecauseOnlySelfConnected() {
+        syncConnectedParticipantsFromSession();
+        return getConnectedParticipantCount() < 2;
+    }
+
+    /**
+     * 判断成员离开后是否应直接结束通话。
+     *
+     * tips：只有在"正式已接通成员"已经少于 2 人，且不存在任何邀请中成员时，
+     * 才认为当前多人通话已经无法继续；否则主叫仍可能在等待其他被叫接听。
+     */
+    private boolean shouldFinishCallAfterMemberLeave() {
+        return getConnectedParticipantCount() < 2 && pendingInviteUserIds.isEmpty();
     }
 
     @Override
