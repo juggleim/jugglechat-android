@@ -32,7 +32,7 @@ public class UserAgreementActivity extends AbsAppActivity {
         ImageView backView = findViewById(R.id.iv_back);
         TextView titleView = findViewById(R.id.tv_title);
 
-        titleView.setText("用户协议");
+        titleView.setText(getString(R.string.auth_user_agreement_page_title));
         backView.setOnClickListener(v -> finish());
 
         // 打开WebView页面显示用户协议

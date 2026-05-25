@@ -88,7 +88,7 @@ public class MyProfileFragment extends Fragment {
         setupSettingRow(rowGeneralSettings, R.drawable.ic_setting_general, "通用设置");
         setupSettingRow(rowFavorites, R.drawable.ic_setting_favorites, "我的收藏");
         setupSettingRow(rowUserAgreement, R.drawable.ic_setting_user_agreement, "用户协议");
-        setupSettingRow(rowPrivacyPolicy, R.drawable.ic_setting_privacy, "隐私协议");
+        setupSettingRow(rowPrivacyPolicy, R.drawable.ic_setting_privacy, "隐私政策");
         setupSettingRow(rowFeedback, R.drawable.ic_setting_feedback, "意见反馈");
         setupSettingRow(rowVersion, R.drawable.ic_setting_about, "版本信息", "2.5.1");
 

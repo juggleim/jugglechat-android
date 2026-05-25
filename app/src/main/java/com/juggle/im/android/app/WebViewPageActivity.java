@@ -25,8 +25,8 @@ public class WebViewPageActivity extends AbsAppActivity {
     private static final String EXTRA_URL = "extra_url";
     private static final String EXTRA_TITLE = "extra_title";
 
-    private static final String USER_AGREEMENT_URL = "https://secretchat.im/user/user.html";
-    private static final String PRIVACY_POLICY_URL = "https://secretchat.im/user/privacy.html";
+    private static final String USER_AGREEMENT_URL = "https://snailchat.im/user/user.html";
+    private static final String PRIVACY_POLICY_URL = "https://snailchat.im/user/privacy.html";
 
     private WebView webView;
 

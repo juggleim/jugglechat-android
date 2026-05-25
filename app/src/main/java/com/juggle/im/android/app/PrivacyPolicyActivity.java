@@ -12,7 +12,7 @@ import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.R;
 
 /**
- * 隐私协议页面
+ * 隐私政策页面
  */
 public class PrivacyPolicyActivity extends AbsAppActivity {
 
@@ -32,10 +32,10 @@ public class PrivacyPolicyActivity extends AbsAppActivity {
         ImageView backView = findViewById(R.id.iv_back);
         TextView titleView = findViewById(R.id.tv_title);
 
-        titleView.setText("隐私协议");
+        titleView.setText(getString(R.string.auth_privacy_policy_page_title));
         backView.setOnClickListener(v -> finish());
 
-        // 打开WebView页面显示隐私协议
+        // 打开 WebView 页面显示隐私政策
         WebViewPageActivity.navToPrivacy(this);
         finish();
     }
