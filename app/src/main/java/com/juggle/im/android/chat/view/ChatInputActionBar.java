@@ -37,6 +37,7 @@ import com.juggle.im.android.chat.mention.MentionConfig;
 import com.juggle.im.android.chat.mention.MentionManager;
 import com.juggle.im.android.chat.mention.MentionModel;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
+import com.juggle.im.android.chat.plugin.FilePlugin;
 import com.juggle.im.android.chat.plugin.ImagePlugin;
 import com.juggle.im.android.chat.plugin.MorePlugin;
 import com.juggle.im.android.chat.plugin.TimedDeletePlugin;
@@ -250,6 +251,7 @@ public class ChatInputActionBar extends LinearLayout {
         registerMorePlugin(new VoiceCallPlugin(cb));
         registerMorePlugin(new VideoCallPlugin(cb));
         registerMorePlugin(new TimedDeletePlugin(cb));
+        registerMorePlugin(new FilePlugin(cb));
     }
 
     /**

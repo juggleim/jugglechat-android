@@ -44,9 +44,11 @@ public class FilePlugin extends MorePlugin {
         pickFile.addCategory(Intent.CATEGORY_OPENABLE);
         pickFile.setType("*/*");
         callback.registerForActivityResult(REQ, this);
-        act.startActivityForResult(Intent.createChooser(pickFile, "Select file"), REQ);
+        act.startActivityForResult(Intent.createChooser(pickFile, act.getString(R.string.choose_file)), REQ);
 
-        startImForegroundService();
+        // 简要描述：兜底同步 host，确保 onActivityResult 前后都能正确启停前台服务。
+        host = act;
+        startImForegroundService(act);
     }
 
 
@@ -54,18 +56,21 @@ public class FilePlugin extends MorePlugin {
      * 启动IM前台服务
      * 该服务会在后台保持IM连接，防止用户选择文件等场景下连接被系统回收
      */
-    private void startImForegroundService() {
-        Intent intent = new Intent(host, ImForegroundService.class);
+    private void startImForegroundService(Activity activity) {
+        Intent intent = new Intent(activity, ImForegroundService.class);
         intent.setAction(ImForegroundService.ACTION_START);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            host.startForegroundService(intent);
+            activity.startForegroundService(intent);
         } else {
-            host.startService(intent);
+            activity.startService(intent);
         }
     }
 
     private void stopImForegroundService() {
+        if (host == null) {
+            return;
+        }
         // 停止IM前台服务
         Intent serviceIntent = new Intent(host, ImForegroundService.class);
         serviceIntent.setAction(ImForegroundService.ACTION_STOP);

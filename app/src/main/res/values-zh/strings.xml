@@ -12,6 +12,7 @@
     <string name="send">发送</string>
     <string name="hold_to_talk">按住说话</string>
     <string name="attach_file">文件</string>
+    <string name="choose_file">选择文件</string>
     <string name="photo">相册</string>
     <string name="camera">拍摄</string>
     <string name="location">位置</string>

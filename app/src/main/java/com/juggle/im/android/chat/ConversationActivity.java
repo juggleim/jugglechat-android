@@ -831,13 +831,12 @@ public class ConversationActivity extends AbsAppActivity {
             if (data == null) {
                 return;
             }
-            String fileUrl = FileUtils.convertContentUriToFile(this, data.toString());
-            FileMessage fileMessage = new FileMessage();
-            File f = new File(fileUrl);
-            fileMessage.setLocalPath(fileUrl);
-            fileMessage.setName(f.getName().length() > 10 ? f.getName().substring(0, 10) : f.getName());
-            long size = f.length();
-            fileMessage.setSize(size);
+            FileUtils.CopiedContentFile copiedFile = FileUtils.copyContentUriToCache(this, data.toString());
+            FileMessage fileMessage = createFileMessageFromPickedFile(copiedFile);
+            if (fileMessage == null) {
+                ToastUtils.show(this, "文件处理失败，请重试");
+                return;
+            }
             sendFileMessage(fileMessage, conversation);
         } else if (pluginId.equals(VoiceCallPlugin.ID) || pluginId.equals(VideoCallPlugin.ID)) {
             if (isGroup) {
@@ -861,6 +860,30 @@ public class ConversationActivity extends AbsAppActivity {
         } else if (pluginId.equals(TimedDeletePlugin.ID)) {
             showTimedDeleteSelector();
         }
+    }
+
+    /**
+     * 将文件选择结果转换为可发送的 FileMessage。
+     *
+     * <p>简要描述：这里统一补齐 localPath/name/size，避免出现“文件名被截断”或“全部显示为临时 jpg 名称”的问题。</p>
+     *
+     * @param copiedFile 文件复制结果
+     * @return 可发送的 FileMessage；若本地文件无效则返回 null
+     */
+    @Nullable
+    private FileMessage createFileMessageFromPickedFile(@Nullable FileUtils.CopiedContentFile copiedFile) {
+        if (copiedFile == null || TextUtils.isEmpty(copiedFile.getLocalPath())) {
+            return null;
+        }
+        File localFile = new File(copiedFile.getLocalPath());
+        if (!localFile.exists() || !localFile.isFile()) {
+            return null;
+        }
+        FileMessage fileMessage = new FileMessage();
+        fileMessage.setLocalPath(localFile.getAbsolutePath());
+        fileMessage.setName(FileUtils.resolveAttachmentDisplayName(copiedFile.getDisplayName(), localFile.getAbsolutePath()));
+        fileMessage.setSize(localFile.length());
+        return fileMessage;
     }
 
     private void showTimedDeleteSelector() {
