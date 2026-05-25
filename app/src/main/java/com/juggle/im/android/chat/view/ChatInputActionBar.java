@@ -54,6 +54,7 @@ import java.util.Map;
  * Implements smooth switching by tracking keyboard height and reserving panel space.
  */
 public class ChatInputActionBar extends LinearLayout {
+    private static final long FIRST_PANEL_ATTACH_DELAY_MS = 120L;
     private ImageView btnVoice, btnEmoji, btnMore;
     private EditText editTextInput;
     private FrameLayout panelContainer;
@@ -90,6 +91,31 @@ public class ChatInputActionBar extends LinearLayout {
     private MentionManager mentionManager;
 
     private int imeMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
+
+    /**
+     * 输入面板首次挂载延迟策略。
+     *
+     * <p>简要描述：首次切到表情/更多这类可交互面板时立即挂载，避免用户首击落在“尚未挂载”的空白区而被吞；
+     * 仅首次显示文本模式占位面板时保留短延迟，维持原有过渡稳定性。</p>
+     */
+    public static final class PanelAttachPolicy {
+        private PanelAttachPolicy() {
+        }
+
+        /**
+         * 计算面板挂载延迟时长。
+         *
+         * @param hasSwitchedPanel 是否已经发生过一次面板切换
+         * @param interactivePanel 当前面板是否可交互（如表情、更多）
+         * @return 延迟毫秒数，0 表示立即挂载
+         */
+        public static long resolveAttachDelayMs(boolean hasSwitchedPanel, boolean interactivePanel) {
+            if (hasSwitchedPanel) {
+                return 0L;
+            }
+            return interactivePanel ? 0L : FIRST_PANEL_ATTACH_DELAY_MS;
+        }
+    }
 
     public interface Listener {
         void onSend(String text, String msgId, List<MentionModel> mentionModelList, int sendType);
@@ -567,11 +593,14 @@ public class ChatInputActionBar extends LinearLayout {
 
     private void showPanel(View panel, InputMode mode) {
         panelContainer.removeAllViews();
-        if (!panelSwitched) {
+        // 简要描述：交互面板（表情/更多）首次显示不再延迟挂载，避免首个点击被丢失。
+        boolean interactivePanel = mode == InputMode.EMOJI || mode == InputMode.MORE;
+        long attachDelayMs = PanelAttachPolicy.resolveAttachDelayMs(panelSwitched, interactivePanel);
+        if (attachDelayMs > 0L) {
             panelContainer.postDelayed(() -> {
                 panelContainer.addView(panel);
                 panelContainer.setVisibility(VISIBLE);
-            }, 120);
+            }, attachDelayMs);
         } else {
             panelContainer.addView(panel);
             panelContainer.setVisibility(VISIBLE);
