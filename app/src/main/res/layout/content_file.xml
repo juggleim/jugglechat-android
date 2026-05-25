@@ -10,17 +10,27 @@
         android:gravity="center_vertical"
         android:minWidth="170dp"
         android:orientation="horizontal"
-        android:paddingStart="6dp"
+        android:paddingStart="8dp"
         android:paddingTop="6dp"
-        android:paddingEnd="6dp"
+        android:paddingEnd="8dp"
         android:paddingBottom="4dp">
 
-        <ImageView
-            android:id="@+id/image_file_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:src="@drawable/ic_msg_type_file"
-            android:contentDescription="file" />
+        <FrameLayout
+            android:id="@+id/layout_file_action"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/primary_circle_bg">
+
+            <ImageView
+                android:id="@+id/image_file_action_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:contentDescription="file_action"
+                android:src="@drawable/ic_file"
+                android:tint="@android:color/white" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -43,9 +53,30 @@
                 android:id="@+id/text_file_size"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="2dp"
                 android:textColor="@color/conversation_secondary_text"
                 android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/text_file_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="3dp"
+                android:textColor="@color/app_primary"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/progress_file_download"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_marginTop="5dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="@color/app_primary"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 
