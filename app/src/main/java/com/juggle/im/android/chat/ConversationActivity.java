@@ -49,6 +49,7 @@ import com.juggle.im.android.chat.message.MessageTypes;
 import com.juggle.im.android.chat.message.TypingNotifyMessage;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
+import com.juggle.im.android.event.MessageContentUpdatedEvent;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
@@ -586,6 +587,19 @@ public class ConversationActivity extends AbsAppActivity {
                 isGroup ? Conversation.ConversationType.GROUP : Conversation.ConversationType.PRIVATE,
                 conversationId);
         JIM.getInstance().getConversationManager().clearUnreadCount(conversation, null);
+    }
+
+    /**
+     * 已存在消息的内容更新（如 AI 流式文本持续输出），原地刷新对应气泡。
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void MessageContentUpdatedEvent(MessageContentUpdatedEvent event) {
+        if (event.getMessage() == null
+                || event.getMessage().getConversation() == null
+                || !event.getMessage().getConversation().getConversationId().equals(conversationId)) {
+            return;
+        }
+        dispatchUpdatedMessagesToStream(Arrays.asList(event.getMessage()));
     }
 
     /**

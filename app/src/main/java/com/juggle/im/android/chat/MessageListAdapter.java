@@ -26,11 +26,13 @@ import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ResourceUtils;
 import com.juggle.im.android.widget.JuggleCheckBox;
 import com.juggle.im.model.Message;
+import com.juggle.im.model.MessageContent;
 import com.juggle.im.model.MessageReaction;
 import com.juggle.im.model.MessageReactionItem;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.MergeMessage;
+import com.juggle.im.model.messages.StreamTextMessage;
 import com.juggle.im.model.messages.TextMessage;
 
 import java.util.ArrayList;
@@ -849,10 +851,26 @@ public class MessageListAdapter extends ListAdapter<UiMessage, RecyclerView.View
 
         @Override
         public boolean areContentsTheSame(@NonNull UiMessage oldItem, @NonNull UiMessage newItem) {
+            // 流式消息在生成过程中 content/seq/finished 不断变化，但 state/read/direction/edit 均不变；
+            // 若不比对内容，DiffUtil 会判定无变化而跳过重绑，导致流式文本停在中间一段无法显示完整。
+            if (!isStreamContentSame(oldItem.getMessage().getContent(), newItem.getMessage().getContent())) {
+                return false;
+            }
             return oldItem.getMessage().getState().getValue() == newItem.getMessage().getState().getValue()
                     && oldItem.getMessage().isHasRead() == newItem.getMessage().isHasRead()
                     && oldItem.getMessage().getDirection().getValue() == newItem.getMessage().getDirection().getValue()
                     && oldItem.getMessage().isEdit() == newItem.getMessage().isEdit();
+        }
+
+        private boolean isStreamContentSame(MessageContent oldContent, MessageContent newContent) {
+            if (!(oldContent instanceof StreamTextMessage) || !(newContent instanceof StreamTextMessage)) {
+                return true;
+            }
+            StreamTextMessage oldStream = (StreamTextMessage) oldContent;
+            StreamTextMessage newStream = (StreamTextMessage) newContent;
+            return oldStream.getSeq() == newStream.getSeq()
+                    && oldStream.isFinished() == newStream.isFinished()
+                    && TextUtils.equals(oldStream.getContent(), newStream.getContent());
         }
     };
 }

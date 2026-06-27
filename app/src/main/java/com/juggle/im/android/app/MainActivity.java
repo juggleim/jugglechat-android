@@ -32,6 +32,7 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.auth.AuthGuard;
 import com.juggle.im.android.auth.MultiDevicePolicy;
 import com.juggle.im.android.auth.UserProfileStore;
+import com.juggle.im.android.chat.ConversationActivity;
 import com.juggle.im.android.chat.ConversationListFragment;
 import com.juggle.im.android.chat.FriendsFragment;
 import com.juggle.im.android.chat.DiscoverFragment;
@@ -60,6 +61,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    /** AI 助手机器人会话 id，点击底部 AI 入口直接进入与该机器人的私聊会话 */
+    private static final String AI_BOT_CONVERSATION_ID = "py-sdk-bot-1782458410";
+
     private ConversationListFragment conversationListFragment;
     private FriendsFragment friendsFragment; // kept for places that still use it
     private DiscoverFragment discoverFragment;
@@ -123,6 +127,10 @@ public class MainActivity extends AppCompatActivity {
         headerProfileArea = findViewById(R.id.header_profile_area);
         if (bottomNav != null) {
             bottomNav.setOnTabClickListener(index -> onTabSelected(index));
+            bottomNav.setOnAiClickListener(() ->
+                    startActivity(ConversationActivity.intentFor(
+                            MainActivity.this, AI_BOT_CONVERSATION_ID, false,
+                            getString(R.string.ai_chat_title))));
             bottomNav.setSelectedTab(0);
         }
         updateHeaderProfile();

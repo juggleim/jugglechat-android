@@ -46,6 +46,12 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
+    <!-- 底部导航 AI 入口图标圆形 -->
+    <style name="RoundedAiIcon">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     <!-- BottomActionSheet 底部弹窗样式 -->
     <style name="BottomActionSheetDialog" parent="Theme.AppCompat.Light.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>

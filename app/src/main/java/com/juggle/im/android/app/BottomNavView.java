@@ -18,11 +18,17 @@ public class BottomNavView extends LinearLayout {
         void onTabClicked(int index);
     }
 
+    public interface OnAiClickListener {
+        void onAiClicked();
+    }
+
     private OnTabClickListener listener;
+    private OnAiClickListener aiListener;
     private int selectedIndex = 0;
 
     private View tabChat;
     private View tabContact;
+    private View tabAi;
     private View tabFriend;
     private View tabMe;
 
@@ -51,6 +57,7 @@ public class BottomNavView extends LinearLayout {
 
         tabChat = findViewById(R.id.tab_chats);
         tabContact = findViewById(R.id.tab_contacts);
+        tabAi = findViewById(R.id.tab_ai);
         tabFriend = findViewById(R.id.tab_discover);
         tabMe = findViewById(R.id.tab_me);
 
@@ -68,6 +75,12 @@ public class BottomNavView extends LinearLayout {
         tabContact.setOnClickListener(v -> selectTab(1, true));
         tabFriend.setOnClickListener(v -> selectTab(2, true));
         tabMe.setOnClickListener(v -> selectTab(3, true));
+        // AI 入口仅作为跳转动作，不改变底部选中态
+        tabAi.setOnClickListener(v -> {
+            if (aiListener != null) {
+                aiListener.onAiClicked();
+            }
+        });
 
         // initialize selection
         post(() -> setSelectedTab(selectedIndex));
@@ -114,6 +127,10 @@ public class BottomNavView extends LinearLayout {
 
     public void setOnTabClickListener(OnTabClickListener listener) {
         this.listener = listener;
+    }
+
+    public void setOnAiClickListener(OnAiClickListener aiListener) {
+        this.aiListener = aiListener;
     }
 
     public void updateUnreadCount(int c) {

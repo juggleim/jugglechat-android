@@ -15,6 +15,7 @@ import com.juggle.im.android.chat.message.SyncDataNotifyMessage;
 import com.juggle.im.android.chat.message.TimelineNotifyMessage;
 import com.juggle.im.android.chat.message.TypingNotifyMessage;
 import com.juggle.im.android.event.ConnectStatusEvent;
+import com.juggle.im.android.event.MessageContentUpdatedEvent;
 import com.juggle.im.android.event.MessageReadUpdatedEvent;
 import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
@@ -240,7 +241,9 @@ public class JIMChatCore {
             @Override
             public void onMessageUpdate(Message message) {
                 Log.d(tag, "onMessageUpdate: " + message.toString());
-
+                // 流式文本等场景下，SDK 会对同一条已存在消息持续回调最新内容，
+                // 需原地刷新对应气泡，故走内容更新事件而非新消息事件。
+                EventBus.getDefault().post(new MessageContentUpdatedEvent(message));
             }
 
             @Override

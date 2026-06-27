@@ -1815,8 +1815,41 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                 continue;
             current.set(idx, um);
         }
-        adapter.submitList(current);
+        // 流式内容持续变长时，若用户停在底部则跟随滚动，避免新增内容被输入栏遮挡而看起来"显示不全"。
+        adapter.submitList(current, () -> {
+            if (atBottom) {
+                recyclerView.post(this::pinLastItemBottom);
+            }
+        });
         upsertUiMessages(updated);
+    }
+
+    /**
+     * 将最后一条消息的底边钉在可视区底边。
+     *
+     * <p>tips：流式消息可能高于整屏，直接用 scrollToPosition 会把该项顶部对齐到屏幕顶部（跳到消息开头）；
+     * 这里改为按底边对齐，保证持续输出时始终贴着屏幕底部滚动。</p>
+     */
+    private void pinLastItemBottom() {
+        if (recyclerView == null || layoutManager == null || adapter == null) {
+            return;
+        }
+        int last = adapter.getItemCount() - 1;
+        if (last < 0) {
+            return;
+        }
+        View lastView = layoutManager.findViewByPosition(last);
+        if (lastView == null) {
+            // 最后一项尚未布局，先粗定位再于下一帧精确对齐底边
+            layoutManager.scrollToPositionWithOffset(last, 0);
+            recyclerView.post(this::pinLastItemBottom);
+            return;
+        }
+        int viewportBottom = recyclerView.getHeight() - recyclerView.getPaddingBottom();
+        int delta = lastView.getBottom() - viewportBottom;
+        if (delta > 0) {
+            recyclerView.scrollBy(0, delta);
+        }
     }
 
     private void onMessageAction(UiMessage message, String action) {
