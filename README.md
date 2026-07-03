@@ -48,7 +48,7 @@
 - `service/`：前台服务与保活
 - `utils/` / `widget/`：工具类与自定义组件
 
-详细拆解可查看 `docs/project-modules.md`。
+详细拆解可查看项目知识库 `docs/knowledge/`（从 `index.md` 进入）。
 
 ## 3 分钟上手
 
