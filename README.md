@@ -1,105 +1,189 @@
-# JuggleChat Android
+# JuggleChat Android — Open-Source Instant Messaging App
 
-一个可直接运行的 Android IM 示例工程：基于 JuggleIM SDK + ZEGO 音视频，覆盖从登录到聊天、群组、朋友圈、通话的完整链路。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-## 为什么看这个项目
+JuggleChat Android is a complete, runnable **Android instant messaging app** built with Java, the JuggleIM SDK, and ZEGO. It is an open-source reference project for developers building a mobile chat app with one-to-one and group messaging, contacts, social feeds, message search, and real-time audio/video calls.
 
-- 想快速评估 JuggleIM Android 接入成本
-- 想拿到一个可运行、可改造的 IM Demo 作为业务原型
-- 想参考聊天、会话、消息、通话在 Android 端的落地方式
+Use this repository to evaluate the JuggleIM Android SDK, learn how production-style chat features fit together, or bootstrap your own Android IM application.
 
-## 功能总览
+## Feature Preview
 
-- 账号体系：登录、注册、会话恢复、多端登录态处理
-- 会话体系：会话列表、分页、未读数、置顶、免打扰
-- 消息体系：文本、图片、语音、文件、合并消息、消息回应
-- 通讯录与群组：好友管理、群管理、群公告、群成员管理
-- 发现页：朋友圈发布、评论、点赞
-- 搜索：好友/群组/消息检索
-- 实时通话：单聊与多人音视频、来电浮窗
+<table>
+  <tr>
+    <td align="center">
+      <strong>Messaging, Contacts, and Groups</strong><br>
+      <sub>Login · Conversations · Rich messages · Voice messages · Search · Group chat</sub>
+    </td>
+    <td align="center">
+      <strong>Calls, Group Management, and Moments</strong><br>
+      <sub>Audio/video calls · Incoming calls · Group settings · Social feed · Favorites</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="images/img.png" alt="JuggleChat Android messaging app screens showing login, conversation list, chat messages, voice messages, contact search, and group chat">
+    </td>
+    <td width="50%">
+      <img src="images/img_1.png" alt="JuggleChat Android IM app screens showing video calls, group management, social moments, favorites, contacts, and incoming calls">
+    </td>
+  </tr>
+</table>
 
-## 界面预览
+## Why JuggleChat?
 
-<img src="images/img.png" alt="会话页预览" style="width: 20%; max-width: 300px;">
-<img src="images/img_1.png" alt="聊天页预览" style="width: 20%; max-width: 300px;">
+- **Runnable end-to-end demo** — follow the flow from authentication to conversations, messages, groups, moments, and calls.
+- **Real chat app patterns** — study unread counts, pagination, message actions, session recovery, multi-device login handling, and incoming-call overlays.
+- **Integration reference** — see how an Android client connects an IM SDK, an application backend, and ZEGO real-time communication.
+- **Readable Java architecture** — a single app module with clear boundaries between UI, domain repositories, SDK integration, HTTP services, and events.
+- **A practical starting point** — fork the project for an internal messenger, community chat, customer-support app, or social product prototype.
 
-## 技术信息（快速判断用）
+## Features
 
-| 项目 | 当前配置 |
+### Messaging and conversations
+
+- One-to-one chat and group chat
+- Text, image, voice, file, and merged/forwarded messages
+- Message replies, reactions, translation, recall, favorites, and pinned messages
+- Conversation pagination, unread badges, pinning, and mute settings
+- Message history and in-chat search
+
+### Contacts and groups
+
+- Registration, login, session restoration, and multi-device session handling
+- Friend requests and contact management
+- Group creation, announcements, QR codes, roles, and member management
+- Search across friends, groups, and messages
+
+### Social and real-time communication
+
+- Moments/social feed with posts, images, likes, and comments
+- One-to-one and multi-party audio/video calls powered by ZEGO
+- Incoming and ongoing call overlays
+- CameraX and ML Kit barcode/QR code scanning
+
+## Technology Stack
+
+| Area | Technology |
 |---|---|
-| 平台 | Android（Java） |
-| 最低/目标 SDK | 24 / 34 |
-| Android Gradle Plugin | 8.4.0 |
-| Gradle Wrapper | 8.6 |
-| 核心 IM | `com.juggle.im:juggle:1.8.44` |
-| 音视频 | `com.juggle.call.zego:juggle:1.8.25` + `im.zego:express-video:3.17.3` |
-| 关键基础库 | Retrofit、EventBus、Glide、CameraX、ML Kit |
+| Platform | Android, Java |
+| Android support | minSdk 24, targetSdk 34 |
+| Build | Android Gradle Plugin 8.4.0, Gradle 8.6, JDK 17 |
+| Instant messaging | JuggleIM Android SDK `1.8.44` |
+| Audio/video calls | Juggle call extension `1.8.25`, ZEGO Express `3.17.3` |
+| App architecture | Repository layer, SDK facade, EventBus event bridge |
+| UI and media | AndroidX, Material Components, Glide, CameraX, ML Kit |
+| Networking and data | Retrofit, Gson, Protobuf, Qiniu SDK |
+| Security | AndroidX Security Crypto |
 
-## 工程结构
+## Architecture
 
-主要代码目录：`app/src/main/java/com/juggle/im/android/`
+JuggleChat keeps SDK callbacks and application UI loosely coupled. `JIMChatCore` is the single facade around the JuggleIM SDK; repositories coordinate domain data, and EventBus distributes connection, conversation, and message updates to the UI.
 
-- `app/`：应用壳层与主页面（登录、设置、个人中心等）
-- `auth/`：会话持久化、鉴权保护、启动路由
-- `chat/`：聊天核心（会话、消息、群组、搜索、通话、朋友圈）
-- `core/`：IM SDK 核心封装（`JIMChatCore`）
-- `server/`：HTTP 接口调用与数据对象
-- `event/`：EventBus 事件定义
-- `service/`：前台服务与保活
-- `utils/` / `widget/`：工具类与自定义组件
+```text
+Android UI
+   ├── Domain repositories ── JIMChatCore ── JuggleIM SDK
+   ├── HTTP service layer ───────────────── Application backend
+   └── Call UI ────────────── Juggle call extension ── ZEGO
+```
 
-详细拆解可查看项目知识库 `docs/knowledge/`（从 `index.md` 进入）。
+Main source directory: `app/src/main/java/com/juggle/im/android/`
 
-## 3 分钟上手
+| Package | Responsibility |
+|---|---|
+| `app/` | Application shell, authentication screens, settings, and profile |
+| `auth/` | Session persistence, authentication guard, and startup routing |
+| `chat/` | Conversations, messages, contacts, groups, search, calls, and moments |
+| `core/` | JuggleIM SDK facade (`JIMChatCore`) |
+| `server/` | HTTP services and data transfer objects |
+| `event/` | EventBus event definitions |
+| `service/` | Foreground and keep-alive services |
+| `utils/`, `widget/` | Shared utilities and custom Android views |
 
-### 1. 准备环境
+For design decisions, module boundaries, and known implementation details, start with the [project knowledge base](docs/knowledge/index.md).
 
-- Android Studio（建议最新稳定版）
+## Quick Start
+
+### Prerequisites
+
+- Android Studio (latest stable version recommended)
 - JDK 17
 - Android SDK 34
+- An Android device or emulator running Android 7.0 (API 24) or later
 
-### 2. 配置运行参数
+### 1. Clone and open the project
 
-先修改 `app/src/main/java/com/juggle/im/android/model/ConfigUtils.java` 中的关键值：
+Clone this repository, then open the root directory in Android Studio and wait for Gradle sync to finish.
 
-- `appKey`：JuggleIM 应用 Key
-- `appServerUrl` / `imServer`：业务服务地址与 IM 地址
-- `zegoId`：ZEGO 音视频 AppID
+### 2. Configure the services
 
-### 3. 构建并运行
+Update `app/src/main/java/com/juggle/im/android/model/ConfigUtils.java`:
 
-- IDE 方式：Android Studio 直接运行 `app` 模块
-- 命令行方式：执行 `./gradlew :app:assembleDebug`
-
-## 常用开发命令
-
-| 命令 | 用途 |
+| Field | Description |
 |---|---|
-| `./gradlew :app:assembleDebug` | 构建 Debug 包 |
-| `./gradlew :app:assembleRelease` | 构建 Release 包 |
-| `./gradlew :app:testDebugUnitTest` | 运行单元测试 |
-| `./gradlew :app:lintDebug` | 运行 Lint |
-| `bash scripts/ci/check-quality.sh` | 本地执行 CI 质量门禁流程 |
+| `appKey` | JuggleIM application key |
+| `appServerUrl` | Application backend base URL |
+| `imServer` | JuggleIM WebSocket server URL |
+| `zegoId` | ZEGO AppID used for audio/video calls |
 
-## CI 说明
+The values committed to this repository are for demonstration and testing only. Use your own services, credentials, and signing configuration before distributing an app. Do not commit production secrets.
 
-- 工作流文件：`.github/workflows/android-ci.yml`
-- 质量脚本：`scripts/ci/check-quality.sh`
+### 3. Build and run
 
-注意：脚本当前包含 `./gradlew verifyModuleBoundaries`，但工程内暂未定义该任务；直接执行脚本会在该步骤失败。若你准备在仓库中启用该脚本，建议先补充该任务或调整脚本门禁项。
+Run the `app` configuration from Android Studio, or build a debug APK from the command line:
 
-## 关键权限与发布注意
+```bash
+./gradlew :app:assembleDebug
+```
 
-- 已声明常用 IM 权限：通知、相机、麦克风、媒体读取、前台服务等
-- 仓库中的 `keystore/key.keystore` 及签名口令仅用于示例调试，不可用于生产
-- 发布前请替换正式服务地址、密钥与签名配置
+## Development Commands
 
-## 开源与使用说明
+| Command | Purpose |
+|---|---|
+| `./gradlew :app:assembleDebug` | Build a debug APK |
+| `./gradlew :app:assembleRelease` | Build a release APK |
+| `./gradlew :app:testDebugUnitTest` | Run unit tests |
+| `./gradlew :app:lintDebug` | Run Android Lint |
 
-本项目主要用于学习、评估与二次开发参考。
-如用于商业场景，请自行评估并处理：
+## Frequently Asked Questions
 
-- SDK 商业授权
-- 服务端与密钥安全
-- 隐私合规与数据合规
+### Is JuggleChat a complete Android chat app or only an SDK sample?
 
+It is a complete client-side reference app. It includes authentication screens, conversations, rich messages, contacts, group management, search, a social feed, and audio/video call UI. A compatible application backend, JuggleIM service, and ZEGO configuration are still required.
+
+### Can I use this project to build my own instant messaging app?
+
+Yes. The project is intended for learning, SDK evaluation, prototyping, and secondary development. Before commercial use, review the licenses and terms of every SDK and service, replace all demo credentials, and complete your own privacy and security review.
+
+### Does the Android chat demo support group messaging and video calls?
+
+Yes. It demonstrates one-to-one and group messaging plus one-to-one and multi-party audio/video calls.
+
+### Is the app written in Kotlin or Java?
+
+The application code is written primarily in Java. This makes the repository useful to Android teams maintaining Java codebases or comparing Java integration patterns for an IM SDK.
+
+### What backend does JuggleChat need?
+
+The client connects to an application HTTP backend for business data, JuggleIM for real-time messaging, and ZEGO for audio/video media. Configure these endpoints and credentials in `ConfigUtils.java`.
+
+## Contributing
+
+Issues and pull requests are welcome. When reporting a bug, include the Android version, device model, reproduction steps, expected result, and relevant logs. Keep changes focused and run the smallest relevant build, unit test, or lint task before submitting a pull request.
+
+If this Android IM project helps you, consider starring the repository. Stars and detailed issue reports help more Android developers discover and improve JuggleChat.
+
+## Security and Production Use
+
+- Replace the example server endpoints, application keys, ZEGO AppID, and signing files.
+- Review notification, camera, microphone, media, and foreground-service permissions.
+- Add your own privacy policy, data-retention rules, and account-deletion flow where required.
+- Verify SDK licensing, service pricing, and regional compliance before commercial deployment.
+- Never treat the included demo configuration as a production security baseline.
+
+## Project Scope
+
+JuggleChat Android is maintained as a learning, evaluation, and secondary-development reference. It is not a hosted messaging service and does not replace the backend, operational monitoring, security hardening, or compliance work required by a production chat application.
+
+## License
+
+JuggleChat Android is licensed under the [Apache License 2.0](LICENSE).
