@@ -11,7 +11,7 @@ resource:
   - app/src/main/java/com/juggle/im/android/model/
   - app/src/main/java/com/juggle/im/android/i18n/
 tags: [app, ui]
-timestamp: 2026-07-28T14:00:00+08:00
+timestamp: 2026-07-28T16:50:00+08:00
 ---
 
 # 应用壳层
@@ -25,6 +25,7 @@ timestamp: 2026-07-28T14:00:00+08:00
 * MainActivity 订阅 [IM 核心封装](/modules/core-im.md) 的连接状态与未读数事件
 * 登录注册页逻辑委托给 [身份认证](/modules/auth.md)
 * 各设置页的数据操作走 [网络请求层](/modules/server.md)
+* 用户协议与隐私政策随 APK 内置，由 WebViewPageActivity 按 [多语言约定](/conventions/i18n.md) 选择中英文资源；协议页禁止网络回退
 
 ## 关键入口
 
@@ -32,6 +33,7 @@ timestamp: 2026-07-28T14:00:00+08:00
 * `service/ImForegroundService.java` — IM 长连接保活的常驻通知
 * `model/ConfigUtils.java` — appKey/服务器地址/Zego ID 全局配置，换环境改这里
 * `i18n/LanguageManager.java` — 应用语言持久化与生效，入口在 app/LanguageSettingsActivity
+* `app/WebViewPageActivity.java` — 用户协议和隐私政策的离线、安全承载页
 
 ## 注意事项
 

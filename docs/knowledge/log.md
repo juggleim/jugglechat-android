@@ -1,6 +1,7 @@
 # 更新日志
 
 ## 2026-07-28
+* **Update**: 协议与隐私政策改为 APK 内置中英文内容，并修复“我的”页硬编码版本号；同步更新 [应用壳层](/modules/app-shell.md)、[聊天消息](/modules/chat-messaging.md) 和 [多语言约定](/conventions/i18n.md)。
 * **Update**: 增加会话级定时删除后，更新 [聊天消息](/modules/chat-messaging.md) 与 [网络请求层](/modules/server.md) 的职责边界；同步复核 [多语言约定](/conventions/i18n.md) 和 [表情面板首击 Gotcha](/gotchas/emoji-panel-first-tap.md)。
 
 ## 2026-07-03

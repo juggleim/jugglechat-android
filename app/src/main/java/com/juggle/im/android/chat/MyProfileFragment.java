@@ -1,6 +1,10 @@
 package com.juggle.im.android.chat;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -91,7 +95,8 @@ public class MyProfileFragment extends Fragment {
         setupSettingRow(rowUserAgreement, R.drawable.ic_setting_user_agreement, getString(R.string.me_user_agreement));
         setupSettingRow(rowPrivacyPolicy, R.drawable.ic_setting_privacy, getString(R.string.me_privacy_policy));
         setupSettingRow(rowFeedback, R.drawable.ic_setting_feedback, getString(R.string.me_feedback));
-        setupSettingRow(rowVersion, R.drawable.ic_setting_about, getString(R.string.me_version), "2.5.1");
+        setupSettingRow(rowVersion, R.drawable.ic_setting_about, getString(R.string.me_version),
+                getAppVersionName(), false);
 
         // 设置点击监听
         ivAvatar.setOnClickListener(v -> navigateToPersonalSettings());
@@ -102,7 +107,29 @@ public class MyProfileFragment extends Fragment {
         rowUserAgreement.setOnClickListener(v -> navigateToUserAgreement());
         rowPrivacyPolicy.setOnClickListener(v -> navigateToPrivacyPolicy());
         rowFeedback.setOnClickListener(v -> navigateToFeedback());
-        rowVersion.setOnClickListener(v -> Toast.makeText(getContext(), R.string.me_version_todo, Toast.LENGTH_SHORT).show());
+    }
+
+    private String getAppVersionName() {
+        Context context = requireContext();
+        PackageManager packageManager = context.getPackageManager();
+        try {
+            // TIPS：读取已安装包元数据，避免 Gradle 升版后界面仍显示历史硬编码版本。
+            PackageInfo packageInfo;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageInfo = packageManager.getPackageInfo(
+                        context.getPackageName(),
+                        PackageManager.PackageInfoFlags.of(0));
+            } else {
+                packageInfo = packageManager.getPackageInfo(context.getPackageName(), 0);
+            }
+            return TextUtils.isEmpty(packageInfo.versionName)
+                    ? getString(R.string.me_version_unknown)
+                    : packageInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            LogUtils.e("MyProfileFragment", "-", "profile", "readVersion",
+                    "fail", e.getMessage());
+            return getString(R.string.me_version_unknown);
+        }
     }
 
     private void setupSettingRow(View row, int iconRes, String title) {

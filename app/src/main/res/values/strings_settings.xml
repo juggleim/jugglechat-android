@@ -7,7 +7,7 @@
     <string name="me_privacy_policy">Privacy Policy</string>
     <string name="me_feedback">Feedback</string>
     <string name="me_version">Version</string>
-    <string name="me_version_todo">Version info is not available yet</string>
+    <string name="me_version_unknown">Unknown</string>
     <string name="me_user_id">Account: @%1$s</string>
     <string name="me_logout">Log out</string>
     <string name="me_logout_confirm">Are you sure you want to log out?</string>
