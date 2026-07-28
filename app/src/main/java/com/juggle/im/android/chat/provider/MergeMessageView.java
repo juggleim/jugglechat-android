@@ -20,6 +20,7 @@ import com.juggle.im.model.messages.MergeMessage;
 import com.qiniu.android.utils.StringUtils;
 
 import java.util.List;
+import com.juggle.im.android.i18n.AppRes;
 
 /**
  * Provider view for MergeMessage preview (shows first up to 4 messages as a summary).
@@ -53,11 +54,11 @@ public class MergeMessageView extends MessageView<UiMessage, MergeMessage> {
                 }
             }
             if (StringUtils.isBlank(name)) {
-                name = "未知用户";
+                name = AppRes.string(R.string.msg_merge_unknown_user);
             }
             String previewContent = previewUnit.getPreviewContent();
             if (StringUtils.isBlank(previewContent)) {
-                previewContent = "[消息]";
+                previewContent = AppRes.string(R.string.msg_unknown);
             }
             sb.append(name)
                     .append("：")

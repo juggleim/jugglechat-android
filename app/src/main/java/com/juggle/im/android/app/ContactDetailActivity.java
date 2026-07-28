@@ -23,6 +23,7 @@ import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 联系人详情页面。
@@ -227,8 +228,9 @@ public class ContactDetailActivity extends AbsAppActivity {
                     @Override
                     public void onError(int code, String message) {
                         tvAddFriend.setEnabled(true);
+                        LogUtils.serverError("contact", "addFriend", code, message);
                         Toast.makeText(ContactDetailActivity.this,
-                                getString(R.string.contact_detail_add_failed, message),
+                                R.string.contact_detail_add_failed,
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -301,24 +303,12 @@ public class ContactDetailActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 isRemovingFriend = false;
                 rowDeleteContact.setEnabled(true);
+                LogUtils.serverError("contact", "removeFriend", code, message);
                 Toast.makeText(ContactDetailActivity.this,
-                        getString(R.string.contact_detail_delete_failed, safeMessage(message)),
+                        R.string.contact_detail_delete_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    /**
-     * 返回可展示的错误文案。
-     *
-     * @param message 服务端返回的错误信息
-     * @return 非空提示文案
-     */
-    private String safeMessage(String message) {
-        if (TextUtils.isEmpty(message)) {
-            return "未知错误";
-        }
-        return message.trim();
     }
 
     /**

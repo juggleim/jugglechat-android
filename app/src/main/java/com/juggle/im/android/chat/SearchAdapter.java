@@ -62,9 +62,9 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         List<String> keys = getOrderedTypes();
-        String title = keys.get(position);
-        List<SearchResult> items = resultsMap.get(title);
-        holder.bind(title, items, keyword, onMoreClickListener);
+        String type = keys.get(position);
+        List<SearchResult> items = resultsMap.get(type);
+        holder.bind(type, items, keyword, onMoreClickListener);
     }
 
     @Override
@@ -185,18 +185,18 @@ public class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ViewHolder
             super(itemView);
         }
 
-        void bind(String title, List<SearchResult> items, String keyword, OnMoreClickListener onMoreClickListener) {
+        void bind(String type, List<SearchResult> items, String keyword, OnMoreClickListener onMoreClickListener) {
             TextView tvTitle = itemView.findViewById(R.id.search_header_title);
             View moreLayout = itemView.findViewById(R.id.layout_more);
             ViewGroup container = itemView.findViewById(R.id.search_result_container);
 
-            tvTitle.setText(title);
+            tvTitle.setText(SearchActivity.searchTypeTitleRes(type));
             if (onMoreClickListener == null) {
                 moreLayout.setVisibility(View.GONE);
                 moreLayout.setOnClickListener(null);
             } else {
                 moreLayout.setVisibility(View.VISIBLE);
-                moreLayout.setOnClickListener(v -> onMoreClickListener.onMoreClick(title));
+                moreLayout.setOnClickListener(v -> onMoreClickListener.onMoreClick(type));
             }
 
             container.removeAllViews();

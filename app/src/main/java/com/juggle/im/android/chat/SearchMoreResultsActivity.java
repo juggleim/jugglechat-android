@@ -9,6 +9,7 @@ import android.view.Window;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.juggle.im.android.utils.LogUtils;
 
 import androidx.annotation.Nullable;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -86,8 +87,9 @@ public class SearchMoreResultsActivity extends AbsAppActivity {
         recyclerView = findViewById(R.id.rv_more_results);
 
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
-        titleView.setText(searchType);
-        emptyView.setText(getString(R.string.search_more_empty, searchType));
+        String typeTitle = getString(SearchActivity.searchTypeTitleRes(searchType));
+        titleView.setText(typeTitle);
+        emptyView.setText(getString(R.string.search_more_empty, typeTitle));
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new SearchMoreResultAdapter();
@@ -161,8 +163,9 @@ public class SearchMoreResultsActivity extends AbsAppActivity {
 
     private void onLoadError(String message) {
         showResults(Collections.emptyList());
+        LogUtils.serverError("search", "loadMoreResults", 0, message);
         Toast.makeText(this,
-                getString(R.string.search_more_load_failed, String.valueOf(message)),
+                R.string.search_more_load_failed,
                 Toast.LENGTH_SHORT).show();
     }
 

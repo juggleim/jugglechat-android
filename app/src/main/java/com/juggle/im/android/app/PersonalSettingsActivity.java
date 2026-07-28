@@ -31,6 +31,7 @@ import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.io.File;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 个人设置页面
@@ -74,21 +75,21 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         rowCurrentUser = findViewById(R.id.row_current_user);
         rowAddAccount = findViewById(R.id.row_add_account);
 
-        ((TextView) findViewById(R.id.tv_title)).setText("个人设置");
+        ((TextView) findViewById(R.id.tv_title)).setText(R.string.personal_settings_title);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         saveView.setOnClickListener(v -> onSave());
         findViewById(R.id.tv_set_avatar).setOnClickListener(v -> openAvatarPicker());
         avatarView.setOnClickListener(v -> openAvatarPicker());
 
-        setupRow(rowBindEmail, R.drawable.ic_display_name, "绑定邮箱", "未设置", true);
-        setupRow(rowUpdatePwd, R.drawable.ic_setting_privacy, "修改密码", "", true);
+        setupRow(rowBindEmail, R.drawable.ic_display_name, getString(R.string.personal_bind_email), getString(R.string.personal_not_set), true);
+        setupRow(rowUpdatePwd, R.drawable.ic_setting_privacy, getString(R.string.personal_update_password), "", true);
 //        setupRow(rowCurrentUser, R.drawable.ic_display_name, "当前用户", "xxxxx", true);
-        setupRow(rowAddAccount, R.drawable.ic_add, "添加账号", "", true);
+        setupRow(rowAddAccount, R.drawable.ic_add, getString(R.string.personal_add_account), "", true);
 
-        rowBindEmail.setOnClickListener(v -> Toast.makeText(this, "绑定邮箱功能开发中", Toast.LENGTH_SHORT).show());
+        rowBindEmail.setOnClickListener(v -> Toast.makeText(this, R.string.personal_bind_email_todo, Toast.LENGTH_SHORT).show());
         rowUpdatePwd.setOnClickListener(v -> startActivity(new Intent(this, UpdatePasswordActivity.class)));
-        rowAddAccount.setOnClickListener(v -> Toast.makeText(this, "添加账号功能开发中", Toast.LENGTH_SHORT).show());
+        rowAddAccount.setOnClickListener(v -> Toast.makeText(this, R.string.personal_add_account_todo, Toast.LENGTH_SHORT).show());
 
         findViewById(R.id.btn_logout).setOnClickListener(v -> confirmLogout());
 
@@ -126,7 +127,8 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
-                Toast.makeText(PersonalSettingsActivity.this, "获取用户信息失败：" + safeText(message, "未知错误"), Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("profile", "loadUserInfo", code, message);
+                Toast.makeText(PersonalSettingsActivity.this, R.string.personal_load_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -156,7 +158,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         ImageView arrow = rowCurrentUser.findViewById(R.id.iv_row_arrow);
 
         // “当前用户”固定为标题，名称展示在副标题，避免语义混淆。
-        title.setText("当前用户");
+        title.setText(R.string.personal_current_user);
         subtitle.setVisibility(View.VISIBLE);
         subtitle.setText(safeText(name, currentUserId));
         arrow.setVisibility(View.GONE);
@@ -183,7 +185,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
                     isUploadingAvatar = false;
                     avatarProgress.setVisibility(View.GONE);
                     if (TextUtils.isEmpty(url)) {
-                        Toast.makeText(PersonalSettingsActivity.this, "头像上传失败", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PersonalSettingsActivity.this, R.string.personal_avatar_upload_failed, Toast.LENGTH_SHORT).show();
                         bindUserData(etName.getText().toString().trim(), etAccount.getText().toString().trim(), originalAvatarUrl);
                         return;
                     }
@@ -198,7 +200,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
                 runOnUiThread(() -> {
                     isUploadingAvatar = false;
                     avatarProgress.setVisibility(View.GONE);
-                    Toast.makeText(PersonalSettingsActivity.this, "头像上传失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(PersonalSettingsActivity.this, R.string.personal_avatar_upload_failed, Toast.LENGTH_SHORT).show();
                     bindUserData(etName.getText().toString().trim(), etAccount.getText().toString().trim(), originalAvatarUrl);
                 });
             }
@@ -210,18 +212,18 @@ public class PersonalSettingsActivity extends AbsAppActivity {
             return;
         }
         if (isUploadingAvatar) {
-            Toast.makeText(this, "头像上传中，请稍候", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.personal_avatar_uploading, Toast.LENGTH_SHORT).show();
             return;
         }
 
         String name = safeText(etName.getText().toString(), "").trim();
         String account = safeText(etAccount.getText().toString(), "").trim();
         if (TextUtils.isEmpty(name)) {
-            Toast.makeText(this, "名称不能为空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.personal_name_empty, Toast.LENGTH_SHORT).show();
             return;
         }
         if (TextUtils.isEmpty(account)) {
-            Toast.makeText(this, "账号不能为空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.personal_account_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -229,7 +231,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         boolean needUpdateAccount = !TextUtils.equals(account, originalAccount);
 
         if (!needUpdateProfile && !needUpdateAccount) {
-            Toast.makeText(this, "资料未变化", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.personal_no_change, Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -249,7 +251,8 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
                 @Override
                 public void onError(int code, String message) {
-                    onSaveFailed("账号保存失败：" + safeText(message, "未知错误"));
+                    LogUtils.serverError("profile", "setAccount", code, message);
+                    onSaveFailed(getString(R.string.personal_account_save_failed));
                 }
             });
         };
@@ -271,7 +274,8 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
-                onSaveFailed("资料保存失败：" + safeText(message, "未知错误"));
+                LogUtils.serverError("profile", "updateUserInfo", code, message);
+                onSaveFailed(getString(R.string.personal_profile_save_failed));
             }
         });
     }
@@ -285,7 +289,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         ConfigUtils.myName = name;
         ConfigUtils.myAvatarUrl = avatar;
         UserProfileStore.save(this, account, name, avatar);
-        Toast.makeText(this, "保存成功", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.personal_save_success, Toast.LENGTH_SHORT).show();
         finish();
     }
 
@@ -302,10 +306,10 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
     private void confirmLogout() {
         AppConfirmDialog.builder(this)
-                .setTitle("退出登录")
-                .setMessage("确定要退出登录吗？")
+                .setTitle(getString(R.string.me_logout))
+                .setMessage(getString(R.string.me_logout_confirm))
                 .setNegativeText(getString(R.string.txt_cancel))
-                .setPositiveText(getString(R.string.create_group_confirm))
+                .setPositiveText(getString(R.string.me_logout_confirm_ok))
                 .setOnPositiveClick(() -> {
                     ConfigUtils.appToken = null;
                     ConfigUtils.imToken = null;

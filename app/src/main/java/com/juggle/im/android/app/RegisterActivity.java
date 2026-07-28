@@ -15,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import com.juggle.im.android.utils.LogUtils;
 
 import androidx.annotation.NonNull;
 import com.juggle.im.android.component.AbsAppActivity;
@@ -158,8 +159,9 @@ public class RegisterActivity extends AbsAppActivity {
                     @Override
                     public void onError(int code, String message) {
                         setRegistering(false);
+                        LogUtils.serverError("auth", "register", code, message);
                         ToastUtils.show(RegisterActivity.this,
-                                getString(R.string.auth_error_register_failed, normalizeErrorMessage(message)));
+                                R.string.auth_error_register_failed);
                     }
                 });
     }
@@ -202,10 +204,6 @@ public class RegisterActivity extends AbsAppActivity {
         return value == null ? "" : value.trim();
     }
 
-    private String normalizeErrorMessage(String message) {
-        String trimmed = safeTrim(message);
-        return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
-    }
 
     private final class LinkSpan extends ClickableSpan {
         private final Runnable clickAction;

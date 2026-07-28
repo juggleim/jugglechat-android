@@ -1,0 +1,55 @@
+<resources>
+    <!-- 新的朋友 -->
+    <string name="friend_apply_load_failed">加载新朋友失败</string>
+    <string name="friend_apply_desc_outgoing">申请添加对方为好友</string>
+    <string name="friend_apply_desc_incoming">申请添加你为好友</string>
+    <string name="friend_apply_status_pending">等待验证</string>
+    <string name="friend_apply_status_added">已添加</string>
+    <string name="friend_apply_status_rejected_by_peer">已被拒绝</string>
+    <string name="friend_apply_status_rejected">已拒绝</string>
+    <string name="friend_apply_status_expired">已过期</string>
+    <string name="friend_apply_accept">接受</string>
+    <string name="friend_apply_reject">拒绝</string>
+    <string name="friend_apply_accept_success">已添加好友</string>
+    <string name="friend_apply_accept_failed">添加好友失败</string>
+    <string name="friend_apply_reject_success">已拒绝</string>
+    <string name="friend_apply_reject_failed">拒绝失败</string>
+
+    <!-- 好友 / 黑名单 -->
+    <string name="friends_load_failed">加载好友失败</string>
+    <string name="blocklist_load_failed">加载黑名单失败</string>
+    <string name="contact_add">添加</string>
+    <string name="contact_unknown_user">未知用户</string>
+
+    <!-- 朋友圈 -->
+    <string name="moments_title">朋友圈</string>
+    <string name="moments_create_post_title">发朋友圈</string>
+    <string name="moments_create_post_send">发送</string>
+    <string name="moments_create_post_hint">这一刻的想法...</string>
+    <string name="moments_content_empty">内容不能为空</string>
+    <string name="moments_image_uploading">图片正在上传中，请稍候</string>
+    <string name="moments_post_success">发表成功</string>
+    <string name="moments_post_failed">发表失败</string>
+    <string name="moments_camera_permission_denied">请授予相机权限</string>
+    <string name="moments_load_failed">加载失败</string>
+    <string name="moments_reply_hint">回复 %1$s: </string>
+    <string name="moments_anonymous">匿名</string>
+    <string name="moments_like">点赞</string>
+    <string name="moments_comment">评论</string>
+    <string name="moments_comment_send">发送</string>
+    <string name="moments_delete_comment_cancel">取消</string>
+
+    <!-- 相对时间 -->
+    <string name="time_just_now">刚刚</string>
+    <string name="time_minutes_ago">%1$d分钟前</string>
+    <string name="time_hours_ago">%1$d小时前</string>
+    <string name="time_yesterday">昨天</string>
+    <string name="time_days_ago">%1$d天前</string>
+
+    <!-- 发现 -->
+    <string name="discover_moments">朋友圈</string>
+
+    <!-- 相机选项 -->
+    <string name="camera_option_take_photo">拍照</string>
+    <string name="camera_option_from_album">从相册选择</string>
+</resources>

@@ -34,7 +34,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="16dp"
-            android:text="保存"
+            android:text="@string/group_management_save"
             android:textColor="@color/app_primary"
             android:textSize="14sp" />
     </RelativeLayout>

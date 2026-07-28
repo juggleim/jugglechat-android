@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 /**
  * 骰子/猜拳游戏消息
@@ -65,11 +67,11 @@ public class StickerGameMessage extends MessageContent {
     @Override
     public String conversationDigest() {
         if (TYPE_DICE.equals(mType)) {
-            return "[骰子]";
+            return AppRes.string(R.string.msg_sticker_game_dice);
         } else if (TYPE_MORA.equals(mType)) {
-            return "[猜拳]";
+            return AppRes.string(R.string.msg_sticker_game_mora);
         }
-        return "[游戏]";
+        return AppRes.string(R.string.msg_sticker_game);
     }
 
     public String getName() {

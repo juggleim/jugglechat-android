@@ -21,6 +21,7 @@ import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 我的二维码页面
@@ -41,10 +42,10 @@ public class MyQRCodeActivity extends AbsAppActivity {
         qrCodeView = findViewById(R.id.iv_qrcode);
         progressBar = findViewById(R.id.progress_bar);
 
-        ((TextView) findViewById(R.id.tv_title)).setText("我的二维码");
+        ((TextView) findViewById(R.id.tv_title)).setText(R.string.qrcode_my_title);
 
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
-        findViewById(R.id.tv_save).setOnClickListener(v -> Toast.makeText(this, "保存功能开发中", Toast.LENGTH_SHORT).show());
+        findViewById(R.id.tv_save).setOnClickListener(v -> Toast.makeText(this, R.string.qrcode_save_todo, Toast.LENGTH_SHORT).show());
 
         loadProfile();
         loadQrCode();
@@ -78,12 +79,12 @@ public class MyQRCodeActivity extends AbsAppActivity {
                 progressBar.setVisibility(View.GONE);
                 String encoded = data == null ? "" : data.getQrCode();
                 if (TextUtils.isEmpty(encoded)) {
-                    Toast.makeText(MyQRCodeActivity.this, "二维码加载失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MyQRCodeActivity.this, R.string.qrcode_load_failed, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Bitmap bitmap = decodeBase64Bitmap(encoded);
                 if (bitmap == null) {
-                    Toast.makeText(MyQRCodeActivity.this, "二维码解析失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MyQRCodeActivity.this, R.string.qrcode_decode_failed, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 qrCodeView.setImageBitmap(bitmap);
@@ -92,7 +93,8 @@ public class MyQRCodeActivity extends AbsAppActivity {
             @Override
             public void onError(int code, String message) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(MyQRCodeActivity.this, "二维码加载失败：" + safeText(message, "未知错误"), Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("qrcode", "loadMyQrCode", code, message);
+                Toast.makeText(MyQRCodeActivity.this, R.string.qrcode_load_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

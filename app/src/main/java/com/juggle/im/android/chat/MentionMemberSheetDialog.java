@@ -14,6 +14,7 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.juggle.im.android.utils.LogUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import com.juggle.im.android.i18n.LanguageManager;
 
 public class MentionMemberSheetDialog extends BottomSheetDialogFragment {
 
@@ -68,7 +70,7 @@ public class MentionMemberSheetDialog extends BottomSheetDialogFragment {
     private final List<MemberEntry> allMembers = new ArrayList<>();
     private final List<CreateGroupListAdapter.RowItem> currentRows = new ArrayList<>();
     private final LinkedHashMap<String, MemberEntry> selectedMap = new LinkedHashMap<>();
-    private final Collator collator = Collator.getInstance(Locale.CHINA);
+    private final Collator collator = Collator.getInstance(LanguageManager.currentLocale());
 
     private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -297,8 +299,9 @@ public class MentionMemberSheetDialog extends BottomSheetDialogFragment {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("chat", "loadMentionMembers", code, message);
                 Toast.makeText(requireContext(),
-                        getString(R.string.create_group_load_failed, String.valueOf(message)),
+                        R.string.create_group_load_failed,
                         Toast.LENGTH_SHORT).show();
                 onMembersLoaded(new ArrayList<>());
             }
@@ -333,8 +336,9 @@ public class MentionMemberSheetDialog extends BottomSheetDialogFragment {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("chat", "loadMentionMembers", code, message);
                 Toast.makeText(requireContext(),
-                        getString(R.string.create_group_load_failed, String.valueOf(message)),
+                        R.string.create_group_load_failed,
                         Toast.LENGTH_SHORT).show();
                 onMembersLoaded(new ArrayList<>());
             }

@@ -26,6 +26,7 @@ import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
+import com.juggle.im.android.utils.LogUtils;
 
 public class GroupManagementActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
@@ -99,12 +100,12 @@ public class GroupManagementActivity extends AbsAppActivity {
         rowTransferOwner = findViewById(R.id.row_transfer_owner);
 
         // 设置默认副标题
-        rowAddMember.setSubtitle("全部成员");
-        rowTop.setSubtitle("全部成员");
-        rowMention.setSubtitle("全部成员");
-        rowEdit.setSubtitle("全部成员");
-        rowChat.setSubtitle("全部成员");
-        rowLife.setSubtitle("全部成员");
+        rowAddMember.setSubtitle(getString(R.string.group_role_all_members));
+        rowTop.setSubtitle(getString(R.string.group_role_all_members));
+        rowMention.setSubtitle(getString(R.string.group_role_all_members));
+        rowEdit.setSubtitle(getString(R.string.group_role_all_members));
+        rowChat.setSubtitle(getString(R.string.group_role_all_members));
+        rowLife.setSubtitle(getString(R.string.group_role_all_members));
 
         setupHistoryRow();
         bindActions();
@@ -121,22 +122,22 @@ public class GroupManagementActivity extends AbsAppActivity {
     }
 
     private void bindActions() {
-        rowAddMember.setOnRowClickListener(v -> openRoleSettingPage("谁可以添加成员",
+        rowAddMember.setOnRowClickListener(v -> openRoleSettingPage(getString(R.string.group_perm_add_member),
                 KEY_ADD_MEMBER,
                 management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupAddMemberRight()));
-        rowTop.setOnRowClickListener(v -> openRoleSettingPage("谁可以置顶消息",
+        rowTop.setOnRowClickListener(v -> openRoleSettingPage(getString(R.string.group_perm_top_message),
                 KEY_TOP_MSG,
                 management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupTopMsgRight()));
-        rowMention.setOnRowClickListener(v -> openRoleSettingPage("谁可以 @ 所有人",
+        rowMention.setOnRowClickListener(v -> openRoleSettingPage(getString(R.string.group_perm_mention_all),
                 KEY_MENTION_ALL,
                 management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupMentionAllRight()));
-        rowEdit.setOnRowClickListener(v -> openRoleSettingPage("谁可以编辑群信息",
+        rowEdit.setOnRowClickListener(v -> openRoleSettingPage(getString(R.string.group_perm_edit_info),
                 KEY_EDIT_MSG,
                 management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupEditMsgRight()));
-        rowChat.setOnRowClickListener(v -> openRoleSettingPage("谁可以在群里发言",
+        rowChat.setOnRowClickListener(v -> openRoleSettingPage(getString(R.string.group_perm_send_message),
                 KEY_SEND_MSG,
                 management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupSendMsgRight()));
-        rowLife.setOnRowClickListener(v -> openRoleSettingPage("谁可以设置消息定时删除",
+        rowLife.setOnRowClickListener(v -> openRoleSettingPage(getString(R.string.group_perm_lifetime),
                 KEY_SET_MSG_LIFE,
                 management == null ? GroupManagementRoleHelper.SETTING_ALL : management.getGroupSetMsgLifeRight()));
 
@@ -156,21 +157,22 @@ public class GroupManagementActivity extends AbsAppActivity {
         });
 
         dissolveButton.setOnClickListener(v -> AppConfirmDialog.builder(this)
-                .setTitle("解散群组")
-                .setMessage("确认解散群组？")
+                .setTitle(getString(R.string.group_dissolve))
+                .setMessage(getString(R.string.group_dissolve_confirm))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
                 .setOnPositiveClick(() -> ServiceManager.getUserService().dissolveGroup(groupId, new ApiCallback<Void>() {
                     @Override
                     public void onSuccess(Void data) {
-                        Toast.makeText(GroupManagementActivity.this, "群组已解散", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(GroupManagementActivity.this, R.string.group_dissolve_success, Toast.LENGTH_SHORT).show();
                         finish();
                     }
 
                     @Override
                     public void onError(int code, String message) {
+                        LogUtils.serverError("group", "dissolveGroup", code, message);
                         Toast.makeText(GroupManagementActivity.this,
-                                "解散失败：" + message,
+                                R.string.group_dissolve_failed,
                                 Toast.LENGTH_SHORT).show();
                     }
                 }))
@@ -201,8 +203,9 @@ public class GroupManagementActivity extends AbsAppActivity {
                     bindingHistorySwitch = true;
                     rowHistory.setSwitchChecked(!isChecked);
                     bindingHistorySwitch = false;
+                    LogUtils.serverError("group", "saveHistorySetting", code, message);
                     Toast.makeText(GroupManagementActivity.this,
-                            "保存失败：" + message,
+                            R.string.group_management_save_failed,
                             Toast.LENGTH_SHORT).show();
                 }
             });
@@ -223,8 +226,9 @@ public class GroupManagementActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "loadGroupManagement", code, message);
                 Toast.makeText(GroupManagementActivity.this,
-                        "加载群管理配置失败：" + message,
+                        R.string.group_management_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -338,14 +342,15 @@ public class GroupManagementActivity extends AbsAppActivity {
             ServiceManager.getUserService().changeGroupOwner(groupId, ownerId, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
-                    Toast.makeText(GroupManagementActivity.this, "已转让群主", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GroupManagementActivity.this, R.string.group_transfer_success, Toast.LENGTH_SHORT).show();
                     finish();
                 }
 
                 @Override
                 public void onError(int code, String message) {
+                    LogUtils.serverError("group", "transferOwner", code, message);
                     Toast.makeText(GroupManagementActivity.this,
-                            "转让失败：" + message,
+                            R.string.group_transfer_failed,
                             Toast.LENGTH_SHORT).show();
                 }
             });

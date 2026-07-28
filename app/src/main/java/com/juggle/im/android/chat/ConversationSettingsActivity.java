@@ -41,6 +41,7 @@ import com.juggle.im.model.UserInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 群组设置主页（对应设计稿：群组详情）。
@@ -146,19 +147,19 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         cardGroupActions = findViewById(R.id.card_group_actions);
         btnQuitGroup = findViewById(R.id.btn_quit_group);
 
-        topTool = bindTool(R.id.tool_top, R.drawable.ic_setting_pin, "置顶");
-        translateTool = bindTool(R.id.tool_translate, R.drawable.ic_translate, "翻译");
-        muteTool = bindTool(R.id.tool_mute, R.drawable.ic_setting_mute, "免打扰");
-        clearTool = bindTool(R.id.tool_clear, R.drawable.ic_clear_message, "清空消息");
+        topTool = bindTool(R.id.tool_top, R.drawable.ic_setting_pin, getString(R.string.conv_tool_pin));
+        translateTool = bindTool(R.id.tool_translate, R.drawable.ic_translate, getString(R.string.conv_tool_translate));
+        muteTool = bindTool(R.id.tool_mute, R.drawable.ic_setting_mute, getString(R.string.conv_tool_mute));
+        clearTool = bindTool(R.id.tool_clear, R.drawable.ic_clear_message, getString(R.string.conv_tool_clear));
 
-        announcementRow = bindRow(R.id.row_group_announcement, R.drawable.ic_notification, "群公告");
-        addMemberRow = bindRow(R.id.row_add_member, R.drawable.ic_add_member, "添加成员");
-        membersRow = bindRow(R.id.row_group_members, R.drawable.ic_group_members, "群组成员");
-        displayNameRow = bindRow(R.id.row_group_display_name, R.drawable.ic_display_name, "我在本群昵称");
-        manageRow = bindRow(R.id.row_group_management, R.drawable.ic_group_manage, "群组管理");
-        qrcodeRow = bindRow(R.id.row_group_qrcode, R.drawable.ic_qrcode, "群组二维码");
-        groupInfoRow = bindRow(R.id.row_group_info, R.drawable.ic_word, "群组信息");
-        reportRow = bindRow(R.id.row_report, R.drawable.ic_report, "举报");
+        announcementRow = bindRow(R.id.row_group_announcement, R.drawable.ic_notification, getString(R.string.conv_row_announcement));
+        addMemberRow = bindRow(R.id.row_add_member, R.drawable.ic_add_member, getString(R.string.conv_row_add_member));
+        membersRow = bindRow(R.id.row_group_members, R.drawable.ic_group_members, getString(R.string.conv_row_members));
+        displayNameRow = bindRow(R.id.row_group_display_name, R.drawable.ic_display_name, getString(R.string.conv_row_display_name));
+        manageRow = bindRow(R.id.row_group_management, R.drawable.ic_group_manage, getString(R.string.conv_row_management));
+        qrcodeRow = bindRow(R.id.row_group_qrcode, R.drawable.ic_qrcode, getString(R.string.conv_row_qrcode));
+        groupInfoRow = bindRow(R.id.row_group_info, R.drawable.ic_word, getString(R.string.conv_row_info));
+        reportRow = bindRow(R.id.row_report, R.drawable.ic_report, getString(R.string.conv_row_report));
         announcementRow.divider.setVisibility(View.GONE);
         displayNameRow.divider.setVisibility(View.GONE);
         qrcodeRow.divider.setVisibility(View.GONE);
@@ -209,7 +210,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         });
 
         translateTool.root.setOnClickListener(v ->
-                Toast.makeText(this, "翻译功能暂未接入", Toast.LENGTH_SHORT).show());
+                Toast.makeText(this, R.string.conv_translate_todo, Toast.LENGTH_SHORT).show());
 
         clearTool.root.setOnClickListener(v -> {
             JIM.getInstance().getMessageManager().clearMessages(getConversation(), 0, null);
@@ -304,7 +305,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
 
         AvatarUtils.loadAvatar(ivAvatar, portrait, displayName, conversationId);
         tvName.setText(displayName);
-        tvMeta.setText("私信");
+        tvMeta.setText(R.string.conv_meta_private);
         previewMembers.setVisibility(View.GONE);
         findViewById(R.id.iv_edit_group).setVisibility(View.GONE);
     }
@@ -326,19 +327,20 @@ public class ConversationSettingsActivity extends AbsAppActivity {
                 if (memberCount <= 0 && data.getMembers() != null) {
                     memberCount = data.getMembers().size();
                 }
-                tvMeta.setText(memberCount + "个成员");
+                tvMeta.setText(getString(R.string.conv_meta_member_count, memberCount));
 
                 groupMemberIds.clear();
                 bindMemberPreview(data.getMembers());
-                displayNameRow.subtitle.setText(safeText(data.getGroupDisplayName(), "未设置"));
+                displayNameRow.subtitle.setText(safeText(data.getGroupDisplayName(), getString(R.string.conv_not_set)));
 
                 updateQuitButtonText();
             }
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("conversation", "loadGroupDetail", code, message);
                 Toast.makeText(ConversationSettingsActivity.this,
-                        "群信息加载失败：" + message,
+                        R.string.conv_group_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -350,7 +352,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
             public void onSuccess(GroupAnnouncementBean data) {
                 announcementPreview = data == null ? "" : safeText(data.getContent(), "");
                 if (TextUtils.isEmpty(announcementPreview)) {
-                    announcementRow.subtitle.setText("未设置");
+                    announcementRow.subtitle.setText(R.string.conv_not_set);
                 } else {
                     announcementRow.subtitle.setText(announcementPreview.replace('\n', ' '));
                 }
@@ -358,7 +360,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
-                announcementRow.subtitle.setText("未设置");
+                announcementRow.subtitle.setText(R.string.conv_not_set);
             }
         });
     }
@@ -389,13 +391,13 @@ public class ConversationSettingsActivity extends AbsAppActivity {
         input.setSingleLine();
         input.setPadding(dp(16), dp(12), dp(16), dp(12));
         String current = displayNameRow.subtitle.getText() == null ? "" : displayNameRow.subtitle.getText().toString();
-        if (!"未设置".contentEquals(current)) {
+        if (!getString(R.string.conv_not_set).contentEquals(current)) {
             input.setText(current);
             input.setSelection(input.getText().length());
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("我在本群昵称")
+                .setTitle(R.string.conv_row_display_name)
                 .setView(input)
                 .setNegativeButton(R.string.txt_cancel, null)
                 .setPositiveButton(R.string.send, (dialog, which) -> {
@@ -403,15 +405,16 @@ public class ConversationSettingsActivity extends AbsAppActivity {
                     ServiceManager.getUserService().setGroupDisplayName(conversationId, newName, new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {
-                            String display = TextUtils.isEmpty(newName) ? "未设置" : newName;
+                            String display = TextUtils.isEmpty(newName) ? getString(R.string.conv_not_set) : newName;
                             displayNameRow.subtitle.setText(display);
-                            Toast.makeText(ConversationSettingsActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ConversationSettingsActivity.this, R.string.conv_save_success, Toast.LENGTH_SHORT).show();
                         }
 
                         @Override
                         public void onError(int code, String message) {
+                            LogUtils.serverError("conversation", "setGroupDisplayName", code, message);
                             Toast.makeText(ConversationSettingsActivity.this,
-                                    "保存失败：" + message,
+                                    R.string.conv_save_failed,
                                     Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -424,11 +427,15 @@ public class ConversationSettingsActivity extends AbsAppActivity {
             return;
         }
         boolean isOwner = groupDetail != null && groupDetail.getMyRole() == ROLE_OWNER;
-        String actionName = isOwner ? "解散群组" : "退出群组";
+        // TIPS: 解散/退出两套文案独立取串，避免中英文语序差异下的拼接问题
+        int titleRes = isOwner ? R.string.group_dissolve : R.string.group_quit;
+        int confirmRes = isOwner ? R.string.group_dissolve_confirm : R.string.group_quit_confirm;
+        int successRes = isOwner ? R.string.group_dissolve_success : R.string.group_quit_success;
+        int failedRes = isOwner ? R.string.group_dissolve_failed : R.string.group_quit_failed;
 
         AppConfirmDialog.builder(this)
-                .setTitle(actionName)
-                .setMessage("确认" + actionName + "？")
+                .setTitle(getString(titleRes))
+                .setMessage(getString(confirmRes))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
                 .setOnPositiveClick(() -> {
@@ -436,15 +443,16 @@ public class ConversationSettingsActivity extends AbsAppActivity {
                         @Override
                         public void onSuccess(Void data) {
                             Toast.makeText(ConversationSettingsActivity.this,
-                                    actionName + "成功",
+                                    successRes,
                                     Toast.LENGTH_SHORT).show();
                             finish();
                         }
 
                         @Override
                         public void onError(int code, String message) {
+                            LogUtils.serverError("conversation", "quitOrDissolveGroup", code, message);
                             Toast.makeText(ConversationSettingsActivity.this,
-                                    actionName + "失败：" + message,
+                                    failedRes,
                                     Toast.LENGTH_SHORT).show();
                         }
                     };
@@ -461,16 +469,16 @@ public class ConversationSettingsActivity extends AbsAppActivity {
     private void updateQuitButtonText() {
         TextView quitView = (TextView) btnQuitGroup;
         if (groupDetail != null && groupDetail.getMyRole() == ROLE_OWNER) {
-            quitView.setText("解散群组");
+            quitView.setText(R.string.group_dissolve);
         } else {
-            quitView.setText("退出群组");
+            quitView.setText(R.string.group_quit);
         }
     }
 
     private void updateToolStates() {
-        topTool.title.setText(isTop ? "取消置顶" : "置顶");
+        topTool.title.setText(isTop ? R.string.conv_tool_unpin : R.string.conv_tool_pin);
         topTool.icon.setImageResource(isTop ? R.drawable.icon_cancel_top : R.drawable.ic_setting_pin);
-        muteTool.title.setText(isMute ? "取消免打扰" : "免打扰");
+        muteTool.title.setText(isMute ? R.string.conv_tool_unmute : R.string.conv_tool_mute);
         muteTool.icon.setImageResource(isMute ? R.drawable.icon_cancel_notify : R.drawable.ic_setting_mute);
     }
 
@@ -554,7 +562,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
                 announcementRow.subtitle.setText(content.replace('\n', ' '));
             } else {
                 announcementPreview = "";
-                announcementRow.subtitle.setText("未设置");
+                announcementRow.subtitle.setText(R.string.conv_not_set);
             }
         }
     }

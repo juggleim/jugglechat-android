@@ -1,5 +1,10 @@
 package com.juggle.im.android.chat;
 
+import androidx.annotation.StringRes;
+
+import com.juggle.im.android.R;
+import com.juggle.im.android.i18n.AppRes;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,9 +26,9 @@ public final class GroupManagementRoleHelper {
 
     static {
         List<RoleOption> options = new ArrayList<>();
-        options.add(new RoleOption("仅群主", SETTING_OWNER, 0xFF5B0BE6));
-        options.add(new RoleOption("全部成员", SETTING_ALL, 0xFFE0493E));
-        options.add(new RoleOption("群主和管理员", SETTING_ADMIN_OWNER, 0xFFE03AE5));
+        options.add(new RoleOption(R.string.group_role_owner_only, SETTING_OWNER, 0xFF5B0BE6));
+        options.add(new RoleOption(R.string.group_role_all_members, SETTING_ALL, 0xFFE0493E));
+        options.add(new RoleOption(R.string.group_role_owner_admin, SETTING_ADMIN_OWNER, 0xFFE03AE5));
         ROLE_OPTIONS = Collections.unmodifiableList(options);
     }
 
@@ -70,33 +75,37 @@ public final class GroupManagementRoleHelper {
     public static String roleToText(int role) {
         int normalized = normalizeRole(role);
         if (normalized == SETTING_OWNER) {
-            return "仅群主";
+            return AppRes.string(R.string.group_role_owner_only);
         }
         if (normalized == SETTING_ADMIN_OWNER) {
-            return "群主和管理员";
+            return AppRes.string(R.string.group_role_owner_admin);
         }
-        return "全部成员";
+        return AppRes.string(R.string.group_role_all_members);
     }
 
     /**
      * 群权限选项模型。
      */
     public static final class RoleOption {
-        private final String title;
+        @StringRes
+        private final int titleRes;
         private final int value;
         private final int dotColor;
 
-        public RoleOption(String title, int value, int dotColor) {
-            this.title = title;
+        public RoleOption(@StringRes int titleRes, int value, int dotColor) {
+            this.titleRes = titleRes;
             this.value = value;
             this.dotColor = dotColor;
         }
 
         /**
-         * @return 选项标题
+         * TIPS: 返回资源 id 而非文案，语言切换后重建界面即可拿到新文案
+         *
+         * @return 选项标题资源 id
          */
-        public String getTitle() {
-            return title;
+        @StringRes
+        public int getTitleRes() {
+            return titleRes;
         }
 
         /**

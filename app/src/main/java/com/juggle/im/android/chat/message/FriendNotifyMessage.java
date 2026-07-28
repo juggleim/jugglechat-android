@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 public class FriendNotifyMessage extends MessageContent {
     public final static String ACTION = "jgd:friendntf";
@@ -53,7 +55,7 @@ public class FriendNotifyMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return "[好友通知]";
+        return AppRes.string(R.string.msg_friend_notify);
     }
 
     public int getType() {
@@ -64,9 +66,15 @@ public class FriendNotifyMessage extends MessageContent {
         this.mType = type;
     }
 
-    public String description() {
-        String opName = mType == 0 ? "添加" : "通过";
-        return opName;
+    /**
+     * 好友通知描述文案。
+     *
+     * @param senderName 触发通知的用户名
+     * @return 完整描述文案
+     */
+    public String description(String senderName) {
+        return AppRes.string(mType == 0
+                ? R.string.friend_notify_added : R.string.friend_notify_accepted, senderName);
     }
 
     private int mType = 0;

@@ -29,6 +29,7 @@ import com.juggle.im.android.model.UiConversation;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,9 @@ public class ConversationListFragment extends Fragment implements ConversationLi
 
     // 追踪用户是否主动滚动离开顶部,用于决定是否自动滚动到新消息
     private boolean userScrolledAway = false;
+
+    // TIPS: 视图创建前到达的会话数据先缓存，onViewCreated 后再合并，避免补拉早于 Fragment 视图就绪时丢数据/空指针
+    private final List<UiConversation> pendingConversations = new ArrayList<>();
 
     @Nullable
     @Override
@@ -132,6 +136,12 @@ public class ConversationListFragment extends Fragment implements ConversationLi
                 }
             }
         });
+
+        if (!pendingConversations.isEmpty()) {
+            List<UiConversation> buffered = new ArrayList<>(pendingConversations);
+            pendingConversations.clear();
+            dispatch(new ConversationListReducer.ConversationsMerged(buffered));
+        }
     }
 
     /**
@@ -194,6 +204,13 @@ public class ConversationListFragment extends Fragment implements ConversationLi
     }
 
     public void upsertConversations(List<UiConversation> dataSet) {
+        if (dataSet == null || dataSet.isEmpty()) {
+            return;
+        }
+        if (conversationListAdapter == null) {
+            pendingConversations.addAll(dataSet);
+            return;
+        }
         dispatch(new ConversationListReducer.ConversationsMerged(dataSet));
     }
 
@@ -249,9 +266,10 @@ public class ConversationListFragment extends Fragment implements ConversationLi
         TextView muteItem = menuView.findViewById(R.id.menu_mute);
 
         // Set dynamic text based on conversation state
-        topItem.setText(uiConversation.isTop() ? "取消置顶" : "置顶");
-        unreadItem.setText(uiConversation.getUnreadCount() > 0 ? "标为已读" : "标为未读");
-        muteItem.setText(uiConversation.isMuted() ? "取消免打扰" : "免打扰");
+        topItem.setText(uiConversation.isTop() ? R.string.conv_tool_unpin : R.string.conv_tool_pin);
+        unreadItem.setText(uiConversation.getUnreadCount() > 0
+                ? R.string.conv_list_mark_read : R.string.conv_list_mark_unread);
+        muteItem.setText(uiConversation.isMuted() ? R.string.conv_tool_unmute : R.string.conv_tool_mute);
 
         // Set click listeners
         deleteItem.setOnClickListener(v -> {

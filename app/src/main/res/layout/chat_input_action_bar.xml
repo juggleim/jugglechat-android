@@ -67,7 +67,7 @@
                 android:layout_height="24dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginEnd="4dp"
-                android:contentDescription="关闭引用"
+                android:contentDescription="@string/chat_close_reply"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_del_primary" />
         </LinearLayout>

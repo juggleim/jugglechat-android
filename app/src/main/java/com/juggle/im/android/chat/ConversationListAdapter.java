@@ -34,6 +34,7 @@ import com.juggle.im.model.MessageMentionInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.i18n.AppRes;
 
 public class ConversationListAdapter extends RecyclerView.Adapter<ConversationListAdapter.ViewHolder> {
     private static final String TAG = "ConvListAdapter";
@@ -495,7 +496,8 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
                 // 简要描述：会话存在草稿时，摘要区域始终优先显示草稿，不被新消息摘要覆盖。
                 lastMessageView.setText(buildDraftSummary(draft));
             } else if (lastMessage != null) {
-                String senderName = lastMessage.getSenderUserId().equals(JIM.getInstance().getCurrentUserId()) ? "你" : uiConversation.getLastMessageUserName();
+                String senderName = lastMessage.getSenderUserId().equals(JIM.getInstance().getCurrentUserId())
+                        ? AppRes.string(R.string.conv_list_sender_you) : uiConversation.getLastMessageUserName();
                 // 处理 @提及 显示
                 String mentionPrefix = getMentionPrefix(conversationInfo);
                 if (mentionPrefix != null) {
@@ -562,7 +564,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         @NonNull
         private CharSequence buildDraftSummary(@NonNull String rawDraft) {
             String summary = rawDraft.replace('\n', ' ').trim();
-            String prefix = "[草稿]";
+            String prefix = AppRes.string(R.string.conv_list_draft);
             SpannableString spannable = new SpannableString(prefix + summary);
             spannable.setSpan(
                     new ForegroundColorSpan(itemView.getResources().getColor(R.color.conversation_badge_red)),
@@ -615,14 +617,14 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         MessageMentionInfo.MentionType type = lastMentionMsg.getType();
 
         if (type == MessageMentionInfo.MentionType.ALL) {
-            return "[@所有人]";
+            return AppRes.string(R.string.conv_list_mention_all);
         } else if (type == MessageMentionInfo.MentionType.SOMEONE) {
-            return "[有人@我]";
+            return AppRes.string(R.string.conv_list_mention_someone);
         } else if (type == MessageMentionInfo.MentionType.ALL_AND_SOMEONE) {
-            return "[@所有人]";
+            return AppRes.string(R.string.conv_list_mention_all);
         }
 
-        return "[有人@我]";
+        return AppRes.string(R.string.conv_list_mention_someone);
     }
 
     private void applyCardMargins(@NonNull View itemView, boolean isCardStyle) {

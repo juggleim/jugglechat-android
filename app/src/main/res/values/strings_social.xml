@@ -1,0 +1,55 @@
+<resources>
+    <!-- 新的朋友 -->
+    <string name="friend_apply_load_failed">Failed to load new friends</string>
+    <string name="friend_apply_desc_outgoing">Requested to add them as a friend</string>
+    <string name="friend_apply_desc_incoming">Requested to add you as a friend</string>
+    <string name="friend_apply_status_pending">Pending</string>
+    <string name="friend_apply_status_added">Added</string>
+    <string name="friend_apply_status_rejected_by_peer">Declined</string>
+    <string name="friend_apply_status_rejected">Declined</string>
+    <string name="friend_apply_status_expired">Expired</string>
+    <string name="friend_apply_accept">Accept</string>
+    <string name="friend_apply_reject">Decline</string>
+    <string name="friend_apply_accept_success">Friend added</string>
+    <string name="friend_apply_accept_failed">Failed to accept request</string>
+    <string name="friend_apply_reject_success">Request declined</string>
+    <string name="friend_apply_reject_failed">Failed to decline request</string>
+
+    <!-- 好友 / 黑名单 -->
+    <string name="friends_load_failed">Failed to load friends</string>
+    <string name="blocklist_load_failed">Failed to load blocked users</string>
+    <string name="contact_add">Add</string>
+    <string name="contact_unknown_user">Unknown</string>
+
+    <!-- 朋友圈 -->
+    <string name="moments_title">Moments</string>
+    <string name="moments_create_post_title">New post</string>
+    <string name="moments_create_post_send">Post</string>
+    <string name="moments_create_post_hint">What\'s on your mind…</string>
+    <string name="moments_content_empty">Content cannot be empty</string>
+    <string name="moments_image_uploading">Uploading photos, please wait</string>
+    <string name="moments_post_success">Posted</string>
+    <string name="moments_post_failed">Failed to post</string>
+    <string name="moments_camera_permission_denied">Camera permission is required</string>
+    <string name="moments_load_failed">Failed to load moments</string>
+    <string name="moments_reply_hint">Reply to %1$s: </string>
+    <string name="moments_anonymous">Anonymous</string>
+    <string name="moments_like">Like</string>
+    <string name="moments_comment">Comment</string>
+    <string name="moments_comment_send">Send</string>
+    <string name="moments_delete_comment_cancel">Cancel</string>
+
+    <!-- 相对时间 -->
+    <string name="time_just_now">Just now</string>
+    <string name="time_minutes_ago">%1$d min ago</string>
+    <string name="time_hours_ago">%1$d h ago</string>
+    <string name="time_yesterday">Yesterday</string>
+    <string name="time_days_ago">%1$d d ago</string>
+
+    <!-- 发现 -->
+    <string name="discover_moments">Moments</string>
+
+    <!-- 相机选项 -->
+    <string name="camera_option_take_photo">Take photo</string>
+    <string name="camera_option_from_album">Choose from album</string>
+</resources>

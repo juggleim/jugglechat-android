@@ -54,6 +54,7 @@ import android.widget.GridLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * Moments page. Collapsing cover image fills status bar area. When scrolled past cover, title bar shows.
@@ -321,7 +322,7 @@ public class MomentsActivity extends AbsAppActivity {
 
     private void takePhoto() {
         if (!PermissionComponent.hasAllPermissions(this, Manifest.permission.CAMERA)) {
-            Toast.makeText(this, "请授予相机权限", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.moments_camera_permission_denied, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -392,7 +393,7 @@ public class MomentsActivity extends AbsAppActivity {
         }
         if (comment != null && comment.getUserInfo() != null) {
             String hint = comment.getUserInfo().getUserName();
-            editTextField.setHint("回复 " + hint + ": ");
+            editTextField.setHint(getString(R.string.moments_reply_hint, hint));
         }
     }
 
@@ -545,7 +546,8 @@ public class MomentsActivity extends AbsAppActivity {
                 runOnUiThread(() -> {
                     swipeRefreshLayout.setRefreshing(false);
                     isLoading = false;
-                    Toast.makeText(MomentsActivity.this, "加载失败: " + errorCode, Toast.LENGTH_SHORT).show();
+                    LogUtils.serverError("moments", "loadMoments", errorCode, "");
+                    Toast.makeText(MomentsActivity.this, R.string.moments_load_failed, Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -620,7 +622,7 @@ public class MomentsActivity extends AbsAppActivity {
                     holder.vDelete.setVisibility(View.GONE);
                 }
             } else {
-                holder.tvName.setText("匿名");
+                holder.tvName.setText(R.string.moments_anonymous);
                 holder.vDelete.setVisibility(View.GONE);
             }
 
@@ -709,15 +711,15 @@ public class MomentsActivity extends AbsAppActivity {
 
                 String timeText;
                 if (minutes < 1) {
-                    timeText = "刚刚";
+                    timeText = getString(R.string.time_just_now);
                 } else if (minutes < 60) {
-                    timeText = minutes + "分钟前";
+                    timeText = getString(R.string.time_minutes_ago, minutes);
                 } else if (hours < 24) {
-                    timeText = hours + "小时前";
+                    timeText = getString(R.string.time_hours_ago, hours);
                 } else if (days < 2) {
-                    timeText = "昨天";
+                    timeText = getString(R.string.time_yesterday);
                 } else {
-                    timeText = days + "天前";
+                    timeText = getString(R.string.time_days_ago, days);
                 }
 
                 holder.tvTime.setText(timeText);

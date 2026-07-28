@@ -848,7 +848,7 @@ public class ConversationActivity extends AbsAppActivity {
             FileUtils.CopiedContentFile copiedFile = FileUtils.copyContentUriToCache(this, data.toString());
             FileMessage fileMessage = createFileMessageFromPickedFile(copiedFile);
             if (fileMessage == null) {
-                ToastUtils.show(this, "文件处理失败，请重试");
+                ToastUtils.show(this, R.string.file_process_failed);
                 return;
             }
             sendFileMessage(fileMessage, conversation);

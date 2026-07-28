@@ -17,7 +17,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:layout_centerVertical="true"
-            android:contentDescription="返回"
+            android:contentDescription="@string/back"
             android:src="@drawable/ic_back_white" />
 
         <TextView
@@ -36,7 +36,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:adjustViewBounds="true"
-        android:contentDescription="预览"
+        android:contentDescription="@string/avatar_preview"
         android:scaleType="fitCenter" />
 
     <LinearLayout
@@ -54,7 +54,7 @@
             android:layout_height="44dp"
             android:layout_weight="1"
             android:background="@drawable/bg_setting_secondary_button"
-            android:text="取消"
+            android:text="@string/avatar_cancel"
             android:textColor="@color/conversation_primary_text"
             android:textSize="15sp" />
 
@@ -68,7 +68,7 @@
             android:layout_height="44dp"
             android:layout_weight="1"
             android:background="@drawable/bg_setting_primary_button"
-            android:text="确认"
+            android:text="@string/avatar_confirm"
             android:textColor="@android:color/white"
             android:textSize="15sp" />
     </LinearLayout>

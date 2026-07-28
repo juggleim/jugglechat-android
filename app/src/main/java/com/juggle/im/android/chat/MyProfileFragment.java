@@ -36,6 +36,7 @@ import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.utils.ToastUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
+import com.juggle.im.android.utils.LogUtils;
 
 public class MyProfileFragment extends Fragment {
 
@@ -84,13 +85,13 @@ public class MyProfileFragment extends Fragment {
         rowVersion = view.findViewById(R.id.row_version);
 
         // 设置各个行项的标题和图标
-        setupSettingRow(rowPersonalSettings, R.drawable.ic_setting_profile, "个人设置");
-        setupSettingRow(rowGeneralSettings, R.drawable.ic_setting_general, "通用设置");
-        setupSettingRow(rowFavorites, R.drawable.ic_setting_favorites, "我的收藏");
-        setupSettingRow(rowUserAgreement, R.drawable.ic_setting_user_agreement, "用户协议");
-        setupSettingRow(rowPrivacyPolicy, R.drawable.ic_setting_privacy, "隐私政策");
-        setupSettingRow(rowFeedback, R.drawable.ic_setting_feedback, "意见反馈");
-        setupSettingRow(rowVersion, R.drawable.ic_setting_about, "版本信息", "2.5.1");
+        setupSettingRow(rowPersonalSettings, R.drawable.ic_setting_profile, getString(R.string.me_personal_settings));
+        setupSettingRow(rowGeneralSettings, R.drawable.ic_setting_general, getString(R.string.me_general_settings));
+        setupSettingRow(rowFavorites, R.drawable.ic_setting_favorites, getString(R.string.me_favorites));
+        setupSettingRow(rowUserAgreement, R.drawable.ic_setting_user_agreement, getString(R.string.me_user_agreement));
+        setupSettingRow(rowPrivacyPolicy, R.drawable.ic_setting_privacy, getString(R.string.me_privacy_policy));
+        setupSettingRow(rowFeedback, R.drawable.ic_setting_feedback, getString(R.string.me_feedback));
+        setupSettingRow(rowVersion, R.drawable.ic_setting_about, getString(R.string.me_version), "2.5.1");
 
         // 设置点击监听
         ivAvatar.setOnClickListener(v -> navigateToPersonalSettings());
@@ -101,7 +102,7 @@ public class MyProfileFragment extends Fragment {
         rowUserAgreement.setOnClickListener(v -> navigateToUserAgreement());
         rowPrivacyPolicy.setOnClickListener(v -> navigateToPrivacyPolicy());
         rowFeedback.setOnClickListener(v -> navigateToFeedback());
-        rowVersion.setOnClickListener(v -> Toast.makeText(getContext(), "版本信息功能开发中", Toast.LENGTH_SHORT).show());
+        rowVersion.setOnClickListener(v -> Toast.makeText(getContext(), R.string.me_version_todo, Toast.LENGTH_SHORT).show());
     }
 
     private void setupSettingRow(View row, int iconRes, String title) {
@@ -161,11 +162,12 @@ public class MyProfileFragment extends Fragment {
 
             @Override
             public void onError(int errorCode, String errorMsg) {
+                LogUtils.serverError("profile", "loadUserInfo", errorCode, errorMsg);
                 if (getActivity() == null) return;
 
                 getActivity().runOnUiThread(() ->
                     Toast.makeText(getContext(),
-                            getString(R.string.profile_error_load_failed, normalizeErrorMessage(errorMsg)),
+                            R.string.profile_error_load_failed,
                             Toast.LENGTH_SHORT).show()
                 );
             }
@@ -186,7 +188,7 @@ public class MyProfileFragment extends Fragment {
         }
 
         // 显示用户ID
-        tvUserId.setText("账号：@" + currentUserInfo.getUserId());
+        tvUserId.setText(getString(R.string.me_user_id, currentUserInfo.getUserId()));
     }
 
     private void updateAvatar() {
@@ -240,12 +242,13 @@ public class MyProfileFragment extends Fragment {
 
             @Override
             public void onError(int errorCode, String errorMsg) {
+                LogUtils.serverError("profile", "updateUserInfo", errorCode, errorMsg);
                 if (getActivity() == null) return;
 
                 getActivity().runOnUiThread(() -> {
                     rollbackProfilePatch(snapshot);
                     Toast.makeText(getContext(),
-                            getString(R.string.profile_error_update_failed, normalizeErrorMessage(errorMsg)),
+                            R.string.profile_error_update_failed,
                             Toast.LENGTH_SHORT).show();
                 });
             }
@@ -290,8 +293,8 @@ public class MyProfileFragment extends Fragment {
 
     private void logout() {
         AppConfirmDialog.builder(requireContext())
-                .setTitle("退出登录")
-                .setMessage("确定要退出登录吗？")
+                .setTitle(getString(R.string.me_logout))
+                .setMessage(getString(R.string.me_logout_confirm))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
                 .setOnPositiveClick(() -> {
@@ -319,10 +322,6 @@ public class MyProfileFragment extends Fragment {
         return value == null ? "" : value.trim();
     }
 
-    private String normalizeErrorMessage(String value) {
-        String trimmed = safeTrim(value);
-        return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
-    }
 
     // Navigation methods for menu items
     private void showMyQRCode() {

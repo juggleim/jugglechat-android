@@ -25,6 +25,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 群组管理权限二级设置页面。
@@ -105,7 +106,7 @@ public class GroupManagementRoleSettingActivity extends AbsAppActivity {
         int currentValue = intent.getIntExtra(EXTRA_CURRENT_VALUE, GroupManagementRoleHelper.SETTING_ALL);
         selectedValue = GroupManagementRoleHelper.normalizeRole(currentValue);
         if (TextUtils.isEmpty(groupId) || TextUtils.isEmpty(settingKey)) {
-            Toast.makeText(this, "参数异常，请重试", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_role_setting_invalid_args, Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -151,8 +152,9 @@ public class GroupManagementRoleSettingActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 submitting = false;
                 saveView.setEnabled(true);
+                LogUtils.serverError("group", "saveRoleSetting", code, message);
                 Toast.makeText(GroupManagementRoleSettingActivity.this,
-                        "保存失败：" + message,
+                        R.string.group_management_save_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -187,7 +189,7 @@ public class GroupManagementRoleSettingActivity extends AbsAppActivity {
         @Override
         public void onBindViewHolder(@NonNull RoleOptionViewHolder holder, int position) {
             GroupManagementRoleHelper.RoleOption option = options.get(position);
-            holder.titleView.setText(option.getTitle());
+            holder.titleView.setText(option.getTitleRes());
             holder.checkedView.setVisibility(option.getValue() == selectedValue ? View.VISIBLE : View.INVISIBLE);
 
             GradientDrawable dotDrawable = new GradientDrawable();

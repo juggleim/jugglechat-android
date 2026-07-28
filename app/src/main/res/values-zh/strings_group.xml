@@ -1,0 +1,128 @@
+<resources>
+    <!-- 会话设置 -->
+    <string name="conv_settings_title">设置</string>
+    <string name="conv_tool_pin">置顶</string>
+    <string name="conv_tool_unpin">取消置顶</string>
+    <string name="conv_tool_translate">翻译</string>
+    <string name="conv_translate_todo">翻译功能暂未接入</string>
+    <string name="conv_tool_mute">免打扰</string>
+    <string name="conv_tool_unmute">取消免打扰</string>
+    <string name="conv_tool_clear">清空消息</string>
+    <string name="conv_row_announcement">群公告</string>
+    <string name="conv_row_add_member">添加成员</string>
+    <string name="conv_row_members">群组成员</string>
+    <string name="conv_row_display_name">我在本群昵称</string>
+    <string name="conv_row_management">群组管理</string>
+    <string name="conv_row_qrcode">群组二维码</string>
+    <string name="conv_row_info">群组信息</string>
+    <string name="conv_row_report">举报</string>
+    <string name="conv_meta_private">私信</string>
+    <string name="conv_meta_member_count">%1$d个成员</string>
+    <string name="conv_not_set">未设置</string>
+    <string name="conv_group_load_failed">群信息加载失败</string>
+    <string name="conv_save_success">保存成功</string>
+    <string name="conv_save_failed">保存失败</string>
+
+    <!-- 解散 / 退出群组 -->
+    <string name="group_dissolve">解散群组</string>
+    <string name="group_quit">退出群组</string>
+    <string name="group_dissolve_confirm">确认解散群组？</string>
+    <string name="group_quit_confirm">确认退出群组？</string>
+    <string name="group_dissolve_success">群组已解散</string>
+    <string name="group_quit_success">已退出群组</string>
+    <string name="group_dissolve_failed">解散群组失败</string>
+    <string name="group_quit_failed">退出群组失败</string>
+
+    <!-- 群组管理 -->
+    <string name="group_management_title">群组管理</string>
+    <string name="group_role_all_members">全部成员</string>
+    <string name="group_role_owner_only">仅群主</string>
+    <string name="group_role_owner_admin">群主和管理员</string>
+    <string name="group_perm_add_member">谁可以添加成员</string>
+    <string name="group_perm_top_message">谁可以置顶消息</string>
+    <string name="group_perm_mention_all">谁可以 @ 所有人</string>
+    <string name="group_perm_edit_info">谁可以编辑群信息</string>
+    <string name="group_perm_send_message">谁可以在群里发言</string>
+    <string name="group_perm_lifetime">谁可以设置消息定时删除</string>
+    <string name="group_management_load_failed">加载群管理配置失败</string>
+    <string name="group_management_save_failed">保存失败</string>
+    <string name="group_management_save">保存</string>
+    <string name="group_transfer_success">已转让群主</string>
+    <string name="group_transfer_failed">转让群主失败</string>
+    <string name="group_history_for_new_member">新人进群获取历史消息</string>
+    <string name="group_transfer_owner">转让群主</string>
+    <string name="group_role_setting_invalid_args">参数异常，请重试</string>
+
+    <!-- 群管理员 -->
+    <string name="group_admins_title">群组管理员</string>
+    <string name="group_admins_desc_capability">管理员可协助群主管理群聊，拥有发布群公告、移除群成员等能力</string>
+    <string name="group_admins_desc_owner_only">只有群主具备设置管理员、解散群聊的能力</string>
+    <string name="group_admins_desc_limit">最多可以设置 3 个管理员</string>
+    <string name="group_admins_add">添加管理员</string>
+    <string name="group_admins_empty">暂无管理员</string>
+    <string name="group_admins_remove">移除</string>
+    <string name="group_admins_load_failed">加载管理员失败</string>
+    <string name="group_admins_limit">最多可以设置 3 个管理员</string>
+    <string name="group_admins_limit_truncated">超出管理员数量上限，已自动截取</string>
+    <string name="group_admins_remove_title">移除管理员</string>
+    <string name="group_admins_remove_message">确定移除管理员 %1$s？</string>
+    <string name="group_admins_remove_success">移除成功</string>
+    <string name="group_admins_remove_failed">移除管理员失败</string>
+    <string name="group_admins_add_success">添加成功</string>
+    <string name="group_admins_add_failed">添加管理员失败</string>
+
+    <!-- 群成员 -->
+    <string name="group_members_title">群组成员</string>
+    <string name="group_members_empty">暂无群成员</string>
+    <string name="group_members_load_failed">加载群成员失败</string>
+    <string name="group_members_multi_select_todo">多选功能暂未接入</string>
+    <string name="group_member_muted">已禁言</string>
+    <string name="group_member_mute_failed">禁言失败</string>
+    <string name="group_member_remove_title">移除成员</string>
+    <string name="group_member_remove_message">确定移除成员 %1$s？</string>
+    <string name="group_member_remove_success">移除成功</string>
+    <string name="group_member_remove_failed">移除成员失败</string>
+    <string name="group_role_owner">群主</string>
+    <string name="group_role_admin">管理员</string>
+    <string name="group_member_action_mute">禁言</string>
+    <string name="group_member_action_remove">移除成员</string>
+    <string name="group_member_action_multi_select">多选</string>
+
+    <!-- 群信息 -->
+    <string name="group_info_title">群组信息</string>
+    <string name="group_info_save">保存</string>
+    <string name="group_info_set_avatar">设置头像</string>
+    <string name="group_info_name">群组名称</string>
+    <string name="group_info_name_hint">请输入群组名称</string>
+    <string name="group_info_load_failed">加载群信息失败</string>
+    <string name="group_info_image_read_failed">读取图片失败</string>
+    <string name="group_info_avatar_uploading">头像上传中...</string>
+    <string name="group_info_avatar_upload_success">头像上传成功</string>
+    <string name="group_info_avatar_upload_failed">头像上传失败</string>
+    <string name="group_info_avatar_uploading_wait">头像上传中，请稍候</string>
+    <string name="group_info_name_empty">群组名称不能为空</string>
+    <string name="group_info_save_success">保存成功</string>
+    <string name="group_info_save_failed">保存失败</string>
+
+    <!-- 群公告 -->
+    <string name="group_announcement_title">群组公告</string>
+    <string name="group_announcement_publish">发表</string>
+    <string name="group_announcement_hint">群公告…</string>
+    <string name="group_announcement_load_failed">加载公告失败</string>
+    <string name="group_announcement_empty">公告内容不能为空</string>
+    <string name="group_announcement_publish_success">发布成功</string>
+    <string name="group_announcement_publish_failed">发布失败</string>
+
+    <!-- 我的群组 / 建群 -->
+    <string name="my_groups_load_failed">加载群组失败</string>
+    <string name="create_group_add_member_title">添加成员</string>
+    <string name="create_group_invite_success">邀请成功</string>
+    <string name="create_group_invite_failed">邀请成员失败</string>
+    <string name="group_default_name_more">%1$s等%2$d人</string>
+    <string name="list_separator">、</string>
+
+    <!-- 群昵称 -->
+    <string name="edit_nickname_title">更改昵称</string>
+    <string name="edit_nickname_hint">请输入昵称</string>
+    <string name="edit_nickname_save">保存</string>
+</resources>

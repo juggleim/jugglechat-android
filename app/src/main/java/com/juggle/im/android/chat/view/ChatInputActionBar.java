@@ -9,20 +9,20 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.util.TypedValue;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.GridView;
 import android.widget.GridLayout;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -313,7 +313,8 @@ public class ChatInputActionBar extends LinearLayout {
         }, new MentionConfig());
         editTextInput.setRawInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         editTextInput.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
-        editTextInput.setImeActionLabel("发送", android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
+        editTextInput.setImeActionLabel(getContext().getString(R.string.send),
+                android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
         editTextInput.setOnKeyListener((v, keyCode, event) -> {
             if (keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
                 // If Shift is pressed, allow newline insertion; otherwise treat as Send.
@@ -906,7 +907,7 @@ public class ChatInputActionBar extends LinearLayout {
         referView.setTag(R.id.tag_edit_msg, null);
         referView.setTag(R.id.tag_reply_msg, null);
         TextView tvSender = findViewById(R.id.refer_msg_sender);
-        tvSender.setText("回复：" + name);
+        tvSender.setText(getContext().getString(R.string.msg_reply_prefix, name));
         TextView tvContent = findViewById(R.id.message_content);
         tvContent.setText(msg);
         referView.setTag(type, msgId);

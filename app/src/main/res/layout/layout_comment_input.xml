@@ -27,7 +27,7 @@
         android:gravity="center"
         android:paddingLeft="12dp"
         android:paddingRight="12dp"
-        android:text="发送"
+        android:text="@string/moments_comment_send"
         android:textColor="#007AFF" />
 
 </LinearLayout>

@@ -25,6 +25,7 @@ import com.juggle.im.model.Conversation;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 public class FriendApplicationsActivity extends AbsAppActivity {
     private static final String FRIEND_APPLY = "friend_apply";
@@ -84,7 +85,8 @@ public class FriendApplicationsActivity extends AbsAppActivity {
                 progressBar.setVisibility(View.GONE);
                 emptyView.setVisibility(View.VISIBLE);
                 rvApplications.setVisibility(View.GONE);
-                Toast.makeText(FriendApplicationsActivity.this, "加载新朋友失败：" + message, Toast.LENGTH_SHORT)
+                LogUtils.serverError("contact", "loadFriendApplications", code, message);
+                Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_load_failed, Toast.LENGTH_SHORT)
                         .show();
             }
         });
@@ -124,10 +126,10 @@ public class FriendApplicationsActivity extends AbsAppActivity {
             // 设置描述文字
             if (isSponsor) {
                 // 当前用户发起的申请
-                holder.tvDescription.setText("申请添加对方为好友");
+                holder.tvDescription.setText(R.string.friend_apply_desc_outgoing);
             } else {
                 // 对方发起的申请
-                holder.tvDescription.setText("申请添加你为好友");
+                holder.tvDescription.setText(R.string.friend_apply_desc_incoming);
             }
 
             // 根据是否发起者和状态设置右侧显示
@@ -153,32 +155,32 @@ public class FriendApplicationsActivity extends AbsAppActivity {
                     // 当前用户发起的申请
                     switch (status) {
                         case STATUS_APPLYING:
-                            statusText = "等待验证";
+                            statusText = getString(R.string.friend_apply_status_pending);
                             break;
                         case STATUS_AGREED:
-                            statusText = "已添加";
+                            statusText = getString(R.string.friend_apply_status_added);
                             break;
                         case STATUS_REJECTED:
-                            statusText = "已被拒绝";
+                            statusText = getString(R.string.friend_apply_status_rejected_by_peer);
                             break;
                         case STATUS_EXPIRED:
-                            statusText = "已过期";
+                            statusText = getString(R.string.friend_apply_status_expired);
                             break;
                         default:
-                            statusText = "等待验证";
+                            statusText = getString(R.string.friend_apply_status_pending);
                             break;
                     }
                 } else {
                     // 对方发起的申请
                     switch (status) {
                         case STATUS_AGREED:
-                            statusText = "已添加";
+                            statusText = getString(R.string.friend_apply_status_added);
                             break;
                         case STATUS_REJECTED:
-                            statusText = "已拒绝";
+                            statusText = getString(R.string.friend_apply_status_rejected);
                             break;
                         case STATUS_EXPIRED:
-                            statusText = "已过期";
+                            statusText = getString(R.string.friend_apply_status_expired);
                             break;
                         default:
                             statusText = "";
@@ -199,12 +201,13 @@ public class FriendApplicationsActivity extends AbsAppActivity {
                     // 更新状态
                     app.setStatus(STATUS_AGREED);
                     notifyItemChanged(position);
-                    Toast.makeText(FriendApplicationsActivity.this, "已添加好友", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_accept_success, Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onError(int code, String message) {
-                    Toast.makeText(FriendApplicationsActivity.this, "添加失败：" + message, Toast.LENGTH_SHORT).show();
+                    LogUtils.serverError("contact", "acceptFriendApplication", code, message);
+                    Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_accept_failed, Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -219,12 +222,13 @@ public class FriendApplicationsActivity extends AbsAppActivity {
                     // 更新状态
                     app.setStatus(STATUS_REJECTED);
                     notifyItemChanged(position);
-                    Toast.makeText(FriendApplicationsActivity.this, "已拒绝", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_reject_success, Toast.LENGTH_SHORT).show();
                 }
 
                 @Override
                 public void onError(int code, String message) {
-                    Toast.makeText(FriendApplicationsActivity.this, "拒绝失败：" + message, Toast.LENGTH_SHORT).show();
+                    LogUtils.serverError("contact", "rejectFriendApplication", code, message);
+                    Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_reject_failed, Toast.LENGTH_SHORT).show();
                 }
             });
         }

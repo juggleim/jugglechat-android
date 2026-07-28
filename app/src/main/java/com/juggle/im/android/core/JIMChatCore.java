@@ -134,6 +134,22 @@ public class JIMChatCore {
      * 1、先用当前时间戳取第一屏会话
      * 2、如果还有，用第一屏的最后一条会话的sortTime取第二屏会话，拉取 OLDER 会话数据
      */
+    /**
+     * 在子线程同步会话列表。
+     * <p>
+     * TIPS：{@link #syncConversationList()} 是阻塞的分页拉取，只在 SDK 的 onDbOpen 回调（已在子线程）里被调用。
+     * 界面侧（如 Activity 重建后补拉）必须走本方法，不能在主线程直接调 syncConversationList。
+     */
+    public void syncConversationListAsync() {
+        new Thread(() -> {
+            try {
+                syncConversationList();
+            } catch (Throwable throwable) {
+                Log.w(tag, "syncConversationListAsync failed", throwable);
+            }
+        }, "conv-sync").start();
+    }
+
     public void syncConversationList() {
         long cursor = -1;
         for(;;) {

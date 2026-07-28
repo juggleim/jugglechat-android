@@ -8,6 +8,8 @@ import com.juggle.im.model.SearchConversationsResult;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 final class SearchResultMapper {
 
@@ -73,7 +75,7 @@ final class SearchResultMapper {
                     conversationId,
                     "",
                     SearchActivity.SEARCH_TYPE_RECORD,
-                    item.getMatchedCount() + " 条匹配记录");
+                    AppRes.string(R.string.search_matched_count, item.getMatchedCount()));
             result.setConversation(item.getConversationInfo().getConversation());
             results.add(result);
         }

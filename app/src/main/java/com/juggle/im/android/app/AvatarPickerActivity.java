@@ -46,7 +46,7 @@ public class AvatarPickerActivity extends AbsAppActivity {
                 if (granted) {
                     loadImages();
                 } else {
-                    Toast.makeText(this, "未授予相册权限", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.avatar_permission_denied, Toast.LENGTH_SHORT).show();
                     finish();
                 }
             });
@@ -103,7 +103,7 @@ public class AvatarPickerActivity extends AbsAppActivity {
 
     private void confirmSelection() {
         if (TextUtils.isEmpty(selectedPath)) {
-            Toast.makeText(this, "请选择头像", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.avatar_select_required, Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent();
@@ -157,7 +157,7 @@ public class AvatarPickerActivity extends AbsAppActivity {
                 imagePaths.addAll(result);
                 adapter.notifyDataSetChanged();
                 if (imagePaths.isEmpty()) {
-                    Toast.makeText(this, "未找到可用图片", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.avatar_no_image, Toast.LENGTH_SHORT).show();
                 }
             });
         }).start();
@@ -167,7 +167,7 @@ public class AvatarPickerActivity extends AbsAppActivity {
         boolean hasSelection = !TextUtils.isEmpty(selectedPath);
         previewButton.setEnabled(hasSelection);
         confirmButton.setEnabled(hasSelection);
-        previewButton.setText(hasSelection ? "预览（1）" : "预览");
+        previewButton.setText(hasSelection ? R.string.avatar_preview_with_count : R.string.avatar_preview);
     }
 
     private boolean hasImagePermission() {

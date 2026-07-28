@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:paddingStart="8dp"
             android:paddingEnd="8dp"
-            android:text="移除"
+            android:text="@string/group_admins_remove"
             android:textColor="@color/red"
             android:textSize="13sp" />
     </LinearLayout>

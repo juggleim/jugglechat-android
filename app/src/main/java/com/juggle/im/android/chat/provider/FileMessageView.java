@@ -43,6 +43,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import com.juggle.im.android.i18n.AppRes;
 
 /**
  * 文件消息内容视图。
@@ -219,7 +220,7 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
 
         String url = boundFileMessage.getUrl();
         if (TextUtils.isEmpty(url)) {
-            Toast.makeText(context, "文件链接无效", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.file_link_invalid, Toast.LENGTH_SHORT).show();
             return;
         }
         startDownload(context, taskKey, url, boundFileName);
@@ -256,24 +257,24 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
             case DOWNLOADING:
                 fileActionIcon.setImageResource(R.drawable.ic_cancel_white);
                 fileStatusView.setVisibility(View.VISIBLE);
-                fileStatusView.setText("下载中 " + snapshot.progress + "%");
+                fileStatusView.setText(AppRes.string(R.string.file_downloading, snapshot.progress));
                 downloadProgressView.setVisibility(View.VISIBLE);
                 downloadProgressView.setProgress(Math.max(0, Math.min(100, snapshot.progress)));
                 break;
             case FAILED:
                 fileActionIcon.setImageResource(R.drawable.ic_download);
                 fileStatusView.setVisibility(View.VISIBLE);
-                fileStatusView.setText("下载失败，点击重试");
+                fileStatusView.setText(R.string.file_download_failed_retry);
                 break;
             case CANCELED:
                 fileActionIcon.setImageResource(R.drawable.ic_download);
                 fileStatusView.setVisibility(View.VISIBLE);
-                fileStatusView.setText("已取消，点击重试");
+                fileStatusView.setText(R.string.file_download_canceled_retry);
                 break;
             case SUCCESS:
                 fileActionIcon.setImageResource(R.drawable.ic_file);
                 fileStatusView.setVisibility(View.VISIBLE);
-                fileStatusView.setText("已下载，点击打开");
+                fileStatusView.setText(R.string.file_downloaded_open);
                 break;
             case IDLE:
             default:
@@ -400,7 +401,7 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
 
     private String resolveFileName(FileMessage message) {
         if (message == null || TextUtils.isEmpty(message.getName())) {
-            return "未知文件";
+            return AppRes.string(R.string.file_unknown_name);
         }
         return message.getName().trim();
     }
@@ -543,7 +544,7 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
 
     private String formatFileSize(long sizeBytes) {
         if (sizeBytes <= 0) {
-            return "未知大小";
+            return AppRes.string(R.string.file_unknown_size);
         }
         if (sizeBytes < 1024) {
             return sizeBytes + " B";
@@ -623,24 +624,24 @@ public class FileMessageView extends MessageView<UiMessage, FileMessage> {
                     Intent imageIntent = new Intent(Intent.ACTION_VIEW);
                     imageIntent.setDataAndType(fileUri, "image/*");
                     imageIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                    context.startActivity(Intent.createChooser(imageIntent, "查看图片"));
+                    context.startActivity(Intent.createChooser(imageIntent, AppRes.string(R.string.file_chooser_image)));
                     break;
                 case "txt":
-                    context.startActivity(Intent.createChooser(intent, "打开文本文件"));
+                    context.startActivity(Intent.createChooser(intent, AppRes.string(R.string.file_chooser_text)));
                     break;
                 case "pdf":
-                    context.startActivity(Intent.createChooser(intent, "打开PDF文件"));
+                    context.startActivity(Intent.createChooser(intent, AppRes.string(R.string.file_chooser_pdf)));
                     break;
                 default:
-                    context.startActivity(Intent.createChooser(intent, "打开文件"));
+                    context.startActivity(Intent.createChooser(intent, AppRes.string(R.string.file_chooser_default)));
                     break;
             }
         } catch (ActivityNotFoundException e) {
             Log.e(TAG, "无法找到适合的应用打开文件", e);
-            Toast.makeText(context, "无法找到适合的应用打开文件", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.file_no_app, Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Log.e(TAG, "打开文件时出错", e);
-            Toast.makeText(context, "打开文件时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, R.string.file_open_error, Toast.LENGTH_SHORT).show();
         }
     }
 

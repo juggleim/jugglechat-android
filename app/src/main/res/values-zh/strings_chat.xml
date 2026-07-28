@@ -1,0 +1,103 @@
+<resources>
+    <!-- 搜索 -->
+    <string name="search_type_contact">联系人</string>
+    <string name="search_type_group">群聊</string>
+    <string name="search_type_record">聊天记录</string>
+    <string name="search_matched_count">%1$d 条匹配记录</string>
+    <string name="search_searching">搜索中...</string>
+
+    <!-- 会话列表 -->
+    <string name="conv_list_mark_read">标为已读</string>
+    <string name="conv_list_mark_unread">标为未读</string>
+    <string name="conv_list_draft">[草稿]</string>
+    <string name="conv_list_mention_all">[@所有人]</string>
+    <string name="conv_list_mention_someone">[有人@我]</string>
+    <string name="conv_list_sender_you">你</string>
+
+    <!-- 消息列表 -->
+    <string name="msg_new_count">%1$s条新消息</string>
+    <string name="msg_mention_me">有人@我</string>
+    <string name="msg_selected_count">已选择%1$d条消息</string>
+    <string name="msg_edited">（已修改）</string>
+    <string name="msg_reply_prefix">回复：%1$s</string>
+    <string name="msg_merge_unknown_user">未知用户</string>
+
+    <!-- 文件消息 -->
+    <string name="file_link_invalid">文件链接无效</string>
+    <string name="file_downloading">下载中 %1$d%%</string>
+    <string name="file_download_failed_retry">下载失败，点击重试</string>
+    <string name="file_download_canceled_retry">已取消，点击重试</string>
+    <string name="file_downloaded_open">已下载，点击打开</string>
+    <string name="file_unknown_name">未知文件</string>
+    <string name="file_unknown_size">未知大小</string>
+    <string name="file_chooser_image">查看图片</string>
+    <string name="file_chooser_text">打开文本文件</string>
+    <string name="file_chooser_pdf">打开PDF文件</string>
+    <string name="file_chooser_default">打开文件</string>
+    <string name="file_no_app">无法找到适合的应用打开文件</string>
+    <string name="file_open_error">打开文件时出错</string>
+    <string name="file_process_failed">文件处理失败，请重试</string>
+
+    <string name="chat_close_reply">关闭引用</string>
+
+    <!-- 语音输入 -->
+    <string name="voice_release_to_send">松开发送  上滑取消</string>
+
+    <!-- @提及 -->
+    <string name="mention_all_name">所有人</string>
+    <string name="mention_all_text">@所有人 </string>
+
+    <!-- 时间 -->
+    <string name="time_today">今天</string>
+    <string name="time_yesterday_at">昨天 %1$s</string>
+    <string name="weekday_monday">周一</string>
+    <string name="weekday_tuesday">周二</string>
+    <string name="weekday_wednesday">周三</string>
+    <string name="weekday_thursday">周四</string>
+    <string name="weekday_friday">周五</string>
+    <string name="weekday_saturday">周六</string>
+    <string name="weekday_sunday">周日</string>
+
+    <!-- 消息摘要 -->
+    <string name="msg_summary_recall">%1$s撤回了一条消息</string>
+    <string name="msg_summary_moment_notify">朋友圈通知</string>
+    <string name="msg_summary_data_synced">数据已同步</string>
+    <string name="msg_summary_timeline">时间线</string>
+    <string name="msg_summary_game_dice">骰子游戏</string>
+    <string name="msg_summary_game_mora">猜拳游戏</string>
+    <string name="msg_summary_game">互动游戏</string>
+    <string name="msg_summary_sticker">表情贴纸</string>
+    <string name="msg_summary_peer">对方</string>
+
+    <!-- 群通知 / 好友通知 / 时效通知 -->
+    <string name="group_notify_you">你</string>
+    <string name="group_notify_add_member">%1$s 邀请 %2$s 加入群聊</string>
+    <string name="group_notify_remove_member">%1$s 将 %2$s 移除群聊</string>
+    <string name="group_notify_rename">%1$s 修改群名称为 %2$s</string>
+    <string name="group_notify_change_owner">%1$s 已成为新群主</string>
+    <string name="group_notify_join">%1$s 加入群聊</string>
+    <string name="friend_notify_added">%1$s添加你为好友</string>
+    <string name="friend_notify_accepted">%1$s通过你为好友</string>
+    <string name="lifetime_notify_off">%1$s 关闭了消息自动删除</string>
+    <string name="lifetime_notify_on">%1$s 设置 %2$d 天后消息自动删除</string>
+    <string name="timeline_notify_digest">[时间线通知]</string>
+
+    <!-- 主框架 / 连接状态 -->
+    <string name="main_connect_failed">连接失败，请检查网络</string>
+
+    <!-- IM 前台服务通知轮播文案 -->
+    <string name="im_service_status_keeping">正在保持聊天连接</string>
+    <string name="im_service_status_running">聊天服务运行中</string>
+    <string name="im_service_status_syncing">正在同步消息</string>
+    <string name="im_service_status_connected">连接服务器正常</string>
+    <string name="im_service_status_active">IM服务活跃中</string>
+
+    <!-- 网络错误 -->
+    <string name="api_error_network">网络开小差，请稍后重试</string>
+    <string name="api_error_server">服务响应异常，请稍后重试</string>
+    <string name="api_error_default">请求失败，请稍后再试</string>
+
+    <!-- 资料校验 -->
+    <string name="profile_validation_empty">用户资料不能为空</string>
+    <string name="profile_validation_avatar">头像字段必须是 http/https URL</string>
+</resources>

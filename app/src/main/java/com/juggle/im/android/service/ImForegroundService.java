@@ -18,6 +18,7 @@ import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.model.ConfigUtils;
 
 import java.util.Random;
+import com.juggle.im.android.i18n.AppRes;
 
 /**
  * IM前台服务
@@ -39,12 +40,12 @@ public class ImForegroundService extends Service {
     private final Random random = new Random();
     private boolean notificationLoopRunning = false;
 
-    private final String[] dynamicTexts = new String[] {
-            "正在保持聊天连接",
-            "聊天服务运行中",
-            "正在同步消息",
-            "连接服务器正常",
-            "IM服务活跃中"
+    private static final int[] DYNAMIC_TEXT_RES = new int[] {
+            R.string.im_service_status_keeping,
+            R.string.im_service_status_running,
+            R.string.im_service_status_syncing,
+            R.string.im_service_status_connected,
+            R.string.im_service_status_active
     };
 
     private final Runnable notificationUpdater = new Runnable() {
@@ -138,8 +139,8 @@ public class ImForegroundService extends Service {
         );
 
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.im_service_title))
-                .setContentText(getString(R.string.im_service_content))
+                .setContentTitle(AppRes.string(R.string.im_service_title))
+                .setContentText(AppRes.string(R.string.im_service_content))
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
@@ -159,11 +160,11 @@ public class ImForegroundService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     CHANNEL_ID,
-                    getString(R.string.im_service_channel_name),
+                    AppRes.string(R.string.im_service_channel_name),
                     NotificationManager.IMPORTANCE_LOW
             );
             channel.setDescription(
-                    getString(R.string.im_service_channel_description)
+                    AppRes.string(R.string.im_service_channel_description)
             );
             channel.setShowBadge(false);
 
@@ -190,7 +191,8 @@ public class ImForegroundService extends Service {
     }
 
     private String getRandomText() {
-        int index = random.nextInt(dynamicTexts.length);
-        return dynamicTexts[index];
+        int index = random.nextInt(DYNAMIC_TEXT_RES.length);
+        // TIPS: Service 的 Resources 不跟随 per-app locale，取串必须走 AppRes
+        return AppRes.string(DYNAMIC_TEXT_RES[index]);
     }
 }

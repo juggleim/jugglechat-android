@@ -22,6 +22,7 @@ import com.juggle.im.android.R;
 import com.juggle.im.android.server.beans.GroupAnnouncementBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 群公告页面
@@ -125,8 +126,9 @@ public class GroupAnnouncementActivity extends AbsAppActivity {
                 progressBar.setVisibility(View.GONE);
                 contentInput.setEnabled(editable);
                 updatePublishButton();
+                LogUtils.serverError("group", "loadAnnouncement", code, message);
                 Toast.makeText(GroupAnnouncementActivity.this,
-                        "加载公告失败：" + message,
+                        R.string.group_announcement_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -154,7 +156,7 @@ public class GroupAnnouncementActivity extends AbsAppActivity {
         }
         String content = contentInput.getText() == null ? "" : contentInput.getText().toString().trim();
         if (TextUtils.isEmpty(content)) {
-            Toast.makeText(this, "公告内容不能为空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_announcement_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -164,7 +166,7 @@ public class GroupAnnouncementActivity extends AbsAppActivity {
             @Override
             public void onSuccess(Void data) {
                 progressBar.setVisibility(View.GONE);
-                Toast.makeText(GroupAnnouncementActivity.this, "发布成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupAnnouncementActivity.this, R.string.group_announcement_publish_success, Toast.LENGTH_SHORT).show();
 
                 // tips: 通知调用方刷新公告预览
                 Intent result = new Intent();
@@ -177,8 +179,9 @@ public class GroupAnnouncementActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 progressBar.setVisibility(View.GONE);
                 publishView.setEnabled(true);
+                LogUtils.serverError("group", "publishAnnouncement", code, message);
                 Toast.makeText(GroupAnnouncementActivity.this,
-                        "发布失败：" + message,
+                        R.string.group_announcement_publish_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });

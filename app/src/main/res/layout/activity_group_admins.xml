@@ -27,7 +27,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="群组管理员"
+                android:text="@string/group_admins_title"
                 android:textColor="@color/conversation_header_text"
                 android:textSize="17sp" />
         </RelativeLayout>
@@ -48,7 +48,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="管理员可协助群主管理群聊，拥有发布群公告、移除群成员等能力"
+                android:text="@string/group_admins_desc_capability"
                 android:textColor="@color/search_secondary_text"
                 android:textSize="13sp" />
 
@@ -56,7 +56,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="只有群主具备设置管理员、解散群聊的能力"
+                android:text="@string/group_admins_desc_owner_only"
                 android:textColor="@color/search_secondary_text"
                 android:textSize="13sp" />
 
@@ -64,7 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="最多可以设置 3 个管理员"
+                android:text="@string/group_admins_desc_limit"
                 android:textColor="@color/search_secondary_text"
                 android:textSize="13sp" />
         </LinearLayout>
@@ -78,7 +78,7 @@
             android:layout_marginEnd="16dp"
             android:background="@drawable/bg_group_setting_card"
             android:gravity="center"
-            android:text="添加管理员"
+            android:text="@string/group_admins_add"
             android:textColor="@color/app_primary"
             android:textSize="15sp" />
 
@@ -107,7 +107,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="暂无管理员"
+        android:text="@string/group_admins_empty"
         android:textColor="@color/search_secondary_text"
         android:textSize="14sp"
         android:visibility="gone" />

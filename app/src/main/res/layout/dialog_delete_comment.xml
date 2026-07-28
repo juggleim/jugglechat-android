@@ -24,7 +24,7 @@
         android:background="?android:attr/selectableItemBackground"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="取消"
+        android:text="@string/moments_delete_comment_cancel"
         android:textSize="16sp"
         android:textColor="#999999"/>
 

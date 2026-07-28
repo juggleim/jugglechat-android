@@ -23,7 +23,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="群组二维码"
+            android:text="@string/qrcode_group_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />
     </RelativeLayout>
@@ -93,7 +93,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="扫一扫，加入群聊"
+            android:text="@string/qrcode_group_hint"
             android:textColor="@color/app_primary"
             android:textSize="14sp" />
     </LinearLayout>

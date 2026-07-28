@@ -21,7 +21,7 @@
         android:padding="6dp"
         android:maxLines="1"
         android:visibility="gone"
-        android:text="通话中"
+        android:text="@string/call_status_connected"
         android:textColor="@android:color/white"
         android:textSize="12sp" />
 

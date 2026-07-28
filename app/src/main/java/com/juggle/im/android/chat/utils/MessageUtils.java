@@ -58,6 +58,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import com.juggle.im.android.i18n.AppRes;
 
 
 public class MessageUtils {
@@ -135,10 +136,10 @@ public class MessageUtils {
 
         if (sameDay) {
             java.text.DateFormat df = new java.text.SimpleDateFormat("HH:mm", Locale.getDefault());
-            text = "今天";// df.format(new Date(timestamp));
+            text = AppRes.string(R.string.time_today);
         } else if (isYesterday) {
             java.text.DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            text = "昨天 " + df.format(new Date(timestamp));
+            text = AppRes.string(R.string.time_yesterday_at, df.format(new Date(timestamp)));
         } else if (sameYear) {
             DateFormat df = new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault());
             text = df.format(new Date(timestamp));
@@ -174,11 +175,11 @@ public class MessageUtils {
         }
         if (isYesterday) {
             DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            return "昨天 " + df.format(new Date(timestamp));
+            return AppRes.string(R.string.time_yesterday_at, df.format(new Date(timestamp)));
         }
         if (isSameWeek(now, cal)) {
             DateFormat df = new SimpleDateFormat("HH:mm", Locale.getDefault());
-            return toChineseWeekday(cal) + " " + df.format(new Date(timestamp));
+            return toWeekdayText(cal) + " " + df.format(new Date(timestamp));
         }
         if (sameYear) {
             DateFormat df = new SimpleDateFormat("MM-dd HH:mm", Locale.getDefault());
@@ -200,22 +201,22 @@ public class MessageUtils {
                 && l.get(Calendar.WEEK_OF_YEAR) == r.get(Calendar.WEEK_OF_YEAR);
     }
 
-    private static String toChineseWeekday(Calendar calendar) {
+    private static String toWeekdayText(Calendar calendar) {
         switch (calendar.get(Calendar.DAY_OF_WEEK)) {
             case Calendar.MONDAY:
-                return "周一";
+                return AppRes.string(R.string.weekday_monday);
             case Calendar.TUESDAY:
-                return "周二";
+                return AppRes.string(R.string.weekday_tuesday);
             case Calendar.WEDNESDAY:
-                return "周三";
+                return AppRes.string(R.string.weekday_wednesday);
             case Calendar.THURSDAY:
-                return "周四";
+                return AppRes.string(R.string.weekday_thursday);
             case Calendar.FRIDAY:
-                return "周五";
+                return AppRes.string(R.string.weekday_friday);
             case Calendar.SATURDAY:
-                return "周六";
+                return AppRes.string(R.string.weekday_saturday);
             default:
-                return "周日";
+                return AppRes.string(R.string.weekday_sunday);
         }
     }
 
@@ -285,7 +286,7 @@ public class MessageUtils {
         } else if (message.getContent() instanceof RecallInfoMessage) {
             return  senderName + String.format(content, view.getResources().getString(R.string.msg_recall));
         } else if (message.getContent() instanceof CallFinishNotifyMessage) {
-            return "通话结束";
+            return view.getResources().getString(R.string.call_status_finished);
         }
         // 自定义消息类型
         else if (message.getContent() instanceof GroupNotifyMessage) {
@@ -344,37 +345,37 @@ public class MessageUtils {
             return msg.description();
         } else if (t instanceof FriendNotifyMessage) {
             FriendNotifyMessage msg = (FriendNotifyMessage) t;
-            return (userInfo != null ? userInfo.getUserName() : "") + msg.description() + "你为好友";
+            return msg.description(userInfo != null ? userInfo.getUserName() : "");
         } else if (t instanceof InsertTimeStatusMessage) {
             InsertTimeStatusMessage msg = (InsertTimeStatusMessage) t;
             return msg.description();
         } else if (t instanceof RecallInfoMessage) {
-            return (userInfo != null ? userInfo.getUserName() : "") + "撤回了一条消息";
+            return AppRes.string(R.string.msg_summary_recall, userInfo != null ? userInfo.getUserName() : "");
         } else if (t instanceof CallFinishNotifyMessage) {
-            return "通话结束";
+            return AppRes.string(R.string.call_status_finished);
         } else if (t instanceof LifeTimeNotifyMessage) {
             LifeTimeNotifyMessage msg = (LifeTimeNotifyMessage) t;
-            return msg.description(userInfo != null ? userInfo.getUserName() : "对方");
+            return msg.description(userInfo != null ? userInfo.getUserName() : AppRes.string(R.string.msg_summary_peer));
         } else if (t instanceof MomentNotifyMessage) {
-            return "朋友圈通知";
+            return AppRes.string(R.string.msg_summary_moment_notify);
         } else if (t instanceof SyncDataNotifyMessage) {
-            return "数据已同步";
+            return AppRes.string(R.string.msg_summary_data_synced);
         } else if (t instanceof TimelineNotifyMessage) {
             TimelineNotifyMessage msg = (TimelineNotifyMessage) t;
             String content = msg.getContent();
-            return TextUtils.isEmpty(content) ? "时间线" : content;
+            return TextUtils.isEmpty(content) ? AppRes.string(R.string.msg_summary_timeline) : content;
         } else if (t instanceof StickerGameMessage) {
             StickerGameMessage msg = (StickerGameMessage) t;
             if (StickerGameMessage.TYPE_DICE.equals(msg.getGameType())) {
-                return "骰子游戏";
+                return AppRes.string(R.string.msg_summary_game_dice);
             } else if (StickerGameMessage.TYPE_MORA.equals(msg.getGameType())) {
-                return "猜拳游戏";
+                return AppRes.string(R.string.msg_summary_game_mora);
             }
-            return "互动游戏";
+            return AppRes.string(R.string.msg_summary_game);
         } else if (t instanceof StickerEmojiMessage) {
-            return "表情贴纸";
+            return AppRes.string(R.string.msg_summary_sticker);
         } else {
-            return "不支持的消息类型";
+            return AppRes.string(R.string.unknown_message);
         }
     }
 
@@ -430,7 +431,7 @@ public class MessageUtils {
 
         // 构建 userId -> userName 映射
         java.util.Map<String, String> idToNameMap = new java.util.HashMap<>();
-        idToNameMap.put("all", "所有人");
+        idToNameMap.put("all", AppRes.string(R.string.mention_all_name));
 
         if (mentionInfo != null && mentionInfo.getTargetUsers() != null) {
             for (UserInfo user : mentionInfo.getTargetUsers()) {
@@ -491,12 +492,12 @@ public class MessageUtils {
 
         // 如果没有 mentionInfo，检查是否有 {all} 需要替换
         if (mentionInfo == null) {
-            return content.replace("{all}", "@所有人 ");
+            return content.replace("{all}", AppRes.string(R.string.mention_all_text));
         }
 
         // 构建 userId -> userName 映射
         java.util.Map<String, String> idToNameMap = new java.util.HashMap<>();
-        idToNameMap.put("all", "所有人");
+        idToNameMap.put("all", AppRes.string(R.string.mention_all_name));
 
         if (mentionInfo.getTargetUsers() != null) {
             for (UserInfo user : mentionInfo.getTargetUsers()) {

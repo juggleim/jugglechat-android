@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import com.juggle.im.android.utils.LogUtils;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -249,8 +250,9 @@ public class LoginActivity extends AbsAppActivity {
                         @Override
                         public void onError(int code, String message) {
                             showLoading(false);
+                            LogUtils.serverError("auth", "loginByCode", code, message);
                             ToastUtils.show(LoginActivity.this,
-                                    getString(R.string.auth_error_login_failed, normalizeErrorMessage(message)));
+                                    R.string.auth_error_login_failed);
                         }
                     });
             return;
@@ -276,8 +278,9 @@ public class LoginActivity extends AbsAppActivity {
                     @Override
                     public void onError(int code, String message) {
                         showLoading(false);
+                        LogUtils.serverError("auth", "loginByPassword", code, message);
                         ToastUtils.show(LoginActivity.this,
-                                getString(R.string.auth_error_login_failed, normalizeErrorMessage(message)));
+                                R.string.auth_error_login_failed);
                     }
                 });
     }
@@ -337,8 +340,9 @@ public class LoginActivity extends AbsAppActivity {
                 isSendingCode = false;
                 getCodeText.setEnabled(true);
                 getCodeText.setText(R.string.auth_send_code);
+                LogUtils.serverError("auth", "sendVerifyCode", code, message);
                 ToastUtils.show(LoginActivity.this,
-                        getString(R.string.auth_error_send_code_failed, normalizeErrorMessage(message)));
+                        R.string.auth_error_send_code_failed);
             }
         });
     }
@@ -402,10 +406,6 @@ public class LoginActivity extends AbsAppActivity {
         return value == null ? "" : value.trim();
     }
 
-    private String normalizeErrorMessage(String message) {
-        String trimmed = safeTrim(message);
-        return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
-    }
 
     private final class LinkSpan extends ClickableSpan {
         private final Runnable clickAction;

@@ -18,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.juggle.im.android.utils.LogUtils;
 
 import androidx.annotation.NonNull;
 import com.juggle.im.android.component.AbsAppActivity;
@@ -36,6 +37,7 @@ import com.juggle.im.android.utils.AvatarUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import com.juggle.im.android.i18n.AppRes;
 
 public class AddFriendActivity extends AbsAppActivity {
 
@@ -189,8 +191,9 @@ public class AddFriendActivity extends AbsAppActivity {
 
                 progressBar.setVisibility(View.GONE);
                 updateEmptyState(false);
+                LogUtils.serverError("contact", "searchFriend", 0, message);
                 Toast.makeText(AddFriendActivity.this,
-                        getString(R.string.add_friend_search_failed, String.valueOf(message)),
+                        R.string.add_friend_search_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -225,8 +228,9 @@ public class AddFriendActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("contact", "applyFriend", code, message);
                 Toast.makeText(AddFriendActivity.this,
-                        getString(R.string.add_friend_request_failed, String.valueOf(message)),
+                        R.string.add_friend_request_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -303,7 +307,7 @@ public class AddFriendActivity extends AbsAppActivity {
             if (!TextUtils.isEmpty(item.getPhone())) {
                 return item.getPhone();
             }
-            return Locale.getDefault().getLanguage().startsWith("zh") ? "未知用户" : "Unknown";
+            return AppRes.string(R.string.contact_unknown_user);
         }
 
         interface OnAddClickListener {

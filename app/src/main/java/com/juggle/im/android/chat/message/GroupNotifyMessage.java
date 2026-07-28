@@ -14,6 +14,8 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 public class GroupNotifyMessage extends MessageContent {
     public final static String ACTION = "jgd:grpntf";
@@ -81,13 +83,14 @@ public class GroupNotifyMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return DIGEST;
+        // TIPS: 摘要必须调用时取串，静态常量会锁死在类加载时的语言
+        return AppRes.string(R.string.msg_group_notify);
     }
 
     public String description() {
         boolean isSender = !TextUtils.isEmpty(mOperator.getUserId())
                 && mOperator.getUserId().equals(JIM.getInstance().getCurrentUserId());
-        String sender = isSender ? "你" : mOperator.getUserName();
+        String sender = isSender ? AppRes.string(R.string.group_notify_you) : mOperator.getUserName();
         StringBuilder userList = new StringBuilder();
         for (UserInfo member : mMembers) {
             userList.append(member.getUserName()).append(", ");
@@ -100,7 +103,7 @@ public class GroupNotifyMessage extends MessageContent {
                 if (member.getUserId().equals(JIM.getInstance().getCurrentUserId())) {
                     isOwner = true;
                 }
-                newOwner = isOwner ? "你" : member.getUserName();
+                newOwner = isOwner ? AppRes.string(R.string.group_notify_you) : member.getUserName();
             }
         }
 
@@ -111,15 +114,15 @@ public class GroupNotifyMessage extends MessageContent {
         String ul = userList.toString();
         switch (mType) {
             case ADD_MEMBER:
-                return sender + " 邀请 " + ul + " 加入群聊";
+                return AppRes.string(R.string.group_notify_add_member, sender, ul);
             case REMOVE_MEMBER:
-                return sender + " 将 " + ul + " 移除群聊";
+                return AppRes.string(R.string.group_notify_remove_member, sender, ul);
             case RENAME:
-                return sender + " 修改群名称为 " + mName;
+                return AppRes.string(R.string.group_notify_rename, sender, mName);
             case CHANGE_OWNER:
-                return newOwner + " 已成为新群主";
+                return AppRes.string(R.string.group_notify_change_owner, newOwner);
             case JOIN:
-                return sender + " 加入群聊";
+                return AppRes.string(R.string.group_notify_join, sender);
             default:
                 return "";
         }
@@ -221,5 +224,4 @@ public class GroupNotifyMessage extends MessageContent {
     private static final String TYPE = "type";
     private static final String OPERATOR = "operator";
     private static final String NAME = "name";
-    private static final String DIGEST = "[群通知]";
 }

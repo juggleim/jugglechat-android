@@ -117,7 +117,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="72dp"
-            android:text="松开发送  上滑取消"
+            android:text="@string/voice_release_to_send"
             android:textColor="#FFFFFFFF"
             android:textSize="16sp"
             android:textStyle="bold" />

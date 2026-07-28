@@ -19,6 +19,8 @@ import com.juggle.im.android.server.beans.FriendsListData;
 import java.util.ArrayList;
 import java.util.List;
 import okhttp3.OkHttpClient;
+import com.juggle.im.android.R;
+import com.juggle.im.android.i18n.AppRes;
 
 /**
  * OkHttp-based implementation of UserService. Calls run network requests
@@ -58,11 +60,11 @@ public class UserServiceImpl extends BaseService implements UserService {
     @Override
     public void updateUserInfo(UserInfoRequest userInfo, ApiCallback<Void> callback) {
         if (userInfo == null) {
-            dispatchProfileValidationError(callback, "用户资料不能为空");
+            dispatchProfileValidationError(callback, AppRes.string(R.string.profile_validation_empty));
             return;
         }
         if (!userInfo.hasValidAvatarProtocol()) {
-            dispatchProfileValidationError(callback, "头像字段必须是 http/https URL");
+            dispatchProfileValidationError(callback, AppRes.string(R.string.profile_validation_avatar));
             return;
         }
         enqueueJson("/jim/users/update", userInfo, Void.class, callback);

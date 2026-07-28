@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 /**
  * 数据同步通知消息
@@ -61,7 +63,7 @@ public class SyncDataNotifyMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return "[数据同步]";
+        return AppRes.string(R.string.msg_sync_data_notify);
     }
 
     public int getType() {

@@ -37,6 +37,8 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import com.juggle.im.android.utils.LogUtils;
+import com.juggle.im.android.i18n.LanguageManager;
 
 public class FriendsFragment extends Fragment {
     private static final String FRIEND_APPLY = "friend_apply";
@@ -50,7 +52,7 @@ public class FriendsFragment extends Fragment {
 
     private final List<ContactEntry> allFriends = new ArrayList<>();
     private final List<ContactListAdapter.RowItem> currentRows = new ArrayList<>();
-    private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
+    private final Collator nameCollator = Collator.getInstance(LanguageManager.currentLocale());
 
     private RecyclerView recyclerView;
     private IndexBar indexBar;
@@ -176,7 +178,8 @@ public class FriendsFragment extends Fragment {
                 if (getContext() == null) {
                     return;
                 }
-                Toast.makeText(requireContext(), "加载好友失败：" + message, Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("contact", "loadFriends", code, message);
+                Toast.makeText(requireContext(), R.string.friends_load_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

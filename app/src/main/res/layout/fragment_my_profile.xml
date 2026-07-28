@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/group_bg_page"
@@ -60,7 +61,7 @@
                         android:textSize="20sp"
                         android:textStyle="bold"
                         android:textColor="@color/group_text_title"
-                        android:text="用户名" />
+                        tools:text="用户名" />
 
                     <TextView
                         android:id="@+id/tv_user_id"
@@ -69,7 +70,7 @@
                         android:layout_marginTop="4dp"
                         android:textSize="16sp"
                         android:textColor="@color/group_text_secondary"
-                        android:text="账号：@xxx" />
+                        tools:text="账号：@xxx" />
                 </LinearLayout>
 
                 <ImageView

@@ -21,6 +21,7 @@ import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.model.Message;
 import com.juggle.im.model.UserInfo;
+import com.juggle.im.android.i18n.AppRes;
 
 /**
  * Generic base for all message content views used by the adapter.
@@ -136,7 +137,7 @@ public abstract class MessageView<T extends UiMessage, K> extends RecyclerView.V
 
         TextView vMsgTime = itemView.findViewById(R.id.msg_sent_time);
         TextView imageMsgTime = itemView.findViewById(R.id.image_msg_time);
-        String spanTimeTxt = message.getMessage().isEdit() ? "（已修改）" : "";
+        String spanTimeTxt = message.getMessage().isEdit() ? AppRes.string(R.string.msg_edited) : "";
         if (isSend) {
             spanTimeTxt += MessageUtils.formatTimestamp(message.getMessage().getTimestamp());
         } else {

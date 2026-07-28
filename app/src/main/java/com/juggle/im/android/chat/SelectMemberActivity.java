@@ -1,6 +1,7 @@
 package com.juggle.im.android.chat;
 
 import static android.view.View.GONE;
+import com.juggle.im.android.utils.LogUtils;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -184,8 +185,9 @@ public class SelectMemberActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "loadSelectableMembers", code, message);
                 Toast.makeText(SelectMemberActivity.this,
-                        getString(R.string.create_group_load_failed, String.valueOf(message)),
+                        R.string.create_group_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -215,8 +217,9 @@ public class SelectMemberActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "loadSelectableMembers", code, message);
                 Toast.makeText(SelectMemberActivity.this,
-                        getString(R.string.create_group_load_failed, String.valueOf(message)),
+                        R.string.create_group_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });

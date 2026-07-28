@@ -1,4 +1,7 @@
 package com.juggle.im.android;
+import android.content.res.Configuration;
+
+import androidx.annotation.NonNull;
 import androidx.multidex.MultiDexApplication;
 
 import com.juggle.im.android.auth.SessionRepository;
@@ -6,6 +9,7 @@ import com.juggle.im.android.auth.StartupRouteUseCase;
 import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.chat.call.CallIncomingFloatingManager;
 import com.juggle.im.android.core.JIMChatCore;
+import com.juggle.im.android.i18n.LanguageManager;
 import com.juggle.im.android.model.ConfigUtils;
 
 import java.util.Collections;
@@ -17,6 +21,8 @@ public class Application extends MultiDexApplication {
     @Override
     public void onCreate() {
         super.onCreate();
+        // tips: 语言必须在任何界面创建前生效，否则首屏会用系统语言
+        LanguageManager.init(this);
         JIMChatCore.getInstance().init(this, Collections.singletonList(ConfigUtils.imServer), ConfigUtils.appKey);
         CallIncomingFloatingManager.getInstance().init(this);
 
@@ -25,6 +31,13 @@ public class Application extends MultiDexApplication {
         if (startupRouteDecision.getTargetRoute() == StartupRouteUseCase.TargetRoute.MAIN) {
             applySession(startupRouteDecision);
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // tips: 跟随系统语言时，系统语言变更后需要丢弃本地化 Context 缓存
+        LanguageManager.invalidateLocalizedContext();
     }
 
     /**
