@@ -47,8 +47,10 @@ import com.juggle.im.android.utils.PermissionComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Chat input action bar supporting text, voice, emoji and more panels.
@@ -65,6 +67,7 @@ public class ChatInputActionBar extends LinearLayout {
     private List<MorePlugin> morePlugins = new ArrayList<>();
     private Map<Integer, MorePlugin> activityResultHandlers = new HashMap<>();
     private Map<String, MorePlugin> pluginRegistry = new HashMap<>();
+    private final Set<String> hiddenPluginIds = new HashSet<>();
     private final PluginPermissionDispatcher pluginPermissionDispatcher = new PluginPermissionDispatcher();
     private final List<EmojiTabConfig> emojiTabs = new ArrayList<>();
     private int emojiTabIndex = 0;
@@ -266,6 +269,26 @@ public class ChatInputActionBar extends LinearLayout {
         String pluginId = plugin.getId();
         if (!TextUtils.isEmpty(pluginId)) {
             pluginRegistry.put(pluginId, plugin);
+        }
+    }
+
+    /**
+     * 控制“更多”面板中指定插件是否展示。
+     *
+     * @param pluginId 插件 ID
+     * @param visible true 表示展示，false 表示隐藏
+     */
+    public void setMorePluginVisible(@NonNull String pluginId, boolean visible) {
+        boolean changed = visible
+                ? hiddenPluginIds.remove(pluginId)
+                : hiddenPluginIds.add(pluginId);
+        if (!changed) {
+            return;
+        }
+        morePanel = null;
+        if (currentMode == InputMode.MORE && panelContainer != null
+                && panelContainer.getVisibility() == VISIBLE) {
+            showPanel(getMorePanel(), InputMode.MORE);
         }
     }
 
@@ -925,8 +948,12 @@ public class ChatInputActionBar extends LinearLayout {
         }
         grid.removeAllViews();
         final int columns = 4;
+        int displayIndex = 0;
         for (int i = 0; i < morePlugins.size(); i++) {
             MorePlugin plugin = morePlugins.get(i);
+            if (hiddenPluginIds.contains(plugin.getId())) {
+                continue;
+            }
             if (getContext() instanceof Activity) {
                 try {
                     plugin.setHostActivity((Activity) getContext());
@@ -934,8 +961,8 @@ public class ChatInputActionBar extends LinearLayout {
                 }
             }
 
-            int row = i / columns;
-            int col = i % columns;
+            int row = displayIndex / columns;
+            int col = displayIndex % columns;
 
             LinearLayout item = new LinearLayout(getContext());
             item.setOrientation(LinearLayout.VERTICAL);
@@ -986,6 +1013,7 @@ public class ChatInputActionBar extends LinearLayout {
                 clickPlugin.onClick(act);
             });
             grid.addView(item);
+            displayIndex++;
         }
         return morePanel;
     }

@@ -2,8 +2,10 @@ package com.juggle.im.android.server.http;
 
 import android.os.Handler;
 import android.os.Looper;
+import android.net.Uri;
 
 import com.juggle.im.android.server.beans.GroupAnnouncementBean;
+import com.juggle.im.android.server.beans.ConversationConfigBean;
 import com.juggle.im.android.server.beans.GroupDetailBean;
 import com.juggle.im.android.server.beans.GroupListData;
 import com.juggle.im.android.server.beans.GroupMembersData;
@@ -352,6 +354,57 @@ public class UserServiceImpl extends BaseService implements UserService {
         body.put("images", images == null ? new ArrayList<>() : images);
         body.put("videos", videos == null ? new ArrayList<>() : videos);
         enqueueJson("/jim/feedbacks/add", body, Void.class, callback);
+    }
+
+    /**
+     * 获取指定会话的消息配置。
+     *
+     * @param targetId 会话目标 ID
+     * @param conversationType 会话类型
+     * @param subChannel 子频道；无子频道时传空字符串
+     * @param callback 请求回调
+     */
+    @Override
+    public void getConversationConfig(String targetId,
+                                      int conversationType,
+                                      String subChannel,
+                                      ApiCallback<ConversationConfigBean> callback) {
+        StringBuilder path = new StringBuilder("/jim/converconfs/get?target_id=")
+                .append(Uri.encode(targetId == null ? "" : targetId))
+                .append("&conver_type=")
+                .append(conversationType);
+        if (subChannel != null && !subChannel.trim().isEmpty()) {
+            path.append("&sub_channel=").append(Uri.encode(subChannel.trim()));
+        }
+        enqueueGet(path.toString(), ConversationConfigBean.class, callback);
+    }
+
+    /**
+     * 设置指定会话的新消息自动删除周期。
+     *
+     * @param targetId 会话目标 ID
+     * @param conversationType 会话类型
+     * @param subChannel 子频道；无子频道时传空字符串
+     * @param messageLifeTimeDays 自动删除天数，0 表示关闭
+     * @param callback 请求回调
+     */
+    @Override
+    public void setConversationMessageLifeTime(String targetId,
+                                               int conversationType,
+                                               String subChannel,
+                                               int messageLifeTimeDays,
+                                               ApiCallback<Void> callback) {
+        java.util.Map<String, Object> configurations = new java.util.HashMap<>();
+        configurations.put("msg_life_time", Math.max(messageLifeTimeDays, 0));
+
+        java.util.Map<String, Object> body = new java.util.HashMap<>();
+        body.put("target_id", targetId == null ? "" : targetId);
+        body.put("conver_type", conversationType);
+        if (subChannel != null && !subChannel.trim().isEmpty()) {
+            body.put("sub_channel", subChannel.trim());
+        }
+        body.put("confs", configurations);
+        enqueueJson("/jim/converconfs/set", body, Void.class, callback);
     }
 
     private void dispatchProfileValidationError(ApiCallback<Void> callback, String message) {

@@ -141,4 +141,32 @@ public interface UserService {
     void getBlockUsers(int count, String offset, ApiCallback<BlockUsersData> callback);
 
     void submitFeedback(String category, String text, List<String> images, List<String> videos, ApiCallback<Void> callback);
+
+    /**
+     * 获取指定会话的消息配置。
+     *
+     * @param targetId 会话目标 ID
+     * @param conversationType 会话类型
+     * @param subChannel 子频道；无子频道时传空字符串
+     * @param callback 请求回调
+     */
+    void getConversationConfig(String targetId,
+                               int conversationType,
+                               String subChannel,
+                               ApiCallback<ConversationConfigBean> callback);
+
+    /**
+     * 设置指定会话的新消息自动删除周期。
+     *
+     * @param targetId 会话目标 ID
+     * @param conversationType 会话类型
+     * @param subChannel 子频道；无子频道时传空字符串
+     * @param messageLifeTimeDays 自动删除天数，0 表示关闭
+     * @param callback 请求回调
+     */
+    void setConversationMessageLifeTime(String targetId,
+                                        int conversationType,
+                                        String subChannel,
+                                        int messageLifeTimeDays,
+                                        ApiCallback<Void> callback);
 }

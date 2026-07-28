@@ -84,6 +84,27 @@ public final class GroupManagementRoleHelper {
     }
 
     /**
+     * 判断当前群角色是否拥有指定设置权限。
+     *
+     * @param settingRight 服务端下发的权限位
+     * @param memberRole 当前成员角色：0-成员、1-群主、2-管理员
+     * @return true 表示允许执行设置
+     */
+    public static boolean hasSettingPermission(int settingRight, int memberRole) {
+        int roleBit;
+        if (memberRole == SETTING_OWNER) {
+            roleBit = SETTING_OWNER;
+        } else if (memberRole == SETTING_ADMIN) {
+            roleBit = SETTING_ADMIN;
+        } else if (memberRole == 0) {
+            roleBit = SETTING_MEMBER;
+        } else {
+            return false;
+        }
+        return (settingRight & roleBit) == roleBit;
+    }
+
+    /**
      * 群权限选项模型。
      */
     public static final class RoleOption {

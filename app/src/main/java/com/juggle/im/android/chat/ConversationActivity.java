@@ -11,6 +11,7 @@ import static com.juggle.im.android.chat.SelectMemberActivity.SELECTED_MEMBERS;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,22 +21,25 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.juggle.im.android.component.AbsAppActivity;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.juggle.im.JIM;
 import com.juggle.im.android.R;
 
 import com.juggle.im.android.chat.call.BaseCallActivity;
+import com.juggle.im.android.chat.message.LifeTimeNotifyMessage;
 import com.juggle.im.android.chat.mention.MentionManager;
 import com.juggle.im.android.chat.mention.MentionModel;
 import com.juggle.im.android.chat.plugin.CameraPlugin;
@@ -55,6 +59,11 @@ import com.juggle.im.android.event.MessageTopEvent;
 import com.juggle.im.android.event.MessageUpdatedEvent;
 import com.juggle.im.android.event.ReactionUpdatedEvent;
 import com.juggle.im.android.model.UiMessage;
+import com.juggle.im.android.server.beans.ConversationConfigBean;
+import com.juggle.im.android.server.beans.GroupDetailBean;
+import com.juggle.im.android.server.beans.GroupManagementBean;
+import com.juggle.im.android.server.http.ApiCallback;
+import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.interfaces.IMessageManager;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.ConversationInfo;
@@ -70,6 +79,7 @@ import com.juggle.im.model.messages.ImageMessage;
 import com.juggle.im.model.messages.MergeMessage;
 import com.juggle.im.model.messages.TextMessage;
 import com.juggle.im.model.messages.VoiceMessage;
+import com.juggle.im.android.utils.LogUtils;
 import com.juggle.im.android.utils.ToastUtils;
 
 import org.greenrobot.eventbus.EventBus;
@@ -80,6 +90,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class ConversationActivity extends AbsAppActivity {
     public static final String EXTRA_CONVERSATION_ID = "extra_conversation_id";
@@ -104,6 +115,26 @@ public class ConversationActivity extends AbsAppActivity {
     private static final long TYPING_VISIBLE_DURATION_MS = 3000L;
     private static final long TYPING_SEND_MIN_INTERVAL_MS = 1200L;
     private static final int TYPING_TRIGGER_STEP = 6;
+    private static final int[] TIMED_DELETE_DAYS = new int[]{1, 7, 30, 90, 180};
+    private static final long EXPIRED_MESSAGE_PRUNE_INTERVAL_MS = TimeUnit.HOURS.toMillis(1);
+    private static final String FEATURE_TIMED_DELETE = "timed_delete";
+    private final Handler timedDeleteHandler = new Handler(Looper.getMainLooper());
+    private final Runnable expiredMessagePruneRunnable = new Runnable() {
+        @Override
+        public void run() {
+            MessageStreamSink streamSink = findMessageStreamSink();
+            if (streamSink != null) {
+                streamSink.removeExpiredMessages(System.currentTimeMillis());
+            }
+            timedDeleteHandler.postDelayed(this, EXPIRED_MESSAGE_PRUNE_INTERVAL_MS);
+        }
+    };
+    private int currentMessageLifeTimeDays;
+    private boolean timedDeleteConfigLoaded;
+    private boolean timedDeleteConfigLoading;
+    private boolean timedDeleteConfigSaving;
+    private boolean showTimedDeleteAfterLoad;
+    private int timedDeleteStateVersion;
 
     public static Intent intentFor(Context ctx,
             String conversationId,
@@ -186,6 +217,9 @@ public class ConversationActivity extends AbsAppActivity {
         // wire up input bar
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
+            if (isGroup) {
+                inputBar.setMorePluginVisible(TimedDeletePlugin.ID, false);
+            }
             inputBar.setListener(new ChatInputActionBar.Listener() {
                 public void onSend(String text, String msgId, List<MentionModel> mentionModelList, int sendType) {
                     TextMessage msg = new TextMessage(text);
@@ -279,6 +313,9 @@ public class ConversationActivity extends AbsAppActivity {
             }
         }
         restoreConversationDraftToInput();
+        loadTimedDeleteConfig(false);
+        loadTimedDeletePermission();
+        timedDeleteHandler.post(expiredMessagePruneRunnable);
 
         // 消息置顶
         JIM.getInstance().getMessageManager().getTopMessage(conversation, new IMessageManager.IGetTopMessageCallback() {
@@ -580,6 +617,13 @@ public class ConversationActivity extends AbsAppActivity {
         if (MessageTypes.TYPING_NTF.equals(event.getMessage().getContentType())) {
             handleTypingMessage(event.getMessage());
             return;
+        }
+        if (event.getMessage().getContent() instanceof LifeTimeNotifyMessage) {
+            LifeTimeNotifyMessage lifeTimeNotifyMessage =
+                    (LifeTimeNotifyMessage) event.getMessage().getContent();
+            timedDeleteStateVersion++;
+            currentMessageLifeTimeDays = Math.max(lifeTimeNotifyMessage.getType(), 0);
+            timedDeleteConfigLoaded = true;
         }
         dispatchNewMessageToStream(event.getMessage());
         // tag message read
@@ -901,24 +945,264 @@ public class ConversationActivity extends AbsAppActivity {
     }
 
     private void showTimedDeleteSelector() {
-        final String[] durations = new String[]{
-                getString(R.string.design_timed_delete_1d),
-                getString(R.string.design_timed_delete_1w),
-                getString(R.string.design_timed_delete_1m),
-                getString(R.string.design_timed_delete_3m),
-                getString(R.string.design_timed_delete_6m),
-                getString(R.string.design_timed_delete_1y)
-        };
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.timed_delete)
-                .setItems(durations, (dialog, which) -> {
-                    if (which < 0 || which >= durations.length) {
-                        return;
+        if (!timedDeleteConfigLoaded) {
+            loadTimedDeleteConfig(true);
+            return;
+        }
+        if (timedDeleteConfigSaving || isFinishing() || isDestroyed()) {
+            return;
+        }
+        showTimedDeleteBottomSheet();
+    }
+
+    /**
+     * 读取当前会话保存的消息自动删除周期。
+     *
+     * @param showSelectorAfterLoad 加载成功后是否立即打开选择弹层
+     */
+    private void loadTimedDeleteConfig(boolean showSelectorAfterLoad) {
+        if (conversation == null) {
+            return;
+        }
+        showTimedDeleteAfterLoad = showTimedDeleteAfterLoad || showSelectorAfterLoad;
+        if (timedDeleteConfigLoaded) {
+            if (showTimedDeleteAfterLoad) {
+                showTimedDeleteAfterLoad = false;
+                showTimedDeleteBottomSheet();
+            }
+            return;
+        }
+        if (timedDeleteConfigLoading) {
+            return;
+        }
+        timedDeleteConfigLoading = true;
+        final int requestStateVersion = timedDeleteStateVersion;
+        ServiceManager.getUserService().getConversationConfig(
+                conversation.getConversationId(),
+                conversation.getConversationType().getValue(),
+                conversation.getSubChannel(),
+                new ApiCallback<ConversationConfigBean>() {
+                    @Override
+                    public void onSuccess(ConversationConfigBean data) {
+                        timedDeleteConfigLoading = false;
+                        // TIPS：若加载期间收到其他端的配置通知，保留更新后的状态，避免旧响应回写覆盖。
+                        if (requestStateVersion == timedDeleteStateVersion) {
+                            timedDeleteStateVersion++;
+                            timedDeleteConfigLoaded = true;
+                            currentMessageLifeTimeDays = data == null
+                                    ? 0
+                                    : Math.max(data.getMessageLifeTimeDays(), 0);
+                        }
+                        if (showTimedDeleteAfterLoad && !isFinishing() && !isDestroyed()) {
+                            showTimedDeleteAfterLoad = false;
+                            showTimedDeleteBottomSheet();
+                        }
                     }
-                    ToastUtils.show(this, getString(R.string.timed_delete_selected, durations[which]));
-                })
-                .setNegativeButton(R.string.txt_cancel, null)
-                .show();
+
+                    @Override
+                    public void onError(int code, String message) {
+                        timedDeleteConfigLoading = false;
+                        LogUtils.serverError(FEATURE_TIMED_DELETE, "load", code, message);
+                        if (showTimedDeleteAfterLoad && !isFinishing() && !isDestroyed()) {
+                            showTimedDeleteAfterLoad = false;
+                            ToastUtils.show(ConversationActivity.this, R.string.timed_delete_load_failed);
+                        }
+                    }
+                });
+    }
+
+    /**
+     * 根据群管理权限控制定时删除插件入口。
+     */
+    private void loadTimedDeletePermission() {
+        if (!isGroup) {
+            return;
+        }
+        ServiceManager.getUserService().getGroupInfo(conversationId, new ApiCallback<GroupDetailBean>() {
+            @Override
+            public void onSuccess(GroupDetailBean data) {
+                if (isFinishing() || isDestroyed()) {
+                    return;
+                }
+                GroupManagementBean management = data == null ? null : data.getGroupManagement();
+                int settingRight = management == null
+                        ? 0
+                        : management.getGroupSetMsgLifeRight();
+                int memberRole = data == null ? -1 : data.getMyRole();
+                boolean visible = GroupManagementRoleHelper.hasSettingPermission(settingRight, memberRole);
+                ChatInputActionBar inputBar = findViewById(R.id.input_bar);
+                if (inputBar != null) {
+                    inputBar.setMorePluginVisible(TimedDeletePlugin.ID, visible);
+                }
+            }
+
+            @Override
+            public void onError(int code, String message) {
+                LogUtils.serverError(FEATURE_TIMED_DELETE, "loadPermission", code, message);
+            }
+        });
+    }
+
+    /**
+     * 展示符合 App 视觉规范的定时删除底部选择弹层。
+     */
+    private void showTimedDeleteBottomSheet() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this, R.style.TransparentBottomSheetDialog);
+        dialog.setContentView(R.layout.dialog_timed_delete_sheet);
+        dialog.setCanceledOnTouchOutside(true);
+        LinearLayout optionsContainer = dialog.findViewById(R.id.layout_timed_delete_options);
+        if (optionsContainer == null) {
+            return;
+        }
+
+        boolean showTurnOff = currentMessageLifeTimeDays > 0;
+        for (int i = 0; i < TIMED_DELETE_DAYS.length; i++) {
+            int days = TIMED_DELETE_DAYS[i];
+            boolean lastItem = !showTurnOff && i == TIMED_DELETE_DAYS.length - 1;
+            addTimedDeleteOption(dialog, optionsContainer, days, lastItem, false);
+        }
+        if (showTurnOff) {
+            addTimedDeleteOption(dialog, optionsContainer, 0, true, true);
+        }
+        dialog.setOnShowListener(ignored -> {
+            View bottomSheet = dialog.findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                bottomSheet.setBackgroundColor(Color.TRANSPARENT);
+            }
+        });
+        dialog.show();
+    }
+
+    /**
+     * 添加定时删除弹层选项。
+     *
+     * @param dialog 所属弹层
+     * @param container 选项容器
+     * @param days 自动删除天数，0 表示关闭
+     * @param lastItem 是否为最后一项
+     * @param warning 是否使用警示色
+     */
+    private void addTimedDeleteOption(@NonNull BottomSheetDialog dialog,
+                                      @NonNull LinearLayout container,
+                                      int days,
+                                      boolean lastItem,
+                                      boolean warning) {
+        View itemView = LayoutInflater.from(this)
+                .inflate(R.layout.item_timed_delete_option, container, false);
+        TextView titleView = itemView.findViewById(R.id.tv_timed_delete_option);
+        ImageView checkedView = itemView.findViewById(R.id.iv_timed_delete_checked);
+        View dividerView = itemView.findViewById(R.id.v_timed_delete_divider);
+
+        titleView.setText(resolveTimedDeleteLabel(days));
+        if (warning) {
+            titleView.setTextColor(getColor(R.color.red));
+        }
+        checkedView.setVisibility(days > 0 && days == currentMessageLifeTimeDays ? VISIBLE : View.INVISIBLE);
+        dividerView.setVisibility(lastItem ? GONE : VISIBLE);
+        itemView.setOnClickListener(v -> {
+            dialog.dismiss();
+            if (days == currentMessageLifeTimeDays) {
+                return;
+            }
+            saveTimedDeleteSetting(days);
+        });
+        container.addView(itemView);
+    }
+
+    /**
+     * 保存会话自动删除周期，成功后再更新本地状态并发送状态通知。
+     *
+     * @param days 自动删除天数，0 表示关闭
+     */
+    private void saveTimedDeleteSetting(int days) {
+        if (conversation == null || timedDeleteConfigSaving) {
+            return;
+        }
+        timedDeleteConfigSaving = true;
+        ServiceManager.getUserService().setConversationMessageLifeTime(
+                conversation.getConversationId(),
+                conversation.getConversationType().getValue(),
+                conversation.getSubChannel(),
+                days,
+                new ApiCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void data) {
+                        timedDeleteConfigSaving = false;
+                        timedDeleteConfigLoaded = true;
+                        timedDeleteStateVersion++;
+                        currentMessageLifeTimeDays = Math.max(days, 0);
+                        sendTimedDeleteNotification(currentMessageLifeTimeDays);
+                        if (currentMessageLifeTimeDays == 0) {
+                            ToastUtils.show(ConversationActivity.this, R.string.timed_delete_turned_off);
+                        } else {
+                            ToastUtils.show(ConversationActivity.this,
+                                    getString(R.string.timed_delete_selected,
+                                            resolveTimedDeleteLabel(currentMessageLifeTimeDays)));
+                        }
+                    }
+
+                    @Override
+                    public void onError(int code, String message) {
+                        timedDeleteConfigSaving = false;
+                        LogUtils.serverError(FEATURE_TIMED_DELETE, "save", code, message);
+                        if (!isFinishing() && !isDestroyed()) {
+                            ToastUtils.show(ConversationActivity.this, R.string.timed_delete_save_failed);
+                        }
+                    }
+                });
+    }
+
+    /**
+     * 向会话发送定时删除配置变化通知。
+     *
+     * @param days 自动删除天数，0 表示关闭
+     */
+    private void sendTimedDeleteNotification(int days) {
+        LifeTimeNotifyMessage content = new LifeTimeNotifyMessage();
+        content.setType(days);
+        MessageOptions options = new MessageOptions();
+        if (days > 0) {
+            options.setLifeTime(TimeUnit.DAYS.toMillis(days));
+        }
+        IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
+            @Override
+            public void onSuccess(Message message) {
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
+            }
+
+            @Override
+            public void onError(Message message, int errorCode) {
+                LogUtils.e("ConversationActivity", "-", FEATURE_TIMED_DELETE,
+                        "sendNotification", "error", "code=" + errorCode);
+                dispatchUpdatedMessagesToStream(Arrays.asList(message));
+            }
+        };
+        Message message = JIM.getInstance().getMessageManager()
+                .sendMessage(content, conversation, options, callback);
+        dispatchNewMessageToStream(message);
+    }
+
+    /**
+     * 返回定时删除周期对应的本地化文案。
+     *
+     * @param days 自动删除天数，0 表示关闭
+     * @return 本地化周期文案
+     */
+    private String resolveTimedDeleteLabel(int days) {
+        switch (days) {
+            case 1:
+                return getString(R.string.timed_delete_1_day);
+            case 7:
+                return getString(R.string.timed_delete_7_days);
+            case 30:
+                return getString(R.string.timed_delete_30_days);
+            case 90:
+                return getString(R.string.timed_delete_90_days);
+            case 180:
+                return getString(R.string.timed_delete_180_days);
+            default:
+                return getString(R.string.timed_delete_off);
+        }
     }
 
     private void editTextMessage(String msgId, TextMessage msg, MessageOptions options, Conversation conversation) {
@@ -936,6 +1220,28 @@ public class ConversationActivity extends AbsAppActivity {
                 });
     }
 
+    /**
+     * 为当前会话的新消息补充自动删除周期。
+     *
+     * <p>TIPS：发送方法也用于转发，只有目标等于当前会话时才附加周期，避免把当前配置带到其他会话。</p>
+     *
+     * @param options 原始发送参数，可为空
+     * @param targetConversation 实际发送目标
+     * @return 可直接传给 SDK 的发送参数
+     */
+    @NonNull
+    private MessageOptions applyCurrentMessageLifeTime(@Nullable MessageOptions options,
+                                                       @Nullable Conversation targetConversation) {
+        MessageOptions safeOptions = options == null ? new MessageOptions() : options;
+        if (conversation != null && conversation.equals(targetConversation)) {
+            long lifeTimeMillis = currentMessageLifeTimeDays > 0
+                    ? TimeUnit.DAYS.toMillis(currentMessageLifeTimeDays)
+                    : 0L;
+            safeOptions.setLifeTime(lifeTimeMillis);
+        }
+        return safeOptions;
+    }
+
     private void sendTextMessage(TextMessage text, MessageOptions options, Conversation conversation) {
         IMessageManager.ISendMessageCallback callback = new IMessageManager.ISendMessageCallback() {
             @Override
@@ -949,7 +1255,9 @@ public class ConversationActivity extends AbsAppActivity {
                 dispatchUpdatedMessagesToStream(Arrays.asList(message));
             }
         };
-        Message message = JIM.getInstance().getMessageManager().sendMessage(text, conversation, options, callback);
+        MessageOptions sendOptions = applyCurrentMessageLifeTime(options, conversation);
+        Message message = JIM.getInstance().getMessageManager()
+                .sendMessage(text, conversation, sendOptions, callback);
         dispatchNewMessageToStream(message);
     }
 
@@ -993,7 +1301,9 @@ public class ConversationActivity extends AbsAppActivity {
                 Log.i("sendImageMessage", "onCancel");
             }
         };
-        Message message = JIM.getInstance().getMessageManager().sendMediaMessage(image, conversation, callback);
+        MessageOptions sendOptions = applyCurrentMessageLifeTime(options, conversation);
+        Message message = JIM.getInstance().getMessageManager()
+                .sendMediaMessage(image, conversation, sendOptions, callback);
         Log.i("TAG", "sendImageMessage msgId= " + message.getMessageId());
         dispatchNewMessageToStream(message);
     }
@@ -1025,7 +1335,9 @@ public class ConversationActivity extends AbsAppActivity {
             }
         };
 
-        Message message = JIM.getInstance().getMessageManager().sendMediaMessage(fileMessage, conversation, callback);
+        MessageOptions sendOptions = applyCurrentMessageLifeTime(null, conversation);
+        Message message = JIM.getInstance().getMessageManager()
+                .sendMediaMessage(fileMessage, conversation, sendOptions, callback);
         Log.i("TAG", "after send, clientMsgNo is " + message.getClientMsgNo());
         dispatchNewMessageToStream(message);
     }
@@ -1054,7 +1366,9 @@ public class ConversationActivity extends AbsAppActivity {
                 Log.i("TAG", "onCancel");
             }
         };
-        Message message = JIM.getInstance().getMessageManager().sendMediaMessage(voice, conversation, callback);
+        MessageOptions sendOptions = applyCurrentMessageLifeTime(null, conversation);
+        Message message = JIM.getInstance().getMessageManager()
+                .sendMediaMessage(voice, conversation, sendOptions, callback);
         Log.i("TAG", "after send, clientMsgNo is " + message.getClientMsgNo());
         dispatchNewMessageToStream(message);
     }
@@ -1073,7 +1387,8 @@ public class ConversationActivity extends AbsAppActivity {
             msgIds.add(forwardMsg.get(i).getMessageId());
         }
         MergeMessage merge = new MergeMessage(targetName, conversation, msgIds, previewList);
-        Message m = JIM.getInstance().getMessageManager().sendMessage(merge, targetConv,
+        MessageOptions sendOptions = applyCurrentMessageLifeTime(null, targetConv);
+        Message m = JIM.getInstance().getMessageManager().sendMessage(merge, targetConv, sendOptions,
                 new IMessageManager.ISendMessageCallback() {
                     @Override
                     public void onSuccess(Message message) {
@@ -1109,6 +1424,7 @@ public class ConversationActivity extends AbsAppActivity {
     protected void onDestroy() {
         super.onDestroy();
         cleanupTypingIndicator();
+        timedDeleteHandler.removeCallbacks(expiredMessagePruneRunnable);
         ChatInputActionBar inputBar = findViewById(R.id.input_bar);
         if (inputBar != null) {
             inputBar.hideKeyboard();
