@@ -5,7 +5,7 @@ description: 会话列表、消息流、渲染器、输入面板插件、@提及
 resource:
   - app/src/main/java/com/juggle/im/android/chat/
 tags: [chat, message, core]
-timestamp: 2026-07-28T16:50:00+08:00
+timestamp: 2026-07-28T21:14:14+08:00
 ---
 
 # 聊天消息
@@ -33,6 +33,7 @@ timestamp: 2026-07-28T16:50:00+08:00
 * `chat/ConversationActivity.java` — 聊天主页面，消息操作（转发/撤回/回复/回应/收藏）的集散地
 * `chat/view/ChatInputActionBar.java` — 输入面板：文字/语音/表情/插件面板切换（有坑：[表情面板首击](/gotchas/emoji-panel-first-tap.md)）
 * `chat/state/ConversationListReducer.java` — 会话列表状态唯一入口
+* `chat/MyProfileFragment.java` — “我的”页资料展示；先绑定当前用户缓存，再刷新服务端资料，资料无变化时不重复刷新界面
 
 ## 注意事项
 
@@ -40,3 +41,4 @@ timestamp: 2026-07-28T16:50:00+08:00
 - 消息列表的时间分割线是 UI-only 的 LocalMessage，不入 SDK 存储。
 - 定时删除仅影响设置后发送的新消息；群聊入口受 `group_set_msg_life_right` 控制，当前会话周期不能附加到转发目标会话。
 - “我的”页版本信息必须读取安装包元数据，不能维护独立的硬编码版本号。
+- “我的”页首次展示不得重复请求资料；缓存与当前登录用户不匹配时不得展示，服务端返回相同资料时不得重新绑定界面。

@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.ImageView;
@@ -21,6 +22,10 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -63,6 +68,10 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
     /** AI 助手机器人会话 id，点击底部 AI 入口直接进入与该机器人的私聊会话 */
     private static final String AI_BOT_CONVERSATION_ID = "py-sdk-bot-1782458410";
+    private static final int MAIN_HEADER_HEIGHT_DP = 44;
+    private static final int CONNECT_STATUS_HEIGHT_DP = 34;
+    private static final int PROFILE_INFO_HEIGHT_DP = 150;
+    private static final int BOTTOM_NAV_HEIGHT_DP = 60;
 
     private ConversationListFragment conversationListFragment;
     private FriendsFragment friendsFragment; // kept for places that still use it
@@ -74,10 +83,14 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvHeaderUserId;
     private TextView tvHeaderStatus;
     private View headerProfileArea;
+    private View mainHeader;
     private ImageView ivHeaderAvatar;
+    private ImageView profileHeaderBackground;
     private ImageView btnMore, btnSearch;
     private AuthGuard authGuard;
     private PopupWindow mainAddActionPopup;
+    private int statusBarInsetTop;
+    private boolean isProfileHeaderEnabled;
 
     /**
      * 扫码结果回调 Launcher。
@@ -105,11 +118,17 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Window window = getWindow();
-        window.setStatusBarColor(getColor(R.color.conversation_page_bg));
+        WindowCompat.setDecorFitsSystemWindows(window, false);
+        window.setStatusBarColor(Color.TRANSPARENT);
         window.setNavigationBarColor(getColor(R.color.conversation_page_bg));
         WindowInsetsControllerCompat controller =
                 new WindowInsetsControllerCompat(window, window.getDecorView());
         controller.setAppearanceLightStatusBars(true);
+
+        bottomNav = findViewById(R.id.footer_nav);
+        mainHeader = findViewById(R.id.main_header);
+        profileHeaderBackground = findViewById(R.id.profile_header_background);
+        applySystemBarInsets();
 
         // add conversation fragment as default
         FragmentManager fm = getSupportFragmentManager();
@@ -118,13 +137,17 @@ public class MainActivity extends AppCompatActivity {
         tx.add(R.id.content_container, conversationListFragment, "conversations");
         tx.commitAllowingStateLoss();
 
-        bottomNav = findViewById(R.id.footer_nav);
         tvTitle = findViewById(R.id.tv_title);
         tvHeaderName = findViewById(R.id.tv_header_name);
         tvHeaderUserId = findViewById(R.id.tv_header_user_id);
         tvHeaderStatus = findViewById(R.id.tv_header_status);
         ivHeaderAvatar = findViewById(R.id.iv_header_avatar);
         headerProfileArea = findViewById(R.id.header_profile_area);
+        if (headerProfileArea != null) {
+            headerProfileArea.setOnClickListener(v ->
+                    startActivity(new Intent(this, PersonalSettingsActivity.class)));
+        }
+        applyProfileHeaderStyle(false);
         if (bottomNav != null) {
             bottomNav.setOnTabClickListener(index -> onTabSelected(index));
             bottomNav.setOnAiClickListener(() ->
@@ -228,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
                 if (friendsFragment != null) tx.hide(friendsFragment);
                 if (discoverFragment != null) tx.hide(discoverFragment);
                 tx.show(myProfileFragment);
-                tvTitle.setText(R.string.tab_me);
                 btnMore.setVisibility(GONE);
                 btnSearch.setVisibility(GONE);
                 if (headerProfileArea != null) headerProfileArea.setVisibility(GONE);
@@ -239,9 +261,75 @@ public class MainActivity extends AppCompatActivity {
                 // other tabs not implemented yet
                 break;
         }
-        tx.commitAllowingStateLoss();
+        // fix(L3)：Fragment 与顶部样式必须在同一帧提交，避免先画出 Me Header、主体仍是旧 Tab 的中间态。
+        tx.setReorderingAllowed(true);
+        tx.commitNowAllowingStateLoss();
+        applyProfileHeaderStyle(index == 3);
         BottomNavView bottomNav = findViewById(R.id.footer_nav);
         if (bottomNav != null) bottomNav.setSelectedTab(index);
+    }
+
+    private void applySystemBarInsets() {
+        View root = findViewById(R.id.main_root);
+        ViewCompat.setOnApplyWindowInsetsListener(root, (view, windowInsets) -> {
+            Insets statusBars =
+                    windowInsets.getInsets(WindowInsetsCompat.Type.statusBars());
+            Insets navigationBars =
+                    windowInsets.getInsets(WindowInsetsCompat.Type.navigationBars());
+
+            statusBarInsetTop = statusBars.top;
+            updateProfileHeaderLayout();
+
+            ViewGroup.LayoutParams bottomNavParams = bottomNav.getLayoutParams();
+            bottomNavParams.height = dpToPx(BOTTOM_NAV_HEIGHT_DP) + navigationBars.bottom;
+            bottomNav.setLayoutParams(bottomNavParams);
+            bottomNav.setPadding(0, 0, 0, navigationBars.bottom);
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(root);
+    }
+
+    private void applyProfileHeaderStyle(boolean enabled) {
+        isProfileHeaderEnabled = enabled;
+        profileHeaderBackground.setVisibility(enabled ? VISIBLE : GONE);
+        mainHeader.setBackgroundColor(enabled
+                ? Color.TRANSPARENT
+                : getColor(R.color.conversation_page_bg));
+        if (enabled) {
+            tvTitle.setText(null);
+        }
+        tvTitle.setVisibility(enabled ? GONE : VISIBLE);
+        updateProfileHeaderLayout();
+    }
+
+    private void updateProfileHeaderLayout() {
+        // fix(L3)：标题隐藏时同步折叠 44dp Header，只保留状态栏安全区，避免留下无内容的空白占位。
+        int headerContentHeight = isProfileHeaderEnabled ? 0 : dpToPx(MAIN_HEADER_HEIGHT_DP);
+        int targetHeaderHeight = statusBarInsetTop + headerContentHeight;
+        ViewGroup.LayoutParams headerParams = mainHeader.getLayoutParams();
+        if (headerParams.height != targetHeaderHeight) {
+            headerParams.height = targetHeaderHeight;
+            mainHeader.setLayoutParams(headerParams);
+        }
+        if (mainHeader.getPaddingTop() != statusBarInsetTop) {
+            mainHeader.setPadding(0, statusBarInsetTop, 0, 0);
+        }
+
+        // TIPS：背景从系统状态栏连续绘制到个人信息区，并预留可能出现的连接状态提示高度。
+        int profileHeaderContentHeight = dpToPx(CONNECT_STATUS_HEIGHT_DP
+                + PROFILE_INFO_HEIGHT_DP);
+        int targetProfileBackgroundHeight = targetHeaderHeight
+                + profileHeaderContentHeight;
+        ViewGroup.LayoutParams profileBackgroundParams =
+                profileHeaderBackground.getLayoutParams();
+        if (profileBackgroundParams.height != targetProfileBackgroundHeight) {
+            profileBackgroundParams.height = targetProfileBackgroundHeight;
+            profileHeaderBackground.setLayoutParams(profileBackgroundParams);
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     /**
@@ -421,9 +509,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
         UserProfileStore.UserProfile cachedProfile = UserProfileStore.read(this);
+        String userId = trimToEmpty(JIM.getInstance().getCurrentUserId());
+        boolean canUseCachedProfile = !cachedProfile.isEmpty()
+                && (userId.isEmpty() || userId.equals(cachedProfile.getUserId()));
+        if (userId.isEmpty() && canUseCachedProfile) {
+            userId = cachedProfile.getUserId();
+        }
 
         String displayName = trimToEmpty(ConfigUtils.myName);
-        if (displayName.isEmpty()) {
+        if (displayName.isEmpty() && canUseCachedProfile) {
             displayName = trimToEmpty(cachedProfile.getNickname());
         }
         if (displayName.isEmpty()) {
@@ -431,26 +525,25 @@ public class MainActivity extends AppCompatActivity {
         }
         tvHeaderName.setText(displayName);
 
-        String userId = trimToEmpty(JIM.getInstance().getCurrentUserId());
-        if (userId.isEmpty()) {
-            userId = trimToEmpty(cachedProfile.getUserId());
-        }
         tvHeaderUserId.setText(userId.isEmpty() ? "" : "@" + userId);
         String avatarUrl = trimToEmpty(ConfigUtils.myAvatarUrl);
-        if (avatarUrl.isEmpty()) {
+        if (avatarUrl.isEmpty() && canUseCachedProfile) {
             avatarUrl = trimToEmpty(cachedProfile.getAvatar());
         }
-        if (ConfigUtils.myName == null || ConfigUtils.myName.trim().isEmpty()) {
+        // TIPS：仅复用当前账号的缓存，防止账号切换时把上一用户资料回写到新账号。
+        if ((ConfigUtils.myName == null || ConfigUtils.myName.trim().isEmpty())
+                && canUseCachedProfile) {
             ConfigUtils.myName = cachedProfile.getNickname();
         }
-        if (ConfigUtils.myAvatarUrl == null || ConfigUtils.myAvatarUrl.trim().isEmpty()) {
+        if ((ConfigUtils.myAvatarUrl == null || ConfigUtils.myAvatarUrl.trim().isEmpty())
+                && canUseCachedProfile) {
             ConfigUtils.myAvatarUrl = cachedProfile.getAvatar();
         }
         String nameForCache = trimToEmpty(ConfigUtils.myName);
-        if (nameForCache.isEmpty()) {
+        if (nameForCache.isEmpty() && canUseCachedProfile) {
             nameForCache = trimToEmpty(cachedProfile.getNickname());
         }
-        if (!userId.isEmpty()) {
+        if (!userId.isEmpty() && (!nameForCache.isEmpty() || !avatarUrl.isEmpty())) {
             UserProfileStore.save(this, userId, nameForCache, avatarUrl);
         }
         AvatarUtils.loadAvatar(ivHeaderAvatar, avatarUrl, displayName, userId);

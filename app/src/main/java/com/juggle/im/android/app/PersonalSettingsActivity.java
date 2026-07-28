@@ -58,6 +58,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
     private boolean isSaving;
     private boolean isUploadingAvatar;
+    private boolean hasCachedProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,7 +94,8 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
         findViewById(R.id.btn_logout).setOnClickListener(v -> confirmLogout());
 
-        currentUserId = JIM.getInstance().getCurrentUserId();
+        currentUserId = safeText(JIM.getInstance().getCurrentUserId(), "");
+        bindCachedUserInfo();
         loadUserInfo();
     }
 
@@ -117,32 +119,96 @@ public class PersonalSettingsActivity extends AbsAppActivity {
                 if (data == null) {
                     return;
                 }
-                originalName = safeText(data.getNickname(), data.getUserId());
-                originalAccount = safeText(data.getUserId(), "");
-                originalAvatarUrl = safeText(data.getAvatar(), "");
-                avatarUrl = originalAvatarUrl;
-                UserProfileStore.save(PersonalSettingsActivity.this, originalAccount, originalName, originalAvatarUrl);
-                bindUserData(originalName, originalAccount, avatarUrl);
+                applyRemoteUserInfo(data);
             }
 
             @Override
             public void onError(int code, String message) {
                 LogUtils.serverError("profile", "loadUserInfo", code, message);
-                Toast.makeText(PersonalSettingsActivity.this, R.string.personal_load_failed, Toast.LENGTH_SHORT).show();
+                if (!hasCachedProfile) {
+                    Toast.makeText(PersonalSettingsActivity.this,
+                            R.string.personal_load_failed,
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
+    }
+
+    private void bindCachedUserInfo() {
+        UserProfileStore.UserProfile cachedProfile = UserProfileStore.read(this);
+        if (cachedProfile.isEmpty()
+                || TextUtils.isEmpty(currentUserId)
+                || !TextUtils.equals(currentUserId, cachedProfile.getUserId())) {
+            return;
+        }
+
+        originalName = safeText(cachedProfile.getNickname(), cachedProfile.getUserId());
+        originalAccount = safeText(cachedProfile.getUserId(), currentUserId);
+        originalAvatarUrl = safeText(cachedProfile.getAvatar(), "");
+        avatarUrl = originalAvatarUrl;
+        ConfigUtils.myName = originalName;
+        ConfigUtils.myAvatarUrl = originalAvatarUrl;
+        bindUserData(originalName, originalAccount, avatarUrl);
+        hasCachedProfile = true;
+    }
+
+    private void applyRemoteUserInfo(UserInfoBean data) {
+        String remoteAccount = safeText(data.getUserId(), currentUserId);
+        String remoteName = safeText(data.getNickname(), remoteAccount);
+        String remoteAvatar = safeText(data.getAvatar(), "");
+        boolean profileChanged = !TextUtils.equals(remoteName, originalName)
+                || !TextUtils.equals(remoteAccount, originalAccount)
+                || !TextUtils.equals(remoteAvatar, originalAvatarUrl);
+        if (!profileChanged) {
+            return;
+        }
+
+        // TIPS：网络响应可能晚于用户编辑，只同步未被用户修改的字段，避免覆盖尚未保存的输入。
+        boolean nameEdited = originalName != null
+                && !TextUtils.equals(etName.getText().toString().trim(), originalName);
+        boolean accountEdited = originalAccount != null
+                && !TextUtils.equals(etAccount.getText().toString().trim(), originalAccount);
+        boolean avatarEdited = !TextUtils.equals(
+                safeText(avatarUrl, ""),
+                safeText(originalAvatarUrl, ""));
+
+        originalName = remoteName;
+        originalAccount = remoteAccount;
+        originalAvatarUrl = remoteAvatar;
+        ConfigUtils.myName = remoteName;
+        ConfigUtils.myAvatarUrl = remoteAvatar;
+        UserProfileStore.save(this, remoteAccount, remoteName, remoteAvatar);
+        hasCachedProfile = true;
+
+        if (!nameEdited) {
+            etName.setText(remoteName);
+        }
+        if (!accountEdited) {
+            etAccount.setText(remoteAccount);
+        }
+        if (!avatarEdited) {
+            avatarUrl = remoteAvatar;
+            bindAvatar(etName.getText().toString().trim(), avatarUrl);
+        }
+        refreshCurrentUserRow(
+                safeText(etName.getText().toString(), remoteName),
+                safeText(avatarUrl, ""));
     }
 
     private void bindUserData(String name, String account, String avatar) {
         etName.setText(name);
         etAccount.setText(account);
+        bindAvatar(name, avatar);
+        // 同步“当前用户”行，确保页面首次加载时头像与文案都与当前资料一致。
+        refreshCurrentUserRow(name, avatar);
+    }
+
+    private void bindAvatar(String name, String avatar) {
         if (!TextUtils.isEmpty(avatar)) {
             AvatarUtils.loadAvatar(avatarView, avatar, name, currentUserId);
         } else {
             avatarView.setImageResource(R.drawable.icon_default_avatar);
         }
-        // 同步“当前用户”行，确保页面首次加载时头像与文案都与当前资料一致。
-        refreshCurrentUserRow(name, avatar);
     }
 
     /**

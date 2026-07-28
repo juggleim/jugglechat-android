@@ -64,7 +64,7 @@ public class MyProfileFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_my_profile, container, false);
 
         initViews(view);
-        loadUserInfo();
+        bindCachedUserInfo();
 
         return view;
     }
@@ -72,6 +72,7 @@ public class MyProfileFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        bindCachedUserInfo();
         loadUserInfo();
     }
 
@@ -169,19 +170,20 @@ public class MyProfileFragment extends Fragment {
         ServiceManager.getUserService().getUserInfo(JIM.getInstance().getCurrentUserId(), new ApiCallback<UserInfoBean>() {
             @Override
             public void onSuccess(UserInfoBean data) {
-                if (getActivity() == null) return;
+                if (getActivity() == null || data == null) return;
 
                 getActivity().runOnUiThread(() -> {
+                    ConfigUtils.myName = data.getNickname();
+                    ConfigUtils.myAvatarUrl = data.getAvatar();
+                    if (isSameProfile(data)) {
+                        return;
+                    }
                     currentUserInfo = data;
-                    if (data != null) {
-                        ConfigUtils.myName = data.getNickname();
-                        ConfigUtils.myAvatarUrl = data.getAvatar();
-                        if (getContext() != null) {
-                            UserProfileStore.save(getContext(),
-                                    data.getUserId(),
-                                    data.getNickname(),
-                                    data.getAvatar());
-                        }
+                    if (getContext() != null) {
+                        UserProfileStore.save(getContext(),
+                                data.getUserId(),
+                                data.getNickname(),
+                                data.getAvatar());
                     }
                     updateUI();
                 });
@@ -190,7 +192,7 @@ public class MyProfileFragment extends Fragment {
             @Override
             public void onError(int errorCode, String errorMsg) {
                 LogUtils.serverError("profile", "loadUserInfo", errorCode, errorMsg);
-                if (getActivity() == null) return;
+                if (getActivity() == null || currentUserInfo != null) return;
 
                 getActivity().runOnUiThread(() ->
                     Toast.makeText(getContext(),
@@ -199,6 +201,38 @@ public class MyProfileFragment extends Fragment {
                 );
             }
         });
+    }
+
+    private void bindCachedUserInfo() {
+        Context context = getContext();
+        if (context == null) {
+            return;
+        }
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        UserProfileStore.UserProfile cachedProfile = UserProfileStore.read(context);
+        if (cachedProfile.isEmpty()
+                || !TextUtils.equals(currentUserId, cachedProfile.getUserId())) {
+            return;
+        }
+
+        UserInfoBean cachedUserInfo = new UserInfoBean();
+        cachedUserInfo.setUserId(cachedProfile.getUserId());
+        cachedUserInfo.setNickname(cachedProfile.getNickname());
+        cachedUserInfo.setAvatar(cachedProfile.getAvatar());
+        if (isSameProfile(cachedUserInfo)) {
+            return;
+        }
+        currentUserInfo = cachedUserInfo;
+        ConfigUtils.myName = cachedUserInfo.getNickname();
+        ConfigUtils.myAvatarUrl = cachedUserInfo.getAvatar();
+        updateUI();
+    }
+
+    private boolean isSameProfile(UserInfoBean userInfo) {
+        return currentUserInfo != null
+                && TextUtils.equals(currentUserInfo.getUserId(), userInfo.getUserId())
+                && TextUtils.equals(currentUserInfo.getNickname(), userInfo.getNickname())
+                && TextUtils.equals(currentUserInfo.getAvatar(), userInfo.getAvatar());
     }
 
     private void updateUI() {
