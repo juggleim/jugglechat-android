@@ -37,11 +37,14 @@
         android:gravity="end|bottom"
         android:layout_gravity="end|bottom">
 
+        <!-- TIPS: 36dp 保留为触摸热区，10dp padding 把图标视觉尺寸收到 16dp，避免压住画面 -->
         <ImageView
             android:id="@+id/preview_btn_forward"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:background="@android:color/transparent"
+            android:background="@drawable/bg_preview_action_scrim"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_forward_pic"
             android:contentDescription="@string/forward" />
 
@@ -49,8 +52,10 @@
             android:id="@+id/preview_btn_save"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:layout_marginStart="15dp"
-            android:background="@android:color/transparent"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_preview_action_scrim"
+            android:padding="10dp"
+            android:scaleType="fitCenter"
             android:src="@drawable/ic_save_pic"
             android:contentDescription="@string/save_to_gallery" />
 

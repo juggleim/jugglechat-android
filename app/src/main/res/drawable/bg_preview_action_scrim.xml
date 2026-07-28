@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 图片预览页操作按钮底衬：半透明黑色圆形，保证白色图标压在浅色照片上仍可辨识 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="#66000000" />
+</shape>

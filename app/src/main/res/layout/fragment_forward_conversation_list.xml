@@ -6,15 +6,15 @@
 
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/white">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rv_forward_conversation_list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp" />
+            android:scrollbars="none" />
 
     </FrameLayout>
 

@@ -21,6 +21,19 @@
         <item name="android:statusBarColor">@color/call_gb</item>
     </style>
 
+    <!--
+      图片预览页主题。
+      TIPS: 首帧的窗口配色由主题决定，代码里的 enableFullscreen() 要等 DecorView attach 后才生效，
+      期间 DecorView 仍按 fitsSystemWindows 布局，会在顶部露出一条 windowBackground 高亮色（闪白）。
+      因此必须在主题层就把 windowBackground / 系统栏全部压黑。
+    -->
+    <style name="ImagePreviewTheme" parent="AppTheme">
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowContentOverlay">@null</item>
+    </style>
+
     <style name="Widget" parent="android:Widget"/>
 
     <style name="NoTitleTextAppearance">

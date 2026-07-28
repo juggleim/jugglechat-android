@@ -176,6 +176,7 @@
     <string name="forward_single_message">逐条转发</string>
     <string name="image_not_found">图片未找到</string>
     <string name="image_preview">图片预览</string>
+    <string name="album_preview">预览</string>
     <string name="share_image">分享图片</string>
     <string name="save_to_gallery">保存到相册</string>
     <string name="saved_to_gallery">已保存到相册</string>

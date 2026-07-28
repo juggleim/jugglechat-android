@@ -54,9 +54,12 @@
             android:id="@+id/album_preview_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:enabled="false"
-            android:text="@string/image_preview"
+            android:text="@string/album_preview"
+            android:textAllCaps="false"
             android:textColor="#FFFFFF"
+            android:textSize="14sp"
             android:background="?android:attr/selectableItemBackground"
             style="?android:attr/borderlessButtonStyle" />
 
@@ -72,7 +75,9 @@
             android:layout_marginEnd="16dp"
             android:enabled="false"
             android:text="@string/send"
+            android:textAllCaps="false"
             android:textColor="#FFFFFF"
+            android:textSize="14sp"
             android:background="@drawable/album_send_button_background"
             android:minWidth="70dp"
             android:paddingStart="16dp"

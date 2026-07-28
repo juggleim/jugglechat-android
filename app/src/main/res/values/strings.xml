@@ -176,6 +176,8 @@
     <string name="forward_single_message">Forward one by one</string>
     <string name="image_not_found">Image not found</string>
     <string name="image_preview">Image preview</string>
+    <!-- 相册底部“预览”按钮；与 image_preview（无障碍描述）区分开 -->
+    <string name="album_preview">Preview</string>
     <string name="share_image">Share image</string>
     <string name="save_to_gallery">Save to album</string>
     <string name="saved_to_gallery">Saved to album</string>

@@ -1,24 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!--
+  相册网格单元格。
+  TIPS: 单元格必须撑满 GridLayoutManager 分到的列宽，否则 ImageView 会退化成占位图的固有尺寸。
+  用 1:1 dimensionRatio 让高度跟随列宽，适配任意屏宽与列数。
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="100dp"
+    android:layout_height="wrap_content"
     android:layout_margin="2dp">
 
     <ImageView
         android:id="@+id/album_item_image"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:contentDescription="@string/photo"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_default_img"
-        android:contentDescription="@string/photo" />
+        app:layout_constraintDimensionRatio="1:1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <CheckBox
         android:id="@+id/album_item_checkbox"
         android:layout_width="24dp"
         android:layout_height="24dp"
-        android:layout_gravity="bottom|end"
         android:layout_margin="4dp"
+        android:background="@drawable/album_checkbox_selector"
         android:button="@null"
-        android:background="@drawable/album_checkbox_selector" />
+        app:layout_constraintBottom_toBottomOf="@id/album_item_image"
+        app:layout_constraintEnd_toEndOf="@id/album_item_image" />
 
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

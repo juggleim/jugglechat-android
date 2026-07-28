@@ -203,7 +203,8 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity android:name=".chat.ImagePreviewActivity"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/ImagePreviewTheme" />
         <activity android:name=".chat.CreatePostActivity"
             android:screenOrientation="portrait" />
         <activity android:name=".chat.AlbumActivity"
