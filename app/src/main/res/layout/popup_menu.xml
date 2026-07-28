@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:paddingStart="4dp"
-            android:text="点赞"
+            android:text="@string/moments_like"
             android:textColor="@color/white"
             android:textSize="12sp" />
     </LinearLayout>
@@ -48,7 +48,7 @@
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:paddingStart="4dp"
-            android:text="评论"
+            android:text="@string/moments_comment"
             android:textColor="@color/white"
             android:textSize="12sp" />
     </LinearLayout>

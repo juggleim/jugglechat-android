@@ -2,6 +2,10 @@ package com.juggle.im.android.server.http;
 
 import android.text.TextUtils;
 
+import com.juggle.im.android.R;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.utils.LogUtils;
+
 /**
  * API 错误分层映射器。
  * <p>
@@ -39,15 +43,16 @@ public final class ApiErrorMapper {
         switch (code) {
             case CODE_NETWORK:
             case CODE_IO:
-                return "网络开小差，请稍后重试";
+                return AppRes.string(R.string.api_error_network);
             case CODE_EMPTY_BODY:
             case CODE_PARSE:
-                return "服务响应异常，请稍后重试";
+                return AppRes.string(R.string.api_error_server);
             default:
+                // TIPS: 服务端 rawMessage 不做展示（不可本地化），仅落日志，界面统一给通用文案
                 if (!TextUtils.isEmpty(rawMessage)) {
-                    return rawMessage;
+                    LogUtils.serverError("http", "toUserMessage", code, rawMessage);
                 }
-                return "请求失败，请稍后再试";
+                return AppRes.string(R.string.api_error_default);
         }
     }
 }

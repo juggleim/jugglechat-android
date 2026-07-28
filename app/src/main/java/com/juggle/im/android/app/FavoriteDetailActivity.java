@@ -76,7 +76,7 @@ public class FavoriteDetailActivity extends AbsAppActivity {
         Message message = fetchFavoriteMessage(messageId);
         if (message == null) {
             TextView tvTitle = findViewById(R.id.tv_title);
-            tvTitle.setText("消息不存在");
+            tvTitle.setText(R.string.favorite_detail_not_found);
             return;
         }
 
@@ -84,7 +84,7 @@ public class FavoriteDetailActivity extends AbsAppActivity {
         UiMessage uiMessage = UiMessage.fromMessage(message);
         if (uiMessage == null) {
             TextView tvTitle = findViewById(R.id.tv_title);
-            tvTitle.setText("消息不存在");
+            tvTitle.setText(R.string.favorite_detail_not_found);
             return;
         }
 
@@ -103,7 +103,8 @@ public class FavoriteDetailActivity extends AbsAppActivity {
         String senderName = resolveSenderName(uiMessage);
         tvSender.setText(senderName);
         tvTime.setText(formatTime(uiMessage.getMessage().getTimestamp()));
-        tvConversation.setText(TextUtils.isEmpty(conversationName) ? "" : "来自: " + conversationName);
+        tvConversation.setText(TextUtils.isEmpty(conversationName)
+                ? "" : getString(R.string.favorite_detail_from, conversationName));
     }
 
     /**
@@ -176,7 +177,7 @@ public class FavoriteDetailActivity extends AbsAppActivity {
      */
     private void showUnsupportedMessage(FrameLayout container) {
         TextView tvEmpty = new TextView(this);
-        tvEmpty.setText("暂不支持查看此消息类型");
+        tvEmpty.setText(R.string.favorite_detail_unsupported);
         tvEmpty.setTextColor(getColor(R.color.search_secondary_text));
         tvEmpty.setTextSize(14);
         container.addView(tvEmpty);

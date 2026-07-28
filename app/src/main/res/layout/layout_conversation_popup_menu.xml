@@ -26,7 +26,7 @@
             android:paddingStart="15dp"
             android:gravity="center"
             android:layout_height="wrap_content"
-            android:text="置顶"
+            android:text="@string/conv_tool_pin"
             android:textSize="16sp"
             android:textColor="@android:color/black"
             android:background="?android:attr/selectableItemBackground" />
@@ -60,7 +60,7 @@
             android:paddingStart="15dp"
             android:gravity="center"
             android:layout_height="wrap_content"
-            android:text="标为未读"
+            android:text="@string/conv_list_mark_unread"
             android:textSize="16sp"
             android:textColor="@android:color/black"
             android:background="?android:attr/selectableItemBackground" />
@@ -93,7 +93,7 @@
             android:paddingStart="15dp"
             android:gravity="center"
             android:layout_height="wrap_content"
-            android:text="免打扰"
+            android:text="@string/conv_tool_mute"
             android:textSize="16sp"
             android:textColor="@android:color/black"
             android:background="?android:attr/selectableItemBackground" />
@@ -126,7 +126,7 @@
             android:paddingStart="15dp"
             android:gravity="center"
             android:layout_height="wrap_content"
-            android:text="删除"
+            android:text="@string/delete"
             android:textSize="16sp"
             android:textColor="@android:color/black"
             android:background="?android:attr/selectableItemBackground" />

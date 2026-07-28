@@ -261,7 +261,7 @@ public class VoiceInputAction extends FrameLayout {
                     : R.drawable.bg_voice_arc_recording);
         }
         if (voiceHint != null) {
-            voiceHint.setText(cancel ? "松开取消" : "松开发送  上滑取消");
+            voiceHint.setText(cancel ? R.string.release_to_cancel : R.string.voice_release_to_send);
             voiceHint.setTextColor(cancel ? 0xFFFF4D4F : 0xFFFFFFFF);
         }
         updateWaveBarColor(cancel);

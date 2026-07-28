@@ -30,9 +30,11 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import com.juggle.im.android.utils.LogUtils;
+import com.juggle.im.android.i18n.LanguageManager;
 
 public class MyGroupsActivity extends AbsAppActivity {
-    private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
+    private final Collator nameCollator = Collator.getInstance(LanguageManager.currentLocale());
 
     private RecyclerView recyclerView;
     private TextView emptyView;
@@ -80,7 +82,8 @@ public class MyGroupsActivity extends AbsAppActivity {
                 progressBar.setVisibility(View.GONE);
                 emptyView.setVisibility(View.VISIBLE);
                 recyclerView.setVisibility(View.GONE);
-                Toast.makeText(MyGroupsActivity.this, "加载群组失败：" + message, Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("group", "loadMyGroups", code, message);
+                Toast.makeText(MyGroupsActivity.this, R.string.my_groups_load_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

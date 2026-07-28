@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 /**
  * 表情贴纸消息
@@ -61,7 +63,7 @@ public class StickerEmojiMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return "[表情]";
+        return AppRes.string(R.string.msg_sticker_emoji);
     }
 
     public String getPath() {

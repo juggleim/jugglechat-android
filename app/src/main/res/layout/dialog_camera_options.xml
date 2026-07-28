@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:gravity="center"
-        android:text="拍照"
+        android:text="@string/camera_option_take_photo"
         android:textSize="16sp"
         android:textColor="#212121"
         android:background="?android:attr/selectableItemBackground" />
@@ -25,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:gravity="center"
-        android:text="从相册选择"
+        android:text="@string/camera_option_from_album"
         android:textSize="16sp"
         android:textColor="#212121"
         android:background="?android:attr/selectableItemBackground" />
@@ -40,7 +40,7 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:gravity="center"
-        android:text="取消"
+        android:text="@string/txt_cancel"
         android:textSize="16sp"
         android:textColor="#212121"
         android:background="?android:attr/selectableItemBackground" />

@@ -34,3 +34,4 @@ okf_version: "0.1"
 # 约定
 
 * [结构化日志约定](conventions/structured-logging.md) - LogUtils 五段式日志 + TraceContext 链路追踪
+* [多语言约定](conventions/i18n.md) - 英文基准资源 + values-zh，LanguageManager 切换，AppRes 兜底无 Context 场景

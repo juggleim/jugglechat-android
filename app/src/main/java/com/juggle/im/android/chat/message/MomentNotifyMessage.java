@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 /**
  * 朋友圈通知消息
@@ -58,7 +60,7 @@ public class MomentNotifyMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return "[朋友圈通知]";
+        return AppRes.string(R.string.msg_moment_notify);
     }
 
     public int getType() {

@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="个人设置"
+            android:text="@string/personal_settings_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />
 
@@ -35,7 +35,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="16dp"
-            android:text="保存"
+            android:text="@string/personal_save"
             android:textColor="@color/group_primary"
             android:textSize="15sp"
             android:textStyle="bold" />
@@ -90,7 +90,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="设置头像"
+                    android:text="@string/personal_set_avatar"
                     android:textColor="@color/group_primary"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -115,7 +115,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
-                        android:text="名称"
+                        android:text="@string/personal_name"
                         android:textColor="@color/conversation_primary_text"
                         android:textSize="14sp" />
 
@@ -126,7 +126,7 @@
                         android:layout_alignParentEnd="true"
                         android:background="@android:color/transparent"
                         android:gravity="end|center_vertical"
-                        android:hint="请输入名称"
+                        android:hint="@string/personal_name_hint"
                         android:inputType="textPersonName"
                         android:maxLines="1"
                         android:textColor="@color/conversation_primary_text"
@@ -151,7 +151,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
-                        android:text="账号"
+                        android:text="@string/personal_account"
                         android:textColor="@color/conversation_primary_text"
                         android:textSize="14sp" />
 
@@ -162,7 +162,7 @@
                         android:layout_alignParentEnd="true"
                         android:background="@android:color/transparent"
                         android:gravity="end|center_vertical"
-                        android:hint="请输入账号"
+                        android:hint="@string/personal_account_hint"
                         android:inputType="text"
                         android:maxLines="1"
                         android:textAllCaps="true"
@@ -217,7 +217,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/rectangle_white_bg"
                 android:gravity="center"
-                android:text="退出登录"
+                android:text="@string/me_logout"
                 android:textColor="@color/group_danger"
                 android:textSize="15sp" />
 

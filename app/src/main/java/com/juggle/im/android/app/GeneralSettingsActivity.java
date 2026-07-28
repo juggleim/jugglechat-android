@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.component.AbsAppActivity;
+import com.juggle.im.android.i18n.LanguageManager;
 import com.juggle.im.android.widget.JuggleSwitch;
 
 /**
@@ -20,6 +21,7 @@ public class GeneralSettingsActivity extends AbsAppActivity {
 
     private View rowChatBackground;
     private View rowAppNotify;
+    private View rowLanguage;
     private boolean suppressNotifyCallback;
 
     @Override
@@ -31,12 +33,15 @@ public class GeneralSettingsActivity extends AbsAppActivity {
         TextView titleView = findViewById(R.id.tv_title);
         rowChatBackground = findViewById(R.id.row_chat_background);
         rowAppNotify = findViewById(R.id.row_app_notify);
+        rowLanguage = findViewById(R.id.row_language);
 
-        titleView.setText("通用设置");
+        titleView.setText(R.string.general_settings_title);
         backView.setOnClickListener(v -> finish());
 
-        setupRow(rowChatBackground, -1, "聊天背景", "", true);
-        setupRow(rowAppNotify,-1, "应用内通知", "", false);
+        setupRow(rowChatBackground, -1, getString(R.string.general_chat_background), "", true);
+        setupRow(rowAppNotify, -1, getString(R.string.general_app_notify), "", false);
+        setupRow(rowLanguage, -1, getString(R.string.general_language),
+                getString(LanguageManager.getCurrentLanguage().getDisplayNameRes()), true);
 
         JuggleSwitch notifySwitch = rowAppNotify.findViewById(R.id.switch_row);
         ImageView notifyArrow = rowAppNotify.findViewById(R.id.iv_row_arrow);
@@ -68,7 +73,16 @@ public class GeneralSettingsActivity extends AbsAppActivity {
             startActivityForResult(intent, REQ_CHAT_BACKGROUND);
         });
 
+        rowLanguage.setOnClickListener(v ->
+                startActivity(new Intent(this, LanguageSettingsActivity.class)));
+
         updateBackgroundSubtitle();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateLanguageSubtitle();
     }
 
     @Override
@@ -83,8 +97,14 @@ public class GeneralSettingsActivity extends AbsAppActivity {
         TextView subtitle = rowChatBackground.findViewById(R.id.tv_row_subtitle);
         ImageView arrow = rowChatBackground.findViewById(R.id.iv_row_arrow);
         subtitle.setVisibility(View.VISIBLE);
-        subtitle.setText("已设置");
+        subtitle.setText(R.string.general_chat_background_set);
         arrow.setVisibility(View.VISIBLE);
+    }
+
+    private void updateLanguageSubtitle() {
+        TextView subtitle = rowLanguage.findViewById(R.id.tv_row_subtitle);
+        subtitle.setVisibility(View.VISIBLE);
+        subtitle.setText(LanguageManager.getCurrentLanguage().getDisplayNameRes());
     }
 
     private void setupRow(View row, int iconRes, String title, String subtitle, boolean showArrow) {

@@ -23,7 +23,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="聊天背景"
+            android:text="@string/chat_bg_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />
 
@@ -34,7 +34,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="16dp"
-            android:text="保存"
+            android:text="@string/chat_bg_save"
             android:textColor="@color/group_primary"
             android:textSize="15sp"
             android:textStyle="bold" />

@@ -5,7 +5,7 @@ description: OkHttp 自封装的 HTTP 服务框架与 DTO
 resource:
   - app/src/main/java/com/juggle/im/android/server/
 tags: [network, http]
-timestamp: 2026-07-03T14:00:00+08:00
+timestamp: 2026-07-28T15:35:00+08:00
 ---
 
 # 网络请求层
@@ -18,7 +18,7 @@ timestamp: 2026-07-03T14:00:00+08:00
 
 ## 关系
 
-* UserService（30+ 接口：账号/好友/群组/黑名单/反馈）被 [身份认证](/modules/auth.md)、[聊天消息](/modules/chat-messaging.md)、[应用壳层](/modules/app-shell.md) 消费
+* UserService（30+ 接口：账号/好友/群组/黑名单/反馈/会话配置）被 [身份认证](/modules/auth.md)、[聊天消息](/modules/chat-messaging.md)、[应用壳层](/modules/app-shell.md) 消费
 * MomentService 被 [朋友圈](/modules/moments.md) 消费
 * 服务器地址等在 model/ConfigUtils
 
@@ -30,4 +30,5 @@ timestamp: 2026-07-03T14:00:00+08:00
 ## 注意事项
 
 - 新增 API：接口加在 UserService/MomentService + Impl，DTO 放 server/beans/，不要绕过 BaseService 直接用 OkHttp。
+- 会话级配置通过 `converconfs` 接口读写；业务层保存按天表示的消息周期，IM SDK 发送前再转换为毫秒。
 - 多端被踢状态码 11011 的处理在 [身份认证](/modules/auth.md)，网络层不拦截。

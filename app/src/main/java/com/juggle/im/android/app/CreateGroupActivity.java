@@ -46,6 +46,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import com.juggle.im.android.utils.LogUtils;
+import com.juggle.im.android.i18n.LanguageManager;
 
 public class CreateGroupActivity extends AbsAppActivity {
 
@@ -67,7 +69,7 @@ public class CreateGroupActivity extends AbsAppActivity {
     private final List<FriendEntry> allFriends = new ArrayList<>();
     private final LinkedHashMap<String, FriendEntry> selectedMap = new LinkedHashMap<>();
     private final List<CreateGroupListAdapter.RowItem> currentRows = new ArrayList<>();
-    private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
+    private final Collator nameCollator = Collator.getInstance(LanguageManager.currentLocale());
     private final Map<String, TextView> indexViewMap = new HashMap<>();
     private final Set<String> disabledUserIds = new HashSet<>();
     private final List<String> visibleIndexLetters = new ArrayList<>();
@@ -138,7 +140,7 @@ public class CreateGroupActivity extends AbsAppActivity {
 
         // 根据模式更新标题
         if (mode == MODE_ADD_MEMBER) {
-            tvPageTitle.setText("添加成员");
+            tvPageTitle.setText(R.string.create_group_add_member_title);
         } else {
             tvPageTitle.setText(R.string.create_group_page_title);
         }
@@ -280,8 +282,9 @@ public class CreateGroupActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "loadFriends", code, message);
                 Toast.makeText(CreateGroupActivity.this,
-                        getString(R.string.create_group_load_failed, String.valueOf(message)),
+                        R.string.create_group_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -592,8 +595,9 @@ public class CreateGroupActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 creating = false;
                 updateConfirmButtonState();
+                LogUtils.serverError("group", "createGroup", code, message);
                 Toast.makeText(CreateGroupActivity.this,
-                        getString(R.string.create_group_create_failed, String.valueOf(message)),
+                        R.string.create_group_create_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -614,7 +618,7 @@ public class CreateGroupActivity extends AbsAppActivity {
             public void onSuccess(Void data) {
                 creating = false;
                 updateConfirmButtonState();
-                Toast.makeText(CreateGroupActivity.this, "邀请成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(CreateGroupActivity.this, R.string.create_group_invite_success, Toast.LENGTH_SHORT).show();
                 setResult(RESULT_OK);
                 finish();
             }
@@ -623,7 +627,8 @@ public class CreateGroupActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 creating = false;
                 updateConfirmButtonState();
-                Toast.makeText(CreateGroupActivity.this, "邀请失败：" + message, Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("group", "inviteMembers", code, message);
+                Toast.makeText(CreateGroupActivity.this, R.string.create_group_invite_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -633,10 +638,12 @@ public class CreateGroupActivity extends AbsAppActivity {
         for (FriendEntry member : selectedMap.values()) {
             names.add(member.displayName);
         }
+        String separator = getString(R.string.list_separator);
         if (names.size() <= 6) {
-            return TextUtils.join("、", names);
+            return TextUtils.join(separator, names);
         }
-        return TextUtils.join("、", names.subList(0, 6)) + "等" + names.size() + "人";
+        return getString(R.string.group_default_name_more,
+                TextUtils.join(separator, names.subList(0, 6)), names.size());
     }
 
     private int dpToPx(int dp) {

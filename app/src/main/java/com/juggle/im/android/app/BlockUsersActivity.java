@@ -26,11 +26,13 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import com.juggle.im.android.utils.LogUtils;
+import com.juggle.im.android.i18n.LanguageManager;
 
 public class BlockUsersActivity extends AbsAppActivity {
     private static final int PAGE_SIZE = 50;
 
-    private final Collator nameCollator = Collator.getInstance(Locale.CHINA);
+    private final Collator nameCollator = Collator.getInstance(LanguageManager.currentLocale());
     private RecyclerView recyclerView;
     private TextView emptyView;
     private ProgressBar progressBar;
@@ -91,7 +93,8 @@ public class BlockUsersActivity extends AbsAppActivity {
                 progressBar.setVisibility(View.GONE);
                 emptyView.setVisibility(View.VISIBLE);
                 recyclerView.setVisibility(View.GONE);
-                Toast.makeText(BlockUsersActivity.this, "加载黑名单失败：" + message, Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("contact", "loadBlockUsers", code, message);
+                Toast.makeText(BlockUsersActivity.this, R.string.blocklist_load_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

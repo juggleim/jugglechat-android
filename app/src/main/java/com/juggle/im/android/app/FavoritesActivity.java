@@ -90,7 +90,7 @@ public class FavoritesActivity extends AbsAppActivity {
 
     private void toggleMultiMode() {
         multiMode = !multiMode;
-        actionView.setText(multiMode ? "取消" : "多选");
+        actionView.setText(multiMode ? R.string.txt_cancel : R.string.favorites_multi_select);
         multiActionLayout.setVisibility(multiMode ? View.VISIBLE : View.GONE);
         if (!multiMode) {
             for (FavoriteRow row : rows) {
@@ -143,7 +143,7 @@ public class FavoritesActivity extends AbsAppActivity {
                 runOnUiThread(() -> {
                     isLoading = false;
                     updateEmptyState();
-                    Toast.makeText(FavoritesActivity.this, "加载收藏失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FavoritesActivity.this, R.string.favorites_load_failed, Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -160,7 +160,7 @@ public class FavoritesActivity extends AbsAppActivity {
             }
         }
         if (messageIds.isEmpty()) {
-            Toast.makeText(this, "请选择要删除的收藏", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.favorites_select_required, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -178,13 +178,13 @@ public class FavoritesActivity extends AbsAppActivity {
                     rows.addAll(keep);
                     adapter.notifyDataSetChanged();
                     updateEmptyState();
-                    Toast.makeText(FavoritesActivity.this, "删除成功", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FavoritesActivity.this, R.string.favorites_delete_success, Toast.LENGTH_SHORT).show();
                 });
             }
 
             @Override
             public void onError(int code) {
-                runOnUiThread(() -> Toast.makeText(FavoritesActivity.this, "删除失败", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(FavoritesActivity.this, R.string.favorites_delete_failed, Toast.LENGTH_SHORT).show());
             }
         });
     }
@@ -231,7 +231,8 @@ public class FavoritesActivity extends AbsAppActivity {
             Message message = row.favorite == null ? null : row.favorite.getMessage();
 
             holder.summary.setText(message == null ? "" : MessageUtils.getMessageSummary(FavoritesActivity.this, message));
-            holder.conversation.setText(TextUtils.isEmpty(row.conversationName) ? "会话" : row.conversationName);
+            holder.conversation.setText(TextUtils.isEmpty(row.conversationName)
+                    ? getString(R.string.favorites_unknown_conversation) : row.conversationName);
             holder.time.setText(row.favorite == null ? "" : formatTime(row.favorite.getCreatedTime()));
 
             holder.checkBox.setVisibility(multiMode ? View.VISIBLE : View.GONE);
@@ -255,7 +256,7 @@ public class FavoritesActivity extends AbsAppActivity {
                     return false;
                 }
                 multiMode = true;
-                actionView.setText("取消");
+                actionView.setText(R.string.txt_cancel);
                 multiActionLayout.setVisibility(View.VISIBLE);
                 row.selected = true;
                 notifyDataSetChanged();

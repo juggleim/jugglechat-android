@@ -29,7 +29,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="群组管理"
+            android:text="@string/group_management_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp"
             android:textStyle="bold" />
@@ -42,7 +42,7 @@
             android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:text="确定"
+            android:text="@string/create_group_confirm"
             android:textColor="@color/app_primary"
             android:textSize="14sp"
             android:visibility="gone" />
@@ -77,7 +77,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="谁可以添加成员" />
+                    app:srv_title="@string/group_perm_add_member" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_pin"
@@ -85,7 +85,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="谁可以置顶消息" />
+                    app:srv_title="@string/group_perm_top_message" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_mention"
@@ -93,7 +93,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="谁可以 @ 所有人" />
+                    app:srv_title="@string/group_perm_mention_all" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_edit"
@@ -101,7 +101,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="谁可以编辑群信息" />
+                    app:srv_title="@string/group_perm_edit_info" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_chat"
@@ -109,7 +109,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="谁可以在群里发言" />
+                    app:srv_title="@string/group_perm_send_message" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_setting_life"
@@ -117,7 +117,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="arrow"
                     app:srv_showDivider="false"
-                    app:srv_title="谁可以设置消息定时删除" />
+                    app:srv_title="@string/group_perm_lifetime" />
 
             </LinearLayout>
 
@@ -136,7 +136,7 @@
                     android:layout_height="wrap_content"
                     app:srv_mode="toggle"
                     app:srv_showDivider="false"
-                    app:srv_title="新人进群获取历史消息" />
+                    app:srv_title="@string/group_history_for_new_member" />
 
             </LinearLayout>
 
@@ -157,7 +157,7 @@
                     app:srv_icon="@drawable/ic_contact_entry_groups"
                     app:srv_mode="arrow"
                     app:srv_showDivider="true"
-                    app:srv_title="群管理员" />
+                    app:srv_title="@string/group_admins_title" />
 
                 <com.juggle.im.android.chat.widget.SettingRowView
                     android:id="@+id/row_transfer_owner"
@@ -166,7 +166,7 @@
                     app:srv_icon="@drawable/ic_forward"
                     app:srv_mode="arrow"
                     app:srv_showDivider="false"
-                    app:srv_title="转让群主" />
+                    app:srv_title="@string/group_transfer_owner" />
 
             </LinearLayout>
 
@@ -179,7 +179,7 @@
                 android:layout_marginEnd="16dp"
                 android:background="@drawable/bg_group_setting_danger_button"
                 android:gravity="center"
-                android:text="解散群组"
+                android:text="@string/group_dissolve"
                 android:textColor="@color/red"
                 android:textSize="15sp"
                 android:visibility="gone" />

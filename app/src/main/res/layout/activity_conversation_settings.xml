@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="设置"
+            android:text="@string/conv_settings_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />
 
@@ -218,7 +218,7 @@
                 android:layout_height="50dp"
                 android:background="@drawable/rectangle_white_bg"
                 android:gravity="center"
-                android:text="退出群组"
+                android:text="@string/group_quit"
                 android:textColor="@color/red"
                 android:textSize="14sp" />
 

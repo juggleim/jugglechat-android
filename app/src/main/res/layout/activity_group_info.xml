@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="群组信息"
+            android:text="@string/group_info_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />
 
@@ -35,7 +35,7 @@
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="16dp"
-            android:text="保存"
+            android:text="@string/group_info_save"
             android:textColor="@color/app_primary"
             android:textSize="14sp" />
     </RelativeLayout>
@@ -72,7 +72,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:text="设置头像"
+                    android:text="@string/group_info_set_avatar"
                     android:textColor="@color/app_primary"
                     android:textSize="16sp" />
             </LinearLayout>
@@ -97,7 +97,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="群组名称"
+                        android:text="@string/group_info_name"
                         android:textColor="@color/conversation_primary_text"
                         android:textSize="14sp" />
 
@@ -109,7 +109,7 @@
                         android:layout_weight="1"
                         android:background="@null"
                         android:gravity="end"
-                        android:hint="请输入群组名称"
+                        android:hint="@string/group_info_name_hint"
                         android:maxLines="1"
                         android:textColor="@color/search_secondary_text"
                         android:textColorHint="@color/conversation_secondary_text"

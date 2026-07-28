@@ -28,7 +28,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="群组成员"
+                android:text="@string/group_members_title"
                 android:textColor="@color/conversation_header_text"
                 android:textSize="17sp" />
         </RelativeLayout>
@@ -54,7 +54,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="暂无群成员"
+        android:text="@string/group_members_empty"
         android:textColor="@color/conversation_secondary_text"
         android:textSize="14sp"
         android:visibility="gone" />

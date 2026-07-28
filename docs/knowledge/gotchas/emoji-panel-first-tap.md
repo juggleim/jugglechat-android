@@ -5,7 +5,7 @@ description: 面板未挂载时首击落空，PanelAttachPolicy 延迟策略
 resource:
   - app/src/main/java/com/juggle/im/android/chat/view/ChatInputActionBar.java
 tags: [chat, input, ui]
-timestamp: 2026-07-03T14:00:00+08:00
+timestamp: 2026-07-28T15:35:00+08:00
 ---
 
 # 部分机型表情面板首击被吞

@@ -21,6 +21,7 @@ import com.juggle.im.android.auth.HashUtils;
 import com.juggle.im.android.component.AbsAppActivity;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 修改密码页面。
@@ -51,7 +52,7 @@ public class UpdatePasswordActivity extends AbsAppActivity {
     }
 
     private void initViews() {
-        ((TextView) findViewById(R.id.tv_title)).setText("修改密码");
+        ((TextView) findViewById(R.id.tv_title)).setText(R.string.pwd_title);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         oldPasswordInput = findViewById(R.id.oldPasswordInput);
@@ -112,19 +113,19 @@ public class UpdatePasswordActivity extends AbsAppActivity {
         String confirmPassword = safeTrim(confirmPasswordInput.getText().toString());
 
         if (TextUtils.isEmpty(oldPassword) || TextUtils.isEmpty(newPassword) || TextUtils.isEmpty(confirmPassword)) {
-            Toast.makeText(this, "请填写完整密码信息", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.pwd_incomplete, Toast.LENGTH_SHORT).show();
             return;
         }
         if (newPassword.length() < 6) {
-            Toast.makeText(this, "密码长度最少 6 位", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.pwd_too_short, Toast.LENGTH_SHORT).show();
             return;
         }
         if (!TextUtils.equals(newPassword, confirmPassword)) {
-            Toast.makeText(this, "两次输入的密码不一致", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.pwd_not_match, Toast.LENGTH_SHORT).show();
             return;
         }
         if (TextUtils.equals(oldPassword, newPassword)) {
-            Toast.makeText(this, "新密码不能与原密码一致", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.pwd_same_as_old, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -137,15 +138,16 @@ public class UpdatePasswordActivity extends AbsAppActivity {
                     @Override
                     public void onSuccess(Void data) {
                         setSubmitting(false);
-                        Toast.makeText(UpdatePasswordActivity.this, "密码修改成功", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(UpdatePasswordActivity.this, R.string.pwd_update_success, Toast.LENGTH_SHORT).show();
                         finish();
                     }
 
                     @Override
                     public void onError(int code, String message) {
                         setSubmitting(false);
+                        LogUtils.serverError("profile", "updatePassword", code, message);
                         Toast.makeText(UpdatePasswordActivity.this,
-                                "密码修改失败：" + normalizeErrorMessage(message),
+                                R.string.pwd_update_failed,
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -161,7 +163,7 @@ public class UpdatePasswordActivity extends AbsAppActivity {
 
         if (isSubmitting) {
             confirmButton.setEnabled(false);
-            confirmButton.setText("提交中");
+            confirmButton.setText(R.string.pwd_submitting);
             confirmButton.setBackgroundResource(R.drawable.bg_auth_button_loading);
             confirmButton.setTextColor(ContextCompat.getColor(this, R.color.white));
             confirmProgress.setVisibility(View.VISIBLE);
@@ -169,7 +171,7 @@ public class UpdatePasswordActivity extends AbsAppActivity {
         }
 
         confirmProgress.setVisibility(View.GONE);
-        confirmButton.setText("确定");
+        confirmButton.setText(R.string.pwd_submit);
         if (canSubmit) {
             confirmButton.setEnabled(true);
             confirmButton.setBackgroundResource(R.drawable.bg_auth_button_enabled);
@@ -216,8 +218,4 @@ public class UpdatePasswordActivity extends AbsAppActivity {
         return value == null ? "" : value.trim();
     }
 
-    private String normalizeErrorMessage(String message) {
-        String trimmed = safeTrim(message);
-        return trimmed.isEmpty() ? getString(R.string.operation_failed) : trimmed;
-    }
 }

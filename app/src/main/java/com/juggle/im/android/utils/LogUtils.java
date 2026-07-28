@@ -9,6 +9,8 @@ import android.util.Log;
  */
 public final class LogUtils {
 
+    private static final String TAG_SERVER_ERROR = "ServerError";
+
     private LogUtils() {
     }
 
@@ -18,6 +20,20 @@ public final class LogUtils {
 
     public static void e(String tag, String traceId, String feature, String event, String result, String detail) {
         Log.e(tag, build(traceId, feature, event, result, detail));
+    }
+
+    /**
+     * 记录被界面丢弃的服务端错误详情。
+     * <p>
+     * TIPS：服务端返回的 message 不做本地化，界面统一展示本地文案，原始错误只落日志，避免中英混排且不丢排查线索。
+     *
+     * @param feature 业务模块
+     * @param event   事件名
+     * @param code    服务端错误码
+     * @param message 服务端错误文案
+     */
+    public static void serverError(String feature, String event, int code, String message) {
+        e(TAG_SERVER_ERROR, "-", feature, event, "fail", "code=" + code + ",msg=" + message);
     }
 
     private static String build(String traceId, String feature, String event, String result, String detail) {

@@ -41,7 +41,7 @@
                 android:id="@+id/tv_call_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="等待对方接听..."
+                android:text="@string/call_status_voice_outgoing"
                 android:textColor="#F2FFFFFF"
                 android:textSize="14sp" />
 

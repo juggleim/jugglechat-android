@@ -2,11 +2,11 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/action_mute_member"
-        android:title="禁言" />
+        android:title="@string/group_member_action_mute" />
     <item
         android:id="@+id/action_remove_member"
-        android:title="移除成员" />
+        android:title="@string/group_member_action_remove" />
     <item
         android:id="@+id/action_multi_select_member"
-        android:title="多选" />
+        android:title="@string/group_member_action_multi_select" />
 </menu>

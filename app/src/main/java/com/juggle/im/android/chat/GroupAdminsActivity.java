@@ -35,6 +35,7 @@ import com.juggle.im.android.widget.AppConfirmDialog;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 public class GroupAdminsActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
@@ -122,8 +123,9 @@ public class GroupAdminsActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 progressBar.setVisibility(View.GONE);
                 renderEmptyState();
+                LogUtils.serverError("group", "loadAdmins", code, message);
                 Toast.makeText(GroupAdminsActivity.this,
-                        "加载管理员失败：" + message,
+                        R.string.group_admins_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -138,7 +140,7 @@ public class GroupAdminsActivity extends AbsAppActivity {
 
     private void addAdmins() {
         if (admins.size() >= MAX_ADMIN_COUNT) {
-            Toast.makeText(this, "最多可以设置 3 个管理员", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_admins_limit, Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(this, SelectMemberActivity.class);
@@ -158,8 +160,8 @@ public class GroupAdminsActivity extends AbsAppActivity {
         }
         String nickname = TextUtils.isEmpty(member.getNickname()) ? member.getUserId() : member.getNickname();
         AppConfirmDialog.builder(this)
-                .setTitle("移除管理员")
-                .setMessage("确定移除管理员 " + nickname + "？")
+                .setTitle(getString(R.string.group_admins_remove_title))
+                .setMessage(getString(R.string.group_admins_remove_message, nickname))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
                 .setOnPositiveClick(() -> {
@@ -168,14 +170,15 @@ public class GroupAdminsActivity extends AbsAppActivity {
                     ServiceManager.getUserService().removeGroupAdmins(groupId, ids, new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {
-                            Toast.makeText(GroupAdminsActivity.this, "移除成功", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(GroupAdminsActivity.this, R.string.group_admins_remove_success, Toast.LENGTH_SHORT).show();
                             loadAdmins();
                         }
 
                         @Override
                         public void onError(int code, String message) {
+                            LogUtils.serverError("group", "removeAdmin", code, message);
                             Toast.makeText(GroupAdminsActivity.this,
-                                    "移除失败：" + message,
+                                    R.string.group_admins_remove_failed,
                                     Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -195,24 +198,25 @@ public class GroupAdminsActivity extends AbsAppActivity {
         }
         int available = MAX_ADMIN_COUNT - adminIds.size();
         if (available <= 0) {
-            Toast.makeText(this, "最多可以设置 3 个管理员", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_admins_limit, Toast.LENGTH_SHORT).show();
             return;
         }
         if (selected.size() > available) {
             selected = new ArrayList<>(selected.subList(0, available));
-            Toast.makeText(this, "超出管理员数量上限，已自动截取", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_admins_limit_truncated, Toast.LENGTH_SHORT).show();
         }
         ServiceManager.getUserService().addGroupAdmins(groupId, selected, new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
-                Toast.makeText(GroupAdminsActivity.this, "添加成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupAdminsActivity.this, R.string.group_admins_add_success, Toast.LENGTH_SHORT).show();
                 loadAdmins();
             }
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "addAdmin", code, message);
                 Toast.makeText(GroupAdminsActivity.this,
-                        "添加失败：" + message,
+                        R.string.group_admins_add_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });

@@ -9,20 +9,20 @@ import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.util.Log;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.util.TypedValue;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.GridView;
 import android.widget.GridLayout;
+import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -47,8 +47,10 @@ import com.juggle.im.android.utils.PermissionComponent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Chat input action bar supporting text, voice, emoji and more panels.
@@ -65,6 +67,7 @@ public class ChatInputActionBar extends LinearLayout {
     private List<MorePlugin> morePlugins = new ArrayList<>();
     private Map<Integer, MorePlugin> activityResultHandlers = new HashMap<>();
     private Map<String, MorePlugin> pluginRegistry = new HashMap<>();
+    private final Set<String> hiddenPluginIds = new HashSet<>();
     private final PluginPermissionDispatcher pluginPermissionDispatcher = new PluginPermissionDispatcher();
     private final List<EmojiTabConfig> emojiTabs = new ArrayList<>();
     private int emojiTabIndex = 0;
@@ -269,6 +272,26 @@ public class ChatInputActionBar extends LinearLayout {
         }
     }
 
+    /**
+     * 控制“更多”面板中指定插件是否展示。
+     *
+     * @param pluginId 插件 ID
+     * @param visible true 表示展示，false 表示隐藏
+     */
+    public void setMorePluginVisible(@NonNull String pluginId, boolean visible) {
+        boolean changed = visible
+                ? hiddenPluginIds.remove(pluginId)
+                : hiddenPluginIds.add(pluginId);
+        if (!changed) {
+            return;
+        }
+        morePanel = null;
+        if (currentMode == InputMode.MORE && panelContainer != null
+                && panelContainer.getVisibility() == VISIBLE) {
+            showPanel(getMorePanel(), InputMode.MORE);
+        }
+    }
+
     private void setupListeners() {
         btnVoice.setOnClickListener(v -> toggleVoiceMode());
         btnEmoji.setOnClickListener(v -> {
@@ -313,7 +336,8 @@ public class ChatInputActionBar extends LinearLayout {
         }, new MentionConfig());
         editTextInput.setRawInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         editTextInput.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
-        editTextInput.setImeActionLabel("发送", android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
+        editTextInput.setImeActionLabel(getContext().getString(R.string.send),
+                android.view.inputmethod.EditorInfo.IME_ACTION_SEND);
         editTextInput.setOnKeyListener((v, keyCode, event) -> {
             if (keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN) {
                 // If Shift is pressed, allow newline insertion; otherwise treat as Send.
@@ -906,7 +930,7 @@ public class ChatInputActionBar extends LinearLayout {
         referView.setTag(R.id.tag_edit_msg, null);
         referView.setTag(R.id.tag_reply_msg, null);
         TextView tvSender = findViewById(R.id.refer_msg_sender);
-        tvSender.setText("回复：" + name);
+        tvSender.setText(getContext().getString(R.string.msg_reply_prefix, name));
         TextView tvContent = findViewById(R.id.message_content);
         tvContent.setText(msg);
         referView.setTag(type, msgId);
@@ -924,8 +948,12 @@ public class ChatInputActionBar extends LinearLayout {
         }
         grid.removeAllViews();
         final int columns = 4;
+        int displayIndex = 0;
         for (int i = 0; i < morePlugins.size(); i++) {
             MorePlugin plugin = morePlugins.get(i);
+            if (hiddenPluginIds.contains(plugin.getId())) {
+                continue;
+            }
             if (getContext() instanceof Activity) {
                 try {
                     plugin.setHostActivity((Activity) getContext());
@@ -933,8 +961,8 @@ public class ChatInputActionBar extends LinearLayout {
                 }
             }
 
-            int row = i / columns;
-            int col = i % columns;
+            int row = displayIndex / columns;
+            int col = displayIndex % columns;
 
             LinearLayout item = new LinearLayout(getContext());
             item.setOrientation(LinearLayout.VERTICAL);
@@ -985,6 +1013,7 @@ public class ChatInputActionBar extends LinearLayout {
                 clickPlugin.onClick(act);
             });
             grid.addView(item);
+            displayIndex++;
         }
         return morePanel;
     }

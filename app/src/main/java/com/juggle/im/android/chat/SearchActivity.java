@@ -36,6 +36,7 @@ import com.juggle.im.model.MessageQueryOptions;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import androidx.annotation.StringRes;
 
 public class SearchActivity extends AbsAppActivity {
 
@@ -45,9 +46,27 @@ public class SearchActivity extends AbsAppActivity {
     private static final int PREVIEW_RECORD_LIMIT = 2;
     private static final int SEARCH_RESULT_SOURCE_COUNT = 3;
 
-    public static final String SEARCH_TYPE_CONTACT = "联系人";
-    public static final String SEARCH_TYPE_GROUP = "群聊";
-    public static final String SEARCH_TYPE_RECORD = "聊天记录";
+    // TIPS: 搜索类型是稳定标识，不参与本地化；展示文案通过 searchTypeTitleRes 映射
+    public static final String SEARCH_TYPE_CONTACT = "contact";
+    public static final String SEARCH_TYPE_GROUP = "group";
+    public static final String SEARCH_TYPE_RECORD = "record";
+
+    /**
+     * 搜索类型对应的分组标题资源。
+     *
+     * @param searchType 搜索类型标识
+     * @return 标题文案资源 id
+     */
+    @StringRes
+    public static int searchTypeTitleRes(String searchType) {
+        if (SEARCH_TYPE_CONTACT.equals(searchType)) {
+            return R.string.search_type_contact;
+        }
+        if (SEARCH_TYPE_GROUP.equals(searchType)) {
+            return R.string.search_type_group;
+        }
+        return R.string.search_type_record;
+    }
 
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private Runnable pendingSearchTask;

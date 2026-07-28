@@ -75,6 +75,13 @@ interface MessageStreamSink {
 
     void onUpdateMessage(List<Message> messages);
 
+    /**
+     * 移除当前可见窗口中已经到期的消息。
+     *
+     * @param currentTimeMillis 当前时间戳（毫秒）
+     */
+    void removeExpiredMessages(long currentTimeMillis);
+
     void scrollToBottomIfNeeded();
 
     void insertMention(ArrayList<String> userIds, ArrayList<String> userNames);
@@ -259,7 +266,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             layoutUnreadBubble.setVisibility(GONE);
             if (unreadCount >= 6) {
                 layoutUnreadBubble.setVisibility(VISIBLE);
-                tvUnread.setText((unreadCount >= 99 ? "99+" : unreadCount) + "条新消息");
+                tvUnread.setText(getString(R.string.msg_new_count, unreadCount >= 99 ? "99+" : String.valueOf(unreadCount)));
                 layoutUnreadBubble.animate().translationX(0).setDuration(320).start();
                 layoutUnreadBubble.setOnClickListener(v -> {
                     Log.d(TAG, "[未读气泡] click, unreadCount=" + unreadCount);
@@ -296,7 +303,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                                     return;
                                 }
                                 mentionBubble.setVisibility(VISIBLE);
-                                mentionText.setText("有人@我");
+                                mentionText.setText(R.string.msg_mention_me);
                                 mentionBubble.animate().translationX(0).setDuration(320).start();
                                 mentionBubble.setOnClickListener(v -> {
                                     mentionBubble.setVisibility(GONE);
@@ -460,7 +467,7 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                     ivBack.setOnClickListener(v -> exitSelectionMode());
                 }
                 if (tv != null) {
-                    tv.setText("已选择" + selectedCount + "条消息");
+                    tv.setText(getString(R.string.msg_selected_count, selectedCount));
                 }
                 getActivity().findViewById(R.id.iv_settings).setVisibility(GONE);
             } else {
@@ -1737,7 +1744,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                         layoutNewMessageBubble.setVisibility(VISIBLE);
                         layoutNewMessageBubble.animate().translationX(0).setDuration(500).start();
                     }
-                    tvNewMessageCount.setText((newMessageCount >= 99 ? "99+" : newMessageCount) + "条新消息");
+                    tvNewMessageCount.setText(getString(R.string.msg_new_count,
+                            newMessageCount >= 99 ? "99+" : String.valueOf(newMessageCount)));
                 }
             }
         });
@@ -1822,6 +1830,39 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             }
         });
         upsertUiMessages(updated);
+    }
+
+    /**
+     * 移除当前可见窗口中已经到期的消息，并重新生成时间分割项。
+     *
+     * @param currentTimeMillis 当前时间戳（毫秒）
+     */
+    @Override
+    public void removeExpiredMessages(long currentTimeMillis) {
+        if (adapter == null || currentTimeMillis <= 0L) {
+            return;
+        }
+        boolean removed = false;
+        Iterator<UiMessage> iterator = uiMessages.iterator();
+        while (iterator.hasNext()) {
+            Message message = iterator.next().getMessage();
+            if (message != null && message.getDestroyTime() > 0L
+                    && message.getDestroyTime() <= currentTimeMillis) {
+                iterator.remove();
+                removed = true;
+            }
+        }
+        pendingMessages.removeIf(uiMessage -> {
+            Message message = uiMessage.getMessage();
+            return message != null && message.getDestroyTime() > 0L
+                    && message.getDestroyTime() <= currentTimeMillis;
+        });
+        if (!removed) {
+            return;
+        }
+        ViewportAnchor anchor = captureViewportAnchor();
+        List<UiMessage> display = buildDisplayMessages();
+        adapter.submitList(display, () -> restoreViewportAnchor(anchor, display));
     }
 
     /**

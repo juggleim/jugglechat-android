@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="56dp"
+    android:foreground="?attr/selectableItemBackground">
+
+    <TextView
+        android:id="@+id/tv_timed_delete_option"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="56dp"
+        android:textColor="@color/conversation_primary_text"
+        android:textSize="16sp" />
+
+    <ImageView
+        android:id="@+id/iv_timed_delete_checked"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_gravity="end|center_vertical"
+        android:layout_marginEnd="20dp"
+        android:contentDescription="@string/timed_delete_selected_state"
+        android:src="@drawable/ic_group_role_checked"
+        android:visibility="invisible" />
+
+    <View
+        android:id="@+id/v_timed_delete_divider"
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="20dp"
+        android:background="@color/conversation_item_divider" />
+
+</FrameLayout>

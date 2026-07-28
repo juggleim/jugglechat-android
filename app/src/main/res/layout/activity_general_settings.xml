@@ -24,7 +24,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:text="通用设置"
+            android:text="@string/general_settings_title"
             android:textColor="@color/conversation_header_text"
             android:textSize="17sp" />
     </RelativeLayout>
@@ -44,6 +44,10 @@
 
         <include
             android:id="@+id/row_app_notify"
+            layout="@layout/item_group_setting_row" />
+
+        <include
+            android:id="@+id/row_language"
             layout="@layout/item_group_setting_row" />
     </LinearLayout>
 </LinearLayout>

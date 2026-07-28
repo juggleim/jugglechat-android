@@ -33,6 +33,7 @@ import com.juggle.im.android.widget.AppConfirmDialog;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 public class GroupMembersActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
@@ -71,7 +72,7 @@ public class GroupMembersActivity extends AbsAppActivity {
         myRole = getIntent().getIntExtra(EXTRA_MY_ROLE, 0);
 
         TextView titleView = findViewById(R.id.tv_title);
-        titleView.setText("群组成员");
+        titleView.setText(R.string.group_members_title);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         progressBar = findViewById(R.id.progress_bar);
@@ -121,8 +122,9 @@ public class GroupMembersActivity extends AbsAppActivity {
             public void onError(int code, String message) {
                 progressBar.setVisibility(View.GONE);
                 showEmpty(Collections.emptyList());
+                LogUtils.serverError("group", "loadMembers", code, message);
                 Toast.makeText(GroupMembersActivity.this,
-                        "加载群成员失败：" + message,
+                        R.string.group_members_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -156,7 +158,7 @@ public class GroupMembersActivity extends AbsAppActivity {
             return true;
         }
         if (itemId == R.id.action_multi_select_member) {
-            Toast.makeText(this, "多选功能暂未接入", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_members_multi_select_todo, Toast.LENGTH_SHORT).show();
             return true;
         }
         return false;
@@ -181,20 +183,21 @@ public class GroupMembersActivity extends AbsAppActivity {
         ServiceManager.getUserService().setGroupMemberMute(groupId, memberIds, true, new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
-                Toast.makeText(GroupMembersActivity.this, "已禁言", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupMembersActivity.this, R.string.group_member_muted, Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onError(int code, String message) {
-                Toast.makeText(GroupMembersActivity.this, "禁言失败：" + message, Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("group", "muteMember", code, message);
+                Toast.makeText(GroupMembersActivity.this, R.string.group_member_mute_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private void removeMember(GroupMemberBean member) {
         AppConfirmDialog.builder(this)
-                .setTitle("移除成员")
-                .setMessage("确定移除成员 " + safeName(member) + "？")
+                .setTitle(getString(R.string.group_member_remove_title))
+                .setMessage(getString(R.string.group_member_remove_message, safeName(member)))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
                 .setOnPositiveClick(() -> {
@@ -204,7 +207,7 @@ public class GroupMembersActivity extends AbsAppActivity {
                         @Override
                         public void onSuccess(Void data) {
                             adapter.remove(member);
-                            Toast.makeText(GroupMembersActivity.this, "移除成功", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(GroupMembersActivity.this, R.string.group_member_remove_success, Toast.LENGTH_SHORT).show();
                             if (adapter.getItemCount() == 0) {
                                 emptyView.setVisibility(View.VISIBLE);
                                 recyclerView.setVisibility(View.GONE);
@@ -213,8 +216,9 @@ public class GroupMembersActivity extends AbsAppActivity {
 
                         @Override
                         public void onError(int code, String message) {
+                            LogUtils.serverError("group", "removeMember", code, message);
                             Toast.makeText(GroupMembersActivity.this,
-                                    "移除失败：" + message,
+                                    R.string.group_member_remove_failed,
                                     Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -300,10 +304,10 @@ public class GroupMembersActivity extends AbsAppActivity {
             }
             if (role == ROLE_OWNER) {
                 holder.roleView.setVisibility(View.VISIBLE);
-                holder.roleView.setText("群主");
+                holder.roleView.setText(R.string.group_role_owner);
             } else if (role == ROLE_ADMIN) {
                 holder.roleView.setVisibility(View.VISIBLE);
-                holder.roleView.setText("管理员");
+                holder.roleView.setText(R.string.group_role_admin);
             } else {
                 holder.roleView.setVisibility(View.GONE);
             }

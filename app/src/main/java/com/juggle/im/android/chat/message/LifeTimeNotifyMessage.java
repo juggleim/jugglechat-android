@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 /**
  * 阅后即焚时效消息通知
@@ -55,7 +57,7 @@ public class LifeTimeNotifyMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return "[消息时效设置]";
+        return AppRes.string(R.string.msg_lifetime_notify);
     }
 
     public int getType() {
@@ -73,9 +75,9 @@ public class LifeTimeNotifyMessage extends MessageContent {
      */
     public String description(String senderName) {
         if (mType == 0) {
-            return senderName + " 关闭了消息自动删除";
+            return AppRes.string(R.string.lifetime_notify_off, senderName);
         }
-        return senderName + " 设置 " + mType + " 天后消息自动删除";
+        return AppRes.string(R.string.lifetime_notify_on, senderName, mType);
     }
 
     private static final String TYPE = "type";

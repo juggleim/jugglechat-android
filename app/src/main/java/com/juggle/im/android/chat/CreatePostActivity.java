@@ -31,6 +31,7 @@ import com.qiniu.android.utils.StringUtils;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 public class CreatePostActivity extends AbsAppActivity {
     private EditText editPostContent;
@@ -121,14 +122,14 @@ public class CreatePostActivity extends AbsAppActivity {
     private void submitPost() {
         String content = editPostContent.getText().toString().trim();
         if (TextUtils.isEmpty(content) && mImageUrls.isEmpty() && TextUtils.isEmpty(mVideoUrl)) {
-            Toast.makeText(this, "内容不能为空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.moments_content_empty, Toast.LENGTH_SHORT).show();
             return;
         }
 
         // 检查是否有图片还在上传中
         for (String url : mImageUrls.values()) {
             if (StringUtils.isBlank(url)) {
-                Toast.makeText(this, "图片正在上传中，请稍候", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.moments_image_uploading, Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -151,7 +152,7 @@ public class CreatePostActivity extends AbsAppActivity {
             @Override
             public void onSuccess(Moment data) {
                 runOnUiThread(() -> {
-                    Toast.makeText(CreatePostActivity.this, "发表成功", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(CreatePostActivity.this, R.string.moments_post_success, Toast.LENGTH_SHORT).show();
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                     if (imm != null) imm.hideSoftInputFromWindow(editPostContent.getWindowToken(), 0);
                     editPostContent.clearFocus();
@@ -166,7 +167,8 @@ public class CreatePostActivity extends AbsAppActivity {
             public void onError(int errorCode) {
                 runOnUiThread(() -> {
                     tvSend.setEnabled(true);
-                    Toast.makeText(CreatePostActivity.this, "发表失败: " + errorCode, Toast.LENGTH_SHORT).show();
+                    LogUtils.serverError("moments", "createPost", errorCode, "");
+                    Toast.makeText(CreatePostActivity.this, R.string.moments_post_failed, Toast.LENGTH_SHORT).show();
                 });
             }
         });

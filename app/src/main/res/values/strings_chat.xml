@@ -1,0 +1,103 @@
+<resources>
+    <!-- 搜索 -->
+    <string name="search_type_contact">Contacts</string>
+    <string name="search_type_group">Groups</string>
+    <string name="search_type_record">Messages</string>
+    <string name="search_matched_count">%1$d matches</string>
+    <string name="search_searching">Searching…</string>
+
+    <!-- 会话列表 -->
+    <string name="conv_list_mark_read">Mark as read</string>
+    <string name="conv_list_mark_unread">Mark as unread</string>
+    <string name="conv_list_draft">[Draft]</string>
+    <string name="conv_list_mention_all">[@All]</string>
+    <string name="conv_list_mention_someone">[Someone @ed you]</string>
+    <string name="conv_list_sender_you">You</string>
+
+    <!-- 消息列表 -->
+    <string name="msg_new_count">%1$s new messages</string>
+    <string name="msg_mention_me">Someone @ed you</string>
+    <string name="msg_selected_count">%1$d selected</string>
+    <string name="msg_edited"> (edited)</string>
+    <string name="msg_reply_prefix">Reply to %1$s</string>
+    <string name="msg_merge_unknown_user">Unknown user</string>
+
+    <!-- 文件消息 -->
+    <string name="file_link_invalid">Invalid file link</string>
+    <string name="file_downloading">Downloading %1$d%%</string>
+    <string name="file_download_failed_retry">Download failed, tap to retry</string>
+    <string name="file_download_canceled_retry">Canceled, tap to retry</string>
+    <string name="file_downloaded_open">Downloaded, tap to open</string>
+    <string name="file_unknown_name">Unknown file</string>
+    <string name="file_unknown_size">Unknown size</string>
+    <string name="file_chooser_image">View image</string>
+    <string name="file_chooser_text">Open text file</string>
+    <string name="file_chooser_pdf">Open PDF</string>
+    <string name="file_chooser_default">Open file</string>
+    <string name="file_no_app">No app available to open this file</string>
+    <string name="file_open_error">Failed to open file</string>
+    <string name="file_process_failed">Failed to process file, please try again</string>
+
+    <string name="chat_close_reply">Close quote</string>
+
+    <!-- 语音输入 -->
+    <string name="voice_release_to_send">Release to send  ·  Slide up to cancel</string>
+
+    <!-- @提及 -->
+    <string name="mention_all_name">All</string>
+    <string name="mention_all_text">@All </string>
+
+    <!-- 时间 -->
+    <string name="time_today">Today</string>
+    <string name="time_yesterday_at">Yesterday %1$s</string>
+    <string name="weekday_monday">Mon</string>
+    <string name="weekday_tuesday">Tue</string>
+    <string name="weekday_wednesday">Wed</string>
+    <string name="weekday_thursday">Thu</string>
+    <string name="weekday_friday">Fri</string>
+    <string name="weekday_saturday">Sat</string>
+    <string name="weekday_sunday">Sun</string>
+
+    <!-- 消息摘要 -->
+    <string name="msg_summary_recall">%1$s recalled a message</string>
+    <string name="msg_summary_moment_notify">Moments notification</string>
+    <string name="msg_summary_data_synced">Data synced</string>
+    <string name="msg_summary_timeline">Timeline</string>
+    <string name="msg_summary_game_dice">Dice game</string>
+    <string name="msg_summary_game_mora">Rock-paper-scissors</string>
+    <string name="msg_summary_game">Interactive game</string>
+    <string name="msg_summary_sticker">Sticker</string>
+    <string name="msg_summary_peer">the other party</string>
+
+    <!-- 群通知 / 好友通知 / 时效通知 -->
+    <string name="group_notify_you">You</string>
+    <string name="group_notify_add_member">%1$s invited %2$s to the group</string>
+    <string name="group_notify_remove_member">%1$s removed %2$s from the group</string>
+    <string name="group_notify_rename">%1$s changed the group name to %2$s</string>
+    <string name="group_notify_change_owner">%1$s is the new group owner</string>
+    <string name="group_notify_join">%1$s joined the group</string>
+    <string name="friend_notify_added">%1$s added you as a friend</string>
+    <string name="friend_notify_accepted">%1$s accepted your friend request</string>
+    <string name="lifetime_notify_off">%1$s turned off auto-delete</string>
+    <string name="lifetime_notify_on">%1$s set messages to auto-delete after %2$d days</string>
+    <string name="timeline_notify_digest">[Timeline notice]</string>
+
+    <!-- 主框架 / 连接状态 -->
+    <string name="main_connect_failed">Connection failed, please check your network</string>
+
+    <!-- IM 前台服务通知轮播文案 -->
+    <string name="im_service_status_keeping">Keeping the chat connection alive</string>
+    <string name="im_service_status_running">Chat service running</string>
+    <string name="im_service_status_syncing">Syncing messages</string>
+    <string name="im_service_status_connected">Connected to the server</string>
+    <string name="im_service_status_active">IM service active</string>
+
+    <!-- 网络错误 -->
+    <string name="api_error_network">Network issue, please try again later</string>
+    <string name="api_error_server">Unexpected server response, please try again later</string>
+    <string name="api_error_default">Request failed, please try again later</string>
+
+    <!-- 资料校验 -->
+    <string name="profile_validation_empty">Profile cannot be empty</string>
+    <string name="profile_validation_avatar">Avatar must be an http/https URL</string>
+</resources>

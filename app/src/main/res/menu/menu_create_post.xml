@@ -3,6 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/action_post"
-        android:title="发表"
+        android:title="@string/group_announcement_publish"
         app:showAsAction="always" />
 </menu>

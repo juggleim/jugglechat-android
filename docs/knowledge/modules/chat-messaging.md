@@ -5,7 +5,7 @@ description: 会话列表、消息流、渲染器、输入面板插件、@提及
 resource:
   - app/src/main/java/com/juggle/im/android/chat/
 tags: [chat, message, core]
-timestamp: 2026-07-03T14:00:00+08:00
+timestamp: 2026-07-28T15:35:00+08:00
 ---
 
 # 聊天消息
@@ -26,6 +26,7 @@ timestamp: 2026-07-03T14:00:00+08:00
 * 数据来源：[IM 核心封装](/modules/core-im.md) 的 EventBus 事件 + domain 仓储
 * 群组/好友资料操作走 [网络请求层](/modules/server.md) UserService
 * 通话入口（VoiceCallPlugin/VideoCallPlugin）唤起 [音视频通话](/modules/call.md)
+* 会话级定时删除由业务服务保存周期，发送消息时通过 JuggleIM SDK 的消息时效参数落到具体消息；设置变化以状态消息同步给会话成员
 
 ## 关键入口
 
@@ -37,3 +38,4 @@ timestamp: 2026-07-03T14:00:00+08:00
 
 - 经 E02 重构（2026-05"聊天流与输入插件管线重构"），输入管线的扩展点是 plugin/，不要在 ConversationActivity 里直接加功能按钮。
 - 消息列表的时间分割线是 UI-only 的 LocalMessage，不入 SDK 存储。
+- 定时删除仅影响设置后发送的新消息；群聊入口受 `group_set_msg_life_right` 控制，当前会话周期不能附加到转发目标会话。

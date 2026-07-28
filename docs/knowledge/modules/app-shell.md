@@ -9,8 +9,9 @@ resource:
   - app/src/main/java/com/juggle/im/android/widget/
   - app/src/main/java/com/juggle/im/android/utils/
   - app/src/main/java/com/juggle/im/android/model/
+  - app/src/main/java/com/juggle/im/android/i18n/
 tags: [app, ui]
-timestamp: 2026-07-03T14:00:00+08:00
+timestamp: 2026-07-28T14:00:00+08:00
 ---
 
 # 应用壳层
@@ -30,8 +31,10 @@ timestamp: 2026-07-03T14:00:00+08:00
 * `app/MainActivity.java` — 主框架与 Tab 管理
 * `service/ImForegroundService.java` — IM 长连接保活的常驻通知
 * `model/ConfigUtils.java` — appKey/服务器地址/Zego ID 全局配置，换环境改这里
+* `i18n/LanguageManager.java` — 应用语言持久化与生效，入口在 app/LanguageSettingsActivity
 
 ## 注意事项
 
 - 日志必须走 utils/LogUtils 的结构化格式，见 [结构化日志约定](/conventions/structured-logging.md)。
 - 新页面继承 AbsAppActivity，别自己处理状态栏。
+- 界面文案一律走资源，取串规则见 [多语言约定](/conventions/i18n.md)。

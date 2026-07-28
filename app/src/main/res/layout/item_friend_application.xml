@@ -77,7 +77,7 @@
                     android:gravity="center"
                     android:paddingStart="12dp"
                     android:paddingEnd="12dp"
-                    android:text="拒绝"
+                    android:text="@string/friend_apply_reject"
                     android:textColor="@color/conversation_secondary_text"
                     android:textSize="13sp" />
 
@@ -90,7 +90,7 @@
                     android:gravity="center"
                     android:paddingStart="12dp"
                     android:paddingEnd="12dp"
-                    android:text="接受"
+                    android:text="@string/friend_apply_accept"
                     android:textColor="@color/white"
                     android:textSize="13sp" />
             </LinearLayout>

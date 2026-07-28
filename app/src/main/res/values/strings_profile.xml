@@ -1,9 +1,9 @@
 <resources>
-    <string name="profile_error_load_failed">获取用户信息失败: %1$s</string>
-    <string name="profile_toast_update_success">更新成功</string>
-    <string name="profile_error_update_failed">更新失败: %1$s</string>
-    <string name="profile_avatar_dialog_title">更换头像</string>
-    <string name="profile_avatar_dialog_hint">请输入头像 URL（https://）</string>
-    <string name="profile_avatar_empty">请输入头像 URL</string>
-    <string name="profile_field_not_set">未设置</string>
+    <string name="profile_error_load_failed">Failed to load profile</string>
+    <string name="profile_toast_update_success">Updated successfully</string>
+    <string name="profile_error_update_failed">Update failed, please try again later</string>
+    <string name="profile_avatar_dialog_title">Update Avatar</string>
+    <string name="profile_avatar_dialog_hint">Enter avatar URL (https://)</string>
+    <string name="profile_avatar_empty">Please enter avatar URL</string>
+    <string name="profile_field_not_set">Not set</string>
 </resources>

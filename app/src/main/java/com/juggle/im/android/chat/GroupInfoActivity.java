@@ -23,6 +23,7 @@ import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 
 import java.util.ArrayList;
+import com.juggle.im.android.utils.LogUtils;
 
 public class GroupInfoActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
@@ -83,8 +84,9 @@ public class GroupInfoActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "loadGroupInfo", code, message);
                 Toast.makeText(GroupInfoActivity.this,
-                        "加载群信息失败：" + message,
+                        R.string.group_info_load_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -107,7 +109,7 @@ public class GroupInfoActivity extends AbsAppActivity {
         }
         String selectedPath = FileUtils.convertContentUriToFile(this, selected.get(0));
         if (TextUtils.isEmpty(selectedPath)) {
-            Toast.makeText(this, "读取图片失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_info_image_read_failed, Toast.LENGTH_SHORT).show();
             return;
         }
         uploadGroupAvatar(selectedPath);
@@ -121,7 +123,7 @@ public class GroupInfoActivity extends AbsAppActivity {
         findViewById(R.id.tv_save).setEnabled(false);
         String groupName = groupNameInput.getText() == null ? groupId : groupNameInput.getText().toString().trim();
         AvatarUtils.loadAvatar(avatarView, localPath, groupName, groupId);
-        Toast.makeText(this, "头像上传中...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.group_info_avatar_uploading, Toast.LENGTH_SHORT).show();
 
         JIM.getInstance().getMessageManager().uploadImage(localPath, new JIMConst.IResultCallback<String>() {
             @Override
@@ -130,14 +132,14 @@ public class GroupInfoActivity extends AbsAppActivity {
                 findViewById(R.id.tv_save).setEnabled(true);
                 portrait = url;
                 AvatarUtils.loadAvatar(avatarView, portrait, groupName, groupId);
-                Toast.makeText(GroupInfoActivity.this, "头像上传成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupInfoActivity.this, R.string.group_info_avatar_upload_success, Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onError(int code) {
                 uploadingAvatar = false;
                 findViewById(R.id.tv_save).setEnabled(true);
-                Toast.makeText(GroupInfoActivity.this, "头像上传失败", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupInfoActivity.this, R.string.group_info_avatar_upload_failed, Toast.LENGTH_SHORT).show();
                 loadGroupInfo();
             }
         });
@@ -145,25 +147,26 @@ public class GroupInfoActivity extends AbsAppActivity {
 
     private void saveGroupInfo() {
         if (uploadingAvatar) {
-            Toast.makeText(this, "头像上传中，请稍候", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_info_avatar_uploading_wait, Toast.LENGTH_SHORT).show();
             return;
         }
         String groupName = groupNameInput.getText() == null ? "" : groupNameInput.getText().toString().trim();
         if (TextUtils.isEmpty(groupName)) {
-            Toast.makeText(this, "群组名称不能为空", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.group_info_name_empty, Toast.LENGTH_SHORT).show();
             return;
         }
         ServiceManager.getUserService().updateGroupInfo(groupId, groupName, portrait, new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
-                Toast.makeText(GroupInfoActivity.this, "保存成功", Toast.LENGTH_SHORT).show();
+                Toast.makeText(GroupInfoActivity.this, R.string.group_info_save_success, Toast.LENGTH_SHORT).show();
                 finish();
             }
 
             @Override
             public void onError(int code, String message) {
+                LogUtils.serverError("group", "saveGroupInfo", code, message);
                 Toast.makeText(GroupInfoActivity.this,
-                        "保存失败：" + message,
+                        R.string.group_info_save_failed,
                         Toast.LENGTH_SHORT).show();
             }
         });

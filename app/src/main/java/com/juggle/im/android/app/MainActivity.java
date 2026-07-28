@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
             bottomNav.setSelectedTab(0);
         }
         updateHeaderProfile();
-        updateHeaderStatus(getString(R.string.main_status_connecting));
+        syncStateFromSdk();
 
         // add button: show custom quick actions popup (Create group, Add friend, Scan QR)
         btnMore = findViewById(R.id.btn_more);
@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
                 if (friendsFragment != null) tx.hide(friendsFragment);
                 if (myProfileFragment != null) tx.hide(myProfileFragment);
                 tx.show(discoverFragment);
-                tvTitle.setText("发现");
+                tvTitle.setText(R.string.tab_friend);
                 btnMore.setVisibility(GONE);
                 btnSearch.setVisibility(GONE);
                 if (headerProfileArea != null) headerProfileArea.setVisibility(GONE);
@@ -228,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
                 if (friendsFragment != null) tx.hide(friendsFragment);
                 if (discoverFragment != null) tx.hide(discoverFragment);
                 tx.show(myProfileFragment);
-                tvTitle.setText("我");
+                tvTitle.setText(R.string.tab_me);
                 btnMore.setVisibility(GONE);
                 btnSearch.setVisibility(GONE);
                 if (headerProfileArea != null) headerProfileArea.setVisibility(GONE);
@@ -244,6 +244,24 @@ public class MainActivity extends AppCompatActivity {
         if (bottomNav != null) bottomNav.setSelectedTab(index);
     }
 
+    /**
+     * 用 SDK 当前状态对齐界面。
+     * <p>
+     * TIPS：连接状态与会话首屏都是靠 SDK 回调推上来的（onStatusChange / onDbOpen）。Activity 重建时
+     * （语言切换、深色模式、字体缩放等）SDK 早已连上，不会再回调，界面就会卡在"正在连接…"且会话列表为空。
+     * 所以每次创建都主动读一次连接态，已连接就补拉一遍会话列表。
+     */
+    private void syncStateFromSdk() {
+        JIMConst.ConnectionStatus status = JIM.getInstance().getConnectionManager().getConnectionStatus();
+        if (status == JIMConst.ConnectionStatus.CONNECTED) {
+            updateHeaderStatus("");
+            findViewById(R.id.connect_status).setVisibility(GONE);
+            JIMChatCore.getInstance().syncConversationListAsync();
+        } else {
+            updateHeaderStatus(getString(R.string.main_status_connecting));
+        }
+    }
+
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onConnectStatusChanged(ConnectStatusEvent event) {
         Log.i("MainActivity", event.getConnectionStatus().toString() + "," + event.getCode());
@@ -256,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                 authGuard.handleSessionInvalid(this, "remote_login_11011");
                 return;
             } else {
-                vStatus.setText("连接失败，请检查网络");
+                vStatus.setText(R.string.main_connect_failed);
                 updateHeaderStatus(getString(R.string.main_status_connecting));
             }
         } else {

@@ -1,4 +1,5 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="horizontal"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -16,7 +17,7 @@
         android:id="@+id/tv_member_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="成员昵称"
+        tools:text="成员昵称"
         android:textColor="@color/black"
         android:textSize="16sp"/>
 </LinearLayout>

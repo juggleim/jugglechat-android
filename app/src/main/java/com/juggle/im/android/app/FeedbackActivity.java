@@ -33,6 +33,7 @@ import com.juggle.im.android.server.http.ServiceManager;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import com.juggle.im.android.utils.LogUtils;
 
 /**
  * 意见反馈页面
@@ -40,12 +41,12 @@ import java.util.List;
 public class FeedbackActivity extends AbsAppActivity {
     private static final int REQ_PICK_IMAGES = 2101;
     private static final int MAX_IMAGE_COUNT = 8;
-    private static final String EXTRA_PAGE_TITLE = "extra_page_title";
+    private static final String EXTRA_REPORT_MODE = "extra_report_mode";
     private static final String EXTRA_CONTENT_PREFIX = "extra_content_prefix";
     private static final String EXTRA_CATEGORY = "extra_category";
-    private static final String DEFAULT_PAGE_TITLE = "意见反馈";
-    private static final String DEFAULT_CATEGORY = "个人反馈";
-    private static final String REPORT_PAGE_TITLE = "举报投诉";
+    // TIPS: category 是提交给服务端的分类取值，不是界面文案，不参与本地化
+    private static final String CATEGORY_FEEDBACK = "个人反馈";
+    private static final String CATEGORY_REPORT = "举报投诉";
 
     private EditText inputView;
     private TextView counterView;
@@ -54,20 +55,20 @@ public class FeedbackActivity extends AbsAppActivity {
     private final List<FeedbackImageItem> images = new ArrayList<>();
     private FeedbackImageAdapter adapter;
     private boolean isSubmitting;
-    private String pageTitle = DEFAULT_PAGE_TITLE;
-    private String category = DEFAULT_CATEGORY;
+    private boolean reportMode;
+    private String category = CATEGORY_FEEDBACK;
     private String contentPrefix = "";
 
     /**
      * 构建通用意见反馈页面启动参数。
      *
      * @param context 页面上下文
-     * @return 反馈页面 Intent（默认标题“意见反馈”）
+     * @return 反馈页面 Intent（标题为“意见反馈”）
      */
     public static Intent intentForFeedback(Context context) {
         Intent intent = new Intent(context, FeedbackActivity.class);
-        intent.putExtra(EXTRA_PAGE_TITLE, DEFAULT_PAGE_TITLE);
-        intent.putExtra(EXTRA_CATEGORY, DEFAULT_CATEGORY);
+        intent.putExtra(EXTRA_REPORT_MODE, false);
+        intent.putExtra(EXTRA_CATEGORY, CATEGORY_FEEDBACK);
         return intent;
     }
 
@@ -80,8 +81,8 @@ public class FeedbackActivity extends AbsAppActivity {
      */
     public static Intent intentForReport(Context context, String reportContentSeed) {
         Intent intent = new Intent(context, FeedbackActivity.class);
-        intent.putExtra(EXTRA_PAGE_TITLE, REPORT_PAGE_TITLE);
-        intent.putExtra(EXTRA_CATEGORY, REPORT_PAGE_TITLE);
+        intent.putExtra(EXTRA_REPORT_MODE, true);
+        intent.putExtra(EXTRA_CATEGORY, CATEGORY_REPORT);
         intent.putExtra(EXTRA_CONTENT_PREFIX, reportContentSeed == null ? "" : reportContentSeed.trim());
         return intent;
     }
@@ -96,7 +97,8 @@ public class FeedbackActivity extends AbsAppActivity {
         counterView = findViewById(R.id.tv_counter);
         submitButton = findViewById(R.id.btn_submit);
 
-        ((TextView) findViewById(R.id.tv_title)).setText(pageTitle);
+        ((TextView) findViewById(R.id.tv_title)).setText(isReportMode()
+                ? R.string.feedback_report_title : R.string.feedback_title);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
 
         RecyclerView recyclerView = findViewById(R.id.rv_feedback_images);
@@ -131,13 +133,10 @@ public class FeedbackActivity extends AbsAppActivity {
         if (intent == null) {
             return;
         }
-        String argTitle = intent.getStringExtra(EXTRA_PAGE_TITLE);
         String argCategory = intent.getStringExtra(EXTRA_CATEGORY);
         String argPrefix = intent.getStringExtra(EXTRA_CONTENT_PREFIX);
 
-        if (!TextUtils.isEmpty(argTitle)) {
-            pageTitle = argTitle.trim();
-        }
+        reportMode = intent.getBooleanExtra(EXTRA_REPORT_MODE, false);
         if (!TextUtils.isEmpty(argCategory)) {
             category = argCategory.trim();
         }
@@ -181,7 +180,7 @@ public class FeedbackActivity extends AbsAppActivity {
 
     private void pickImages() {
         if (images.size() >= MAX_IMAGE_COUNT) {
-            Toast.makeText(this, "最多添加 8 张图片", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.feedback_image_limit, Toast.LENGTH_SHORT).show();
             return;
         }
         startActivityForResult(new Intent(this, AlbumActivity.class), REQ_PICK_IMAGES);
@@ -208,7 +207,7 @@ public class FeedbackActivity extends AbsAppActivity {
                 runOnUiThread(() -> {
                     images.remove(item);
                     adapter.notifyDataSetChanged();
-                    Toast.makeText(FeedbackActivity.this, "图片上传失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(FeedbackActivity.this, R.string.feedback_image_upload_failed, Toast.LENGTH_SHORT).show();
                 });
             }
         });
@@ -221,14 +220,14 @@ public class FeedbackActivity extends AbsAppActivity {
 
         String inputContent = inputView.getText() == null ? "" : inputView.getText().toString().trim();
         if (TextUtils.isEmpty(inputContent) && images.isEmpty()) {
-            Toast.makeText(this, "请填写反馈内容", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.feedback_content_empty, Toast.LENGTH_SHORT).show();
             return;
         }
         String submitContent = buildSubmitContent(inputContent);
 
         for (FeedbackImageItem item : images) {
             if (item.uploading) {
-                Toast.makeText(this, "图片上传中，请稍候", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.feedback_image_uploading, Toast.LENGTH_SHORT).show();
                 return;
             }
         }
@@ -245,8 +244,8 @@ public class FeedbackActivity extends AbsAppActivity {
             @Override
             public void onSuccess(Void data) {
                 setSubmitting(false);
-                String successText = isReportMode() ? "已提交举报，1s后自动返回" : "反馈成功，1s后自动返回";
-                Toast.makeText(FeedbackActivity.this, successText, Toast.LENGTH_SHORT).show();
+                Toast.makeText(FeedbackActivity.this, isReportMode()
+                        ? R.string.feedback_report_success : R.string.feedback_success, Toast.LENGTH_SHORT).show();
                 inputView.postDelayed(() -> {
                     if (!isFinishing() && !isDestroyed()) {
                         finish();
@@ -257,13 +256,14 @@ public class FeedbackActivity extends AbsAppActivity {
             @Override
             public void onError(int code, String message) {
                 setSubmitting(false);
-                Toast.makeText(FeedbackActivity.this, "反馈失败：" + safeText(message), Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("feedback", "submitFeedback", code, message);
+                Toast.makeText(FeedbackActivity.this, R.string.feedback_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private boolean isReportMode() {
-        return TextUtils.equals(pageTitle, REPORT_PAGE_TITLE);
+        return reportMode;
     }
 
     private String buildSubmitContent(String inputContent) {
@@ -276,15 +276,7 @@ public class FeedbackActivity extends AbsAppActivity {
     private void setSubmitting(boolean submitting) {
         isSubmitting = submitting;
         submitButton.setEnabled(!submitting);
-        submitButton.setText(submitting ? "提交中..." : "提交");
-    }
-
-    private String safeText(String value) {
-        if (value == null) {
-            return "未知错误";
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? "未知错误" : trimmed;
+        submitButton.setText(submitting ? R.string.feedback_submitting : R.string.feedback_submit);
     }
 
     private final class FeedbackImageAdapter extends RecyclerView.Adapter<FeedbackImageAdapter.Holder> {

@@ -63,7 +63,7 @@
                 android:layout_height="48dp"
                 android:gravity="center"
                 app:layout_collapseMode="pin"
-                app:title="朋友圈"
+                app:title="@string/moments_title"
                 app:titleTextColor="@color/white">
 
                 <ImageView

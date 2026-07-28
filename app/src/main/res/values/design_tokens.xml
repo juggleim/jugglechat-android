@@ -33,10 +33,4 @@
     <dimen name="design_text_title">18sp</dimen>
     <dimen name="design_text_page_title">20sp</dimen>
 
-    <string name="design_timed_delete_1d" translatable="false">1d</string>
-    <string name="design_timed_delete_1w" translatable="false">1w</string>
-    <string name="design_timed_delete_1m" translatable="false">1m</string>
-    <string name="design_timed_delete_3m" translatable="false">3m</string>
-    <string name="design_timed_delete_6m" translatable="false">6m</string>
-    <string name="design_timed_delete_1y" translatable="false">1y</string>
 </resources>

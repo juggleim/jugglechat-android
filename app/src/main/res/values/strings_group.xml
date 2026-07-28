@@ -1,0 +1,128 @@
+<resources>
+    <!-- 会话设置 -->
+    <string name="conv_settings_title">Settings</string>
+    <string name="conv_tool_pin">Pin</string>
+    <string name="conv_tool_unpin">Unpin</string>
+    <string name="conv_tool_translate">Translate</string>
+    <string name="conv_translate_todo">Translation is not available yet</string>
+    <string name="conv_tool_mute">Mute</string>
+    <string name="conv_tool_unmute">Unmute</string>
+    <string name="conv_tool_clear">Clear messages</string>
+    <string name="conv_row_announcement">Announcement</string>
+    <string name="conv_row_add_member">Add members</string>
+    <string name="conv_row_members">Members</string>
+    <string name="conv_row_display_name">My nickname in group</string>
+    <string name="conv_row_management">Group management</string>
+    <string name="conv_row_qrcode">Group QR code</string>
+    <string name="conv_row_info">Group info</string>
+    <string name="conv_row_report">Report</string>
+    <string name="conv_meta_private">Direct message</string>
+    <string name="conv_meta_member_count">%1$d members</string>
+    <string name="conv_not_set">Not set</string>
+    <string name="conv_group_load_failed">Failed to load group info</string>
+    <string name="conv_save_success">Saved</string>
+    <string name="conv_save_failed">Failed to save</string>
+
+    <!-- 解散 / 退出群组 -->
+    <string name="group_dissolve">Delete group</string>
+    <string name="group_quit">Leave group</string>
+    <string name="group_dissolve_confirm">Delete this group?</string>
+    <string name="group_quit_confirm">Leave this group?</string>
+    <string name="group_dissolve_success">Group deleted</string>
+    <string name="group_quit_success">You left the group</string>
+    <string name="group_dissolve_failed">Failed to delete group</string>
+    <string name="group_quit_failed">Failed to leave group</string>
+
+    <!-- 群组管理 -->
+    <string name="group_management_title">Group management</string>
+    <string name="group_role_all_members">All members</string>
+    <string name="group_role_owner_only">Owner only</string>
+    <string name="group_role_owner_admin">Owner and admins</string>
+    <string name="group_perm_add_member">Who can add members</string>
+    <string name="group_perm_top_message">Who can pin messages</string>
+    <string name="group_perm_mention_all">Who can @everyone</string>
+    <string name="group_perm_edit_info">Who can edit group info</string>
+    <string name="group_perm_send_message">Who can send messages</string>
+    <string name="group_perm_lifetime">Who can set auto-delete</string>
+    <string name="group_management_load_failed">Failed to load group management settings</string>
+    <string name="group_management_save_failed">Failed to save</string>
+    <string name="group_management_save">Save</string>
+    <string name="group_transfer_success">Ownership transferred</string>
+    <string name="group_transfer_failed">Failed to transfer ownership</string>
+    <string name="group_history_for_new_member">New members can see chat history</string>
+    <string name="group_transfer_owner">Transfer ownership</string>
+    <string name="group_role_setting_invalid_args">Invalid parameters, please try again</string>
+
+    <!-- 群管理员 -->
+    <string name="group_admins_title">Group admins</string>
+    <string name="group_admins_desc_capability">Admins help the owner manage the group: post announcements, remove members, and more</string>
+    <string name="group_admins_desc_owner_only">Only the owner can appoint admins or delete the group</string>
+    <string name="group_admins_desc_limit">Up to 3 admins</string>
+    <string name="group_admins_add">Add admin</string>
+    <string name="group_admins_empty">No admins yet</string>
+    <string name="group_admins_remove">Remove</string>
+    <string name="group_admins_load_failed">Failed to load admins</string>
+    <string name="group_admins_limit">Up to 3 admins</string>
+    <string name="group_admins_limit_truncated">Admin limit exceeded, extra selections were dropped</string>
+    <string name="group_admins_remove_title">Remove admin</string>
+    <string name="group_admins_remove_message">Remove admin %1$s?</string>
+    <string name="group_admins_remove_success">Removed</string>
+    <string name="group_admins_remove_failed">Failed to remove admin</string>
+    <string name="group_admins_add_success">Added</string>
+    <string name="group_admins_add_failed">Failed to add admin</string>
+
+    <!-- 群成员 -->
+    <string name="group_members_title">Group members</string>
+    <string name="group_members_empty">No members yet</string>
+    <string name="group_members_load_failed">Failed to load group members</string>
+    <string name="group_members_multi_select_todo">Multi-select is not available yet</string>
+    <string name="group_member_muted">Muted</string>
+    <string name="group_member_mute_failed">Failed to mute member</string>
+    <string name="group_member_remove_title">Remove member</string>
+    <string name="group_member_remove_message">Remove member %1$s?</string>
+    <string name="group_member_remove_success">Removed</string>
+    <string name="group_member_remove_failed">Failed to remove member</string>
+    <string name="group_role_owner">Owner</string>
+    <string name="group_role_admin">Admin</string>
+    <string name="group_member_action_mute">Mute</string>
+    <string name="group_member_action_remove">Remove member</string>
+    <string name="group_member_action_multi_select">Multi-select</string>
+
+    <!-- 群信息 -->
+    <string name="group_info_title">Group info</string>
+    <string name="group_info_save">Save</string>
+    <string name="group_info_set_avatar">Set avatar</string>
+    <string name="group_info_name">Group name</string>
+    <string name="group_info_name_hint">Enter group name</string>
+    <string name="group_info_load_failed">Failed to load group info</string>
+    <string name="group_info_image_read_failed">Failed to read image</string>
+    <string name="group_info_avatar_uploading">Uploading avatar…</string>
+    <string name="group_info_avatar_upload_success">Avatar uploaded</string>
+    <string name="group_info_avatar_upload_failed">Failed to upload avatar</string>
+    <string name="group_info_avatar_uploading_wait">Uploading avatar, please wait</string>
+    <string name="group_info_name_empty">Group name cannot be empty</string>
+    <string name="group_info_save_success">Saved</string>
+    <string name="group_info_save_failed">Failed to save</string>
+
+    <!-- 群公告 -->
+    <string name="group_announcement_title">Announcement</string>
+    <string name="group_announcement_publish">Post</string>
+    <string name="group_announcement_hint">Group announcement…</string>
+    <string name="group_announcement_load_failed">Failed to load announcement</string>
+    <string name="group_announcement_empty">Announcement cannot be empty</string>
+    <string name="group_announcement_publish_success">Posted</string>
+    <string name="group_announcement_publish_failed">Failed to post announcement</string>
+
+    <!-- 我的群组 / 建群 -->
+    <string name="my_groups_load_failed">Failed to load groups</string>
+    <string name="create_group_add_member_title">Add members</string>
+    <string name="create_group_invite_success">Invitation sent</string>
+    <string name="create_group_invite_failed">Failed to invite members</string>
+    <string name="group_default_name_more">%1$s and %2$d others</string>
+    <string name="list_separator">, </string>
+
+    <!-- 群昵称 -->
+    <string name="edit_nickname_title">Edit nickname</string>
+    <string name="edit_nickname_hint">Enter nickname</string>
+    <string name="edit_nickname_save">Save</string>
+</resources>

@@ -1,0 +1,126 @@
+<resources>
+    <!-- 我的 -->
+    <string name="me_personal_settings">个人设置</string>
+    <string name="me_general_settings">通用设置</string>
+    <string name="me_favorites">我的收藏</string>
+    <string name="me_user_agreement">用户协议</string>
+    <string name="me_privacy_policy">隐私政策</string>
+    <string name="me_feedback">意见反馈</string>
+    <string name="me_version">版本信息</string>
+    <string name="me_version_todo">版本信息功能开发中</string>
+    <string name="me_user_id">账号：@%1$s</string>
+    <string name="me_logout">退出登录</string>
+    <string name="me_logout_confirm">确定要退出登录吗？</string>
+    <string name="me_logout_confirm_ok">退出登录</string>
+
+    <!-- 通用设置 -->
+    <string name="general_settings_title">通用设置</string>
+    <string name="general_chat_background">聊天背景</string>
+    <string name="general_chat_background_set">已设置</string>
+    <string name="general_app_notify">应用内通知</string>
+    <string name="general_language">语言</string>
+
+    <!-- 语言设置 -->
+    <string name="language_settings_title">语言</string>
+    <string name="language_follow_system">跟随系统</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="language_english">English</string>
+    <string name="language_switching">正在切换语言…</string>
+    <string name="language_selected">已选中</string>
+
+    <!-- 个人设置 -->
+    <string name="personal_settings_title">个人设置</string>
+    <string name="personal_save">保存</string>
+    <string name="personal_set_avatar">设置头像</string>
+    <string name="personal_name">名称</string>
+    <string name="personal_name_hint">请输入名称</string>
+    <string name="personal_account">账号</string>
+    <string name="personal_account_hint">请输入账号</string>
+    <string name="personal_bind_email">绑定邮箱</string>
+    <string name="personal_not_set">未设置</string>
+    <string name="personal_update_password">修改密码</string>
+    <string name="personal_add_account">添加账号</string>
+    <string name="personal_current_user">当前用户</string>
+    <string name="personal_bind_email_todo">绑定邮箱功能开发中</string>
+    <string name="personal_add_account_todo">添加账号功能开发中</string>
+    <string name="personal_load_failed">获取用户信息失败</string>
+    <string name="personal_avatar_upload_failed">头像上传失败</string>
+    <string name="personal_avatar_uploading">头像上传中，请稍候</string>
+    <string name="personal_name_empty">名称不能为空</string>
+    <string name="personal_account_empty">账号不能为空</string>
+    <string name="personal_no_change">资料未变化</string>
+    <string name="personal_account_save_failed">账号保存失败</string>
+    <string name="personal_profile_save_failed">资料保存失败</string>
+    <string name="personal_save_success">保存成功</string>
+
+    <!-- 修改密码 -->
+    <string name="pwd_title">修改密码</string>
+    <string name="pwd_old">原密码</string>
+    <string name="pwd_old_hint">请输入原密码</string>
+    <string name="pwd_new">新密码</string>
+    <string name="pwd_new_hint">请输入新密码</string>
+    <string name="pwd_confirm">确认密码</string>
+    <string name="pwd_confirm_hint">请再次输入新密码</string>
+    <string name="pwd_submit">确定</string>
+    <string name="pwd_submitting">提交中</string>
+    <string name="pwd_incomplete">请填写完整密码信息</string>
+    <string name="pwd_too_short">密码长度最少 6 位</string>
+    <string name="pwd_not_match">两次输入的密码不一致</string>
+    <string name="pwd_same_as_old">新密码不能与原密码一致</string>
+    <string name="pwd_update_success">密码修改成功</string>
+    <string name="pwd_update_failed">密码修改失败</string>
+
+    <!-- 意见反馈 / 举报 -->
+    <string name="feedback_title">意见反馈</string>
+    <string name="feedback_report_title">举报投诉</string>
+    <string name="feedback_hint">说点什么...</string>
+    <string name="feedback_submit">提交</string>
+    <string name="feedback_submitting">提交中...</string>
+    <string name="feedback_image_limit">最多添加 8 张图片</string>
+    <string name="feedback_image_upload_failed">图片上传失败</string>
+    <string name="feedback_content_empty">请填写反馈内容</string>
+    <string name="feedback_image_uploading">图片上传中，请稍候</string>
+    <string name="feedback_report_success">已提交举报，1s后自动返回</string>
+    <string name="feedback_success">反馈成功，1s后自动返回</string>
+    <string name="feedback_failed">反馈提交失败</string>
+
+    <!-- 我的收藏 -->
+    <string name="favorites_title">我的收藏</string>
+    <string name="favorites_multi_select">多选</string>
+    <string name="favorites_empty">没有收藏消息</string>
+    <string name="favorites_delete">删除</string>
+    <string name="favorites_load_failed">加载收藏失败</string>
+    <string name="favorites_select_required">请选择要删除的收藏</string>
+    <string name="favorites_delete_success">删除成功</string>
+    <string name="favorites_delete_failed">删除失败</string>
+    <string name="favorites_unknown_conversation">会话</string>
+    <string name="favorite_detail_title">收藏详情</string>
+    <string name="favorite_detail_not_found">消息不存在</string>
+    <string name="favorite_detail_from">来自: %1$s</string>
+    <string name="favorite_detail_unsupported">暂不支持查看此消息类型</string>
+
+    <!-- 二维码 -->
+    <string name="qrcode_my_title">我的二维码</string>
+    <string name="qrcode_save">保存</string>
+    <string name="qrcode_save_todo">保存功能开发中</string>
+    <string name="qrcode_my_hint">扫一扫，加我为好友</string>
+    <string name="qrcode_group_title">群组二维码</string>
+    <string name="qrcode_group_hint">扫一扫，加入群聊</string>
+    <string name="qrcode_load_failed">二维码加载失败</string>
+    <string name="qrcode_decode_failed">二维码解析失败</string>
+
+    <!-- 头像选择 -->
+    <string name="avatar_picker_close">关闭</string>
+    <string name="avatar_picker_recent">最近</string>
+    <string name="avatar_preview">预览</string>
+    <string name="avatar_preview_with_count">预览（1）</string>
+    <string name="avatar_confirm">确认</string>
+    <string name="avatar_cancel">取消</string>
+    <string name="avatar_permission_denied">未授予相册权限</string>
+    <string name="avatar_select_required">请选择头像</string>
+    <string name="avatar_no_image">未找到可用图片</string>
+
+    <!-- 聊天背景 -->
+    <string name="chat_bg_title">聊天背景</string>
+    <string name="chat_bg_save">保存</string>
+</resources>

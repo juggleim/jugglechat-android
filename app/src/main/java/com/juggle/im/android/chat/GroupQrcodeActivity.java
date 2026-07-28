@@ -22,6 +22,7 @@ import com.juggle.im.android.server.beans.QRCodeBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
+import com.juggle.im.android.utils.LogUtils;
 
 public class GroupQrcodeActivity extends AbsAppActivity {
     private static final String EXTRA_GROUP_ID = "extra_group_id";
@@ -85,12 +86,12 @@ public class GroupQrcodeActivity extends AbsAppActivity {
                 progressBar.setVisibility(android.view.View.GONE);
                 String encoded = data == null ? "" : data.getQrCode();
                 if (TextUtils.isEmpty(encoded)) {
-                    Toast.makeText(GroupQrcodeActivity.this, "二维码加载失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GroupQrcodeActivity.this, R.string.qrcode_load_failed, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 Bitmap bitmap = decodeBase64Bitmap(encoded);
                 if (bitmap == null) {
-                    Toast.makeText(GroupQrcodeActivity.this, "二维码解析失败", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(GroupQrcodeActivity.this, R.string.qrcode_decode_failed, Toast.LENGTH_SHORT).show();
                     return;
                 }
                 qrcodeView.setImageBitmap(bitmap);
@@ -99,7 +100,8 @@ public class GroupQrcodeActivity extends AbsAppActivity {
             @Override
             public void onError(int code, String message) {
                 progressBar.setVisibility(android.view.View.GONE);
-                Toast.makeText(GroupQrcodeActivity.this, "二维码加载失败：" + message, Toast.LENGTH_SHORT).show();
+                LogUtils.serverError("group", "loadGroupQrCode", code, message);
+                Toast.makeText(GroupQrcodeActivity.this, R.string.qrcode_load_failed, Toast.LENGTH_SHORT).show();
             }
         });
     }

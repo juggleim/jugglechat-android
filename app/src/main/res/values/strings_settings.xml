@@ -1,0 +1,126 @@
+<resources>
+    <!-- 我的 -->
+    <string name="me_personal_settings">Account settings</string>
+    <string name="me_general_settings">General</string>
+    <string name="me_favorites">Favorites</string>
+    <string name="me_user_agreement">User Agreement</string>
+    <string name="me_privacy_policy">Privacy Policy</string>
+    <string name="me_feedback">Feedback</string>
+    <string name="me_version">Version</string>
+    <string name="me_version_todo">Version info is not available yet</string>
+    <string name="me_user_id">Account: @%1$s</string>
+    <string name="me_logout">Log out</string>
+    <string name="me_logout_confirm">Are you sure you want to log out?</string>
+    <string name="me_logout_confirm_ok">Log out</string>
+
+    <!-- 通用设置 -->
+    <string name="general_settings_title">General</string>
+    <string name="general_chat_background">Chat background</string>
+    <string name="general_chat_background_set">Set</string>
+    <string name="general_app_notify">In-app notifications</string>
+    <string name="general_language">Language</string>
+
+    <!-- 语言设置 -->
+    <string name="language_settings_title">Language</string>
+    <string name="language_follow_system">System default</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="language_english">English</string>
+    <string name="language_switching">Switching language…</string>
+    <string name="language_selected">Selected</string>
+
+    <!-- 个人设置 -->
+    <string name="personal_settings_title">Account settings</string>
+    <string name="personal_save">Save</string>
+    <string name="personal_set_avatar">Set avatar</string>
+    <string name="personal_name">Name</string>
+    <string name="personal_name_hint">Enter name</string>
+    <string name="personal_account">Account</string>
+    <string name="personal_account_hint">Enter account</string>
+    <string name="personal_bind_email">Bind email</string>
+    <string name="personal_not_set">Not set</string>
+    <string name="personal_update_password">Change password</string>
+    <string name="personal_add_account">Add account</string>
+    <string name="personal_current_user">Current user</string>
+    <string name="personal_bind_email_todo">Email binding is not available yet</string>
+    <string name="personal_add_account_todo">Adding accounts is not available yet</string>
+    <string name="personal_load_failed">Failed to load profile</string>
+    <string name="personal_avatar_upload_failed">Failed to upload avatar</string>
+    <string name="personal_avatar_uploading">Uploading avatar, please wait</string>
+    <string name="personal_name_empty">Name cannot be empty</string>
+    <string name="personal_account_empty">Account cannot be empty</string>
+    <string name="personal_no_change">Nothing changed</string>
+    <string name="personal_account_save_failed">Failed to save account</string>
+    <string name="personal_profile_save_failed">Failed to save profile</string>
+    <string name="personal_save_success">Saved</string>
+
+    <!-- 修改密码 -->
+    <string name="pwd_title">Change password</string>
+    <string name="pwd_old">Current password</string>
+    <string name="pwd_old_hint">Enter current password</string>
+    <string name="pwd_new">New password</string>
+    <string name="pwd_new_hint">Enter new password</string>
+    <string name="pwd_confirm">Confirm password</string>
+    <string name="pwd_confirm_hint">Enter new password again</string>
+    <string name="pwd_submit">OK</string>
+    <string name="pwd_submitting">Submitting</string>
+    <string name="pwd_incomplete">Please fill in all password fields</string>
+    <string name="pwd_too_short">Password must be at least 6 characters</string>
+    <string name="pwd_not_match">Passwords do not match</string>
+    <string name="pwd_same_as_old">New password must differ from the current one</string>
+    <string name="pwd_update_success">Password changed</string>
+    <string name="pwd_update_failed">Failed to change password</string>
+
+    <!-- 意见反馈 / 举报 -->
+    <string name="feedback_title">Feedback</string>
+    <string name="feedback_report_title">Report</string>
+    <string name="feedback_hint">Say something…</string>
+    <string name="feedback_submit">Submit</string>
+    <string name="feedback_submitting">Submitting…</string>
+    <string name="feedback_image_limit">Up to 8 photos</string>
+    <string name="feedback_image_upload_failed">Failed to upload photo</string>
+    <string name="feedback_content_empty">Please enter your feedback</string>
+    <string name="feedback_image_uploading">Uploading photos, please wait</string>
+    <string name="feedback_report_success">Report submitted, going back in 1s</string>
+    <string name="feedback_success">Feedback submitted, going back in 1s</string>
+    <string name="feedback_failed">Failed to submit feedback</string>
+
+    <!-- 我的收藏 -->
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_multi_select">Multi-select</string>
+    <string name="favorites_empty">No favorites yet</string>
+    <string name="favorites_delete">Delete</string>
+    <string name="favorites_load_failed">Failed to load favorites</string>
+    <string name="favorites_select_required">Select the favorites to delete</string>
+    <string name="favorites_delete_success">Deleted</string>
+    <string name="favorites_delete_failed">Failed to delete</string>
+    <string name="favorites_unknown_conversation">Chat</string>
+    <string name="favorite_detail_title">Favorite detail</string>
+    <string name="favorite_detail_not_found">Message not found</string>
+    <string name="favorite_detail_from">From: %1$s</string>
+    <string name="favorite_detail_unsupported">This message type is not supported yet</string>
+
+    <!-- 二维码 -->
+    <string name="qrcode_my_title">My QR code</string>
+    <string name="qrcode_save">Save</string>
+    <string name="qrcode_save_todo">Saving is not available yet</string>
+    <string name="qrcode_my_hint">Scan the QR code to add me</string>
+    <string name="qrcode_group_title">Group QR code</string>
+    <string name="qrcode_group_hint">Scan the QR code to join the group</string>
+    <string name="qrcode_load_failed">Failed to load QR code</string>
+    <string name="qrcode_decode_failed">Failed to parse QR code</string>
+
+    <!-- 头像选择 -->
+    <string name="avatar_picker_close">Close</string>
+    <string name="avatar_picker_recent">Recent</string>
+    <string name="avatar_preview">Preview</string>
+    <string name="avatar_preview_with_count">Preview (1)</string>
+    <string name="avatar_confirm">Confirm</string>
+    <string name="avatar_cancel">Cancel</string>
+    <string name="avatar_permission_denied">Album permission not granted</string>
+    <string name="avatar_select_required">Please select an avatar</string>
+    <string name="avatar_no_image">No image available</string>
+
+    <!-- 聊天背景 -->
+    <string name="chat_bg_title">Chat background</string>
+    <string name="chat_bg_save">Save</string>
+</resources>

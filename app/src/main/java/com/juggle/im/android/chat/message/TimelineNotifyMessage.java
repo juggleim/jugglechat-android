@@ -8,6 +8,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import com.juggle.im.android.i18n.AppRes;
+import com.juggle.im.android.R;
 
 /**
  * 时间线通知消息
@@ -55,7 +57,7 @@ public class TimelineNotifyMessage extends MessageContent {
 
     @Override
     public String conversationDigest() {
-        return "[时间线通知]";
+        return AppRes.string(R.string.timeline_notify_digest);
     }
 
     public String getContent() {

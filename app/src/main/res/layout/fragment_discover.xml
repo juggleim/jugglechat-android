@@ -24,7 +24,7 @@
             android:layout_marginStart="30dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="朋友圈"
+            android:text="@string/discover_moments"
             android:layout_gravity="start|center_vertical"
             android:textSize="16sp"/>
 
