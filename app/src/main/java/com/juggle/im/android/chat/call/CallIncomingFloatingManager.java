@@ -120,6 +120,7 @@ public final class CallIncomingFloatingManager {
 
         @Override
         public void onUsersLeave(List<String> list) {
+            mainHandler.post(() -> handleIncomingRemoteUsersLeave(list));
         }
 
         @Override
@@ -181,6 +182,7 @@ public final class CallIncomingFloatingManager {
 
         @Override
         public void onUsersLeave(List<String> list) {
+            mainHandler.post(() -> handleOngoingRemoteUsersLeave(list));
         }
 
         @Override
@@ -260,6 +262,37 @@ public final class CallIncomingFloatingManager {
         incomingCallSession.addListener(SESSION_LISTENER_KEY, sessionListener);
         playIncomingRing();
         attachIncomingFloatToCurrentActivity();
+    }
+
+    private void handleIncomingRemoteUsersLeave(List<String> leavingUserIds) {
+        if (!shouldFinishAfterRemoteUsersLeave(incomingCallSession, leavingUserIds)) {
+            return;
+        }
+        // fix(L3): 多人会话中的一对一来电取消只回调成员离开，不会回调整个会话结束。
+        // TIPS：先结束 SDK 会话再移除浮窗，避免来电状态残留并阻塞下一通电话。
+        incomingCallSession.hangup();
+        dismissIncomingFloat();
+    }
+
+    private void handleOngoingRemoteUsersLeave(List<String> leavingUserIds) {
+        if (!shouldFinishAfterRemoteUsersLeave(ongoingCallSession, leavingUserIds)) {
+            return;
+        }
+        // fix(L3): 通话最小化后页面监听已释放，必须由全局浮窗监听接管最后远端成员离开的收口。
+        ongoingCallSession.hangup();
+        CallUiStateStore.clearFloatingCallInfo();
+        dismissOngoingFloat();
+    }
+
+    private boolean shouldFinishAfterRemoteUsersLeave(ICallSession callSession,
+                                                       List<String> leavingUserIds) {
+        if (callSession == null) {
+            return false;
+        }
+        return RemoteCallTerminationPolicy.shouldFinishAfterRemoteLeave(
+                JIM.getInstance().getCurrentUserId(),
+                leavingUserIds,
+                callSession);
     }
 
     /**

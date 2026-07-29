@@ -104,16 +104,15 @@ dependencies {
     implementation "com.google.mlkit:barcode-scanning:17.2.0"
 
 
-    // juggleim
-    // 最新版本来源：/Users/panyantong/juggle/im-android-sdk/JuggleIM/upload-maven.gradle
-    implementation 'com.juggle.im:juggle:1.8.44'
+    // JuggleIM（版本以官方 Maven 仓库已发布版本为准）
+    implementation 'com.juggle.im:juggle:1.9.1'
     implementation 'org.java-websocket:Java-WebSocket:1.5.5'
     implementation 'com.google.protobuf:protobuf-javalite:3.18.0'
     implementation 'com.qiniu:qiniu-android-sdk:8.7.0'
 
-    // 音视频
-    implementation 'com.juggle.call.zego:juggle:1.8.25'
-    implementation 'im.zego:express-video:3.17.3'
+    // 音视频（ZEGO 版本与最新已发布的 Juggle ZEGO Call 组件保持配套）
+    implementation 'com.juggle.call.zego:juggle:1.8.46'
+    implementation 'im.zego:express-video:3.21.0'
 
     // Markdown 渲染（用于 AI 流式文本消息）
     implementation 'io.noties.markwon:core:4.6.2'

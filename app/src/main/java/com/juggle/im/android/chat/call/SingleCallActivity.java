@@ -5,6 +5,7 @@ import static android.view.View.VISIBLE;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,6 +59,7 @@ public class SingleCallActivity extends BaseCallActivity {
     private boolean isCameraEnabled = true;
     private boolean isFrontCamera = true;
     private boolean timerStarted;
+    private boolean remoteLeaveHandled;
     private String remoteUserId = "";
 
     @Override
@@ -128,6 +130,37 @@ public class SingleCallActivity extends BaseCallActivity {
             renderRemoteUserInfo();
         }
         bindRemoteVideoIfNeed();
+    }
+
+    /**
+     * 远端用户离开时结束已无远端成员的单聊通话。
+     *
+     * @param remoteUserIds 离开用户ID列表
+     */
+    @Override
+    public void onRemoteUserLeave(List<String> remoteUserIds) {
+        if (remoteLeaveHandled || callSession == null) {
+            return;
+        }
+
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        if (!RemoteCallTerminationPolicy.shouldFinishAfterRemoteLeave(
+                currentUserId,
+                remoteUserIds,
+                callSession)) {
+            return;
+        }
+
+        // fix(L3): iOS 的一对一通话可能使用多人会话，远端挂断只触发成员离开回调。
+        // before: 单聊页仅等待 onCallFinish，导致 Android 页面与计时一直保留。
+        // after: SDK 成员快照中已无远端成员时主动结束本地会话并关闭页面。
+        // TIPS：必须同时调用 hangup，避免只关闭页面却把多人会话残留在 SDK 内部。
+        remoteLeaveHandled = true;
+        Log.i("CallActivity", "single call remote user left, finish local session: " + remoteUserIds);
+        CallUiStateStore.clearFloatingCallInfo();
+        stopAndRelease();
+        hangupCall();
+        finish();
     }
 
     /**

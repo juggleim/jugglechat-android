@@ -5,14 +5,14 @@ description: 基于 ZEGO 的单聊/多人通话与全局来电浮窗
 resource:
   - app/src/main/java/com/juggle/im/android/chat/call/
 tags: [call, zego]
-timestamp: 2026-07-03T14:00:00+08:00
+timestamp: 2026-07-29T15:04:11+08:00
 ---
 
 # 音视频通话
 
 ## Overview
 
-通话信令走 JuggleIM 的 call 扩展（com.juggle.call.zego），媒体流走 ZEGO Express。BaseCallActivity 收敛全部通话生命周期（会话创建/权限/铃声/计时/接听挂断/浮窗恢复），单人与多人页面只做画面布局差异。
+通话信令走 JuggleIM 的 call 扩展（com.juggle.call.zego），媒体流走 ZEGO Express。BaseCallActivity 收敛全部通话生命周期（会话创建/权限/铃声/计时/接听挂断/浮窗恢复），单人与多人页面主要负责画面布局差异。跨端的一对一界面可能承载底层多人会话，因此成员退出和会话结束必须分别处理。
 
 ## 关系
 
@@ -25,8 +25,11 @@ timestamp: 2026-07-03T14:00:00+08:00
 * `chat/call/BaseCallActivity.java` — 通话页基类，改通话行为先看这里
 * `chat/call/CallIncomingFloatingManager.java` — 全局来电横幅
 * `chat/call/CallUiStateStore.java` — 浮窗最小化/恢复的临时状态
+* `chat/call/RemoteCallTerminationPolicy.java` — 最后一个远端成员退出后的本地会话收口策略
 
 ## 注意事项
 
 - 通话最小化→恢复依赖 CallUiStateStore 的内存态，进程被杀后浮窗恢复链路失效（推断，未验证极端场景）。
-- ZEGO SDK 版本与 JuggleIM call 扩展版本需配套升级（见根 build.gradle 版本表）。
+- 底层多人会话中，远端挂断只会触发成员退出；当已无其他远端成员时，通话页和全局浮窗必须主动结束本地会话，避免页面、计时和 SDK 状态残留。
+- 服务端当前只为真正的一对一房间生成 `jg:callfinishntf` 通话记录；多人会话即使实际只有两人，也不会因本地收口自动产生消息列表灰条。
+- ZEGO SDK 版本与 JuggleIM call 扩展版本需配套升级（见 app/build.gradle）。

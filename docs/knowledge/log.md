@@ -1,5 +1,8 @@
 # 更新日志
 
+## 2026-07-29
+* **Update**: 兼容跨端一对一界面承载多人通话会话的情况，在最后一个远端成员退出时收口 Android 通话页、浮窗和 SDK 会话；同步记录通话结束灰条仍由服务端一对一房间通知生成，并复核 [音视频通话](/modules/call.md) 与 [聊天消息](/modules/chat-messaging.md)。
+
 ## 2026-07-28
 * **Update**: 优化“我的”页顶部背景、账户资料缓存与 Tab 切换，消除从“消息”切换到“我的”时的中间态闪烁；同步更新 [应用壳层](/modules/app-shell.md) 和 [聊天消息](/modules/chat-messaging.md)。
 * **Update**: 协议与隐私政策改为 APK 内置中英文内容，并修复“我的”页硬编码版本号；同步更新 [应用壳层](/modules/app-shell.md)、[聊天消息](/modules/chat-messaging.md) 和 [多语言约定](/conventions/i18n.md)。
