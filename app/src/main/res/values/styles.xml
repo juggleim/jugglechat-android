@@ -67,6 +67,27 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <!-- 消息列表未读/新消息气泡：白色胶囊 + 主题色文字 -->
+    <style name="MessageListCountBubble">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:layout_marginEnd">12dp</item>
+        <item name="android:background">@drawable/bg_unread_bubble</item>
+        <item name="android:elevation">4dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">16dp</item>
+    </style>
+
+    <style name="MessageListCountBubbleText">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/app_primary</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
     <!-- BottomActionSheet 底部弹窗样式 -->
     <style name="BottomActionSheetDialog" parent="Theme.AppCompat.Light.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>

@@ -11,6 +11,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.PathInterpolator;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
@@ -40,6 +41,15 @@ import java.util.Map;
 public class ConversationListFragment extends Fragment implements ConversationListAdapter.OnConversationClickListener {
     private static final String TAG = "ConvListFragment";
     private static final int PAGE_SIZE = 20;
+
+    /** 长按弹窗浮现动画时长（毫秒） */
+    private static final long POPUP_ANIM_DURATION = 200L;
+    /** 弹窗浮现的起始缩放 */
+    private static final float POPUP_ENTER_SCALE = 0.92f;
+    /** 弹窗浮现的起始下移量（dp） */
+    private static final float POPUP_ENTER_OFFSET_DP = 6f;
+    /** 弹窗与会话项之间的间隙（dp） */
+    private static final float POPUP_GAP_DP = 8f;
 
     private RecyclerView conversationListView;
     private View conversationFocusOverlay;
@@ -319,14 +329,44 @@ public class ConversationListFragment extends Fragment implements ConversationLi
             // 计算横向位置：居中到屏幕中间
             int x = (screenWidth - popupWidth) / 2;
 
-            // 计算纵向位置：贴在 item 上方
-            int y = anchorY - popupHeight;
+            // 计算纵向位置：贴在 item 上方，并留出间隙容纳会话项悬浮后的抬升
+            int y = anchorY - popupHeight - dpToPx(anchorView, POPUP_GAP_DP);
 
             // 注意：Gravity.NO_GRAVITY 才能让 x、y 生效
             popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, x, y);
+            playPopupEnterAnimation(menuView);
         } else {
             exitConversationContextMode();
         }
+    }
+
+    /**
+     * 弹窗以渐变方式浮现：底部为锚点轻微放大 + 淡入，与会话项的悬浮动画节奏保持一致
+     *
+     * @param menuView 弹窗内容视图
+     */
+    private void playPopupEnterAnimation(@NonNull View menuView) {
+        menuView.setAlpha(0f);
+        menuView.setScaleX(POPUP_ENTER_SCALE);
+        menuView.setScaleY(POPUP_ENTER_SCALE);
+        menuView.setTranslationY(dpToPx(menuView, POPUP_ENTER_OFFSET_DP));
+        // TIPS: 弹窗刚 show 出来时尚未完成布局，宽高为 0，需等一帧再取尺寸设置缩放锚点
+        menuView.post(() -> {
+            menuView.setPivotX(menuView.getWidth() / 2f);
+            menuView.setPivotY(menuView.getHeight());
+            menuView.animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .translationY(0f)
+                    .setDuration(POPUP_ANIM_DURATION)
+                    .setInterpolator(new PathInterpolator(0.2f, 0f, 0f, 1f))
+                    .start();
+        });
+    }
+
+    private int dpToPx(@NonNull View view, float dp) {
+        return Math.round(dp * view.getResources().getDisplayMetrics().density);
     }
 
     private void enterConversationContextMode(int selectedPosition) {

@@ -16,6 +16,7 @@
 
     <!-- 消息列表 -->
     <string name="msg_new_count">%1$s new messages</string>
+    <string name="msg_new_count_icon_desc">Jump to messages</string>
     <string name="msg_mention_me">Someone @ed you</string>
     <string name="msg_selected_count">%1$d selected</string>
     <string name="msg_edited"> (edited)</string>

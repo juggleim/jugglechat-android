@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/conversation_bg_light"
+    android:clipChildren="false"
     xmlns:tools="http://schemas.android.com/tools">
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -85,102 +86,71 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end|top"
         android:layout_marginTop="74dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:gravity="end"
         android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/layout_unread_bubble"
-            android:layout_width="wrap_content"
-            android:layout_height="30dp"
+            style="@style/MessageListCountBubble"
             android:layout_marginBottom="8dp"
-            android:background="@drawable/bg_unread_bubble"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="4dp"
             android:translationX="60dp"
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_arrow_up"
-                android:scaleType="fitCenter" />
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginEnd="5dp"
+                android:contentDescription="@string/msg_new_count_icon_desc"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_double_chevron_up" />
 
             <TextView
                 android:id="@+id/tv_unread_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                style="@style/MessageListCountBubbleText" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/layout_mention_bubble"
-            android:layout_width="wrap_content"
-            android:layout_height="30dp"
-            android:background="@drawable/bg_unread_bubble"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="10dp"
-            android:paddingBottom="4dp"
+            style="@style/MessageListCountBubble"
             android:translationX="60dp"
             android:visibility="gone">
 
             <ImageView
-                android:layout_width="12dp"
-                android:layout_height="12dp"
-                android:layout_marginEnd="4dp"
-                android:src="@drawable/ic_arrow_up"
-                android:scaleType="fitCenter" />
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginEnd="5dp"
+                android:contentDescription="@string/msg_new_count_icon_desc"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_double_chevron_up" />
 
             <TextView
                 android:id="@+id/tv_mention"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                style="@style/MessageListCountBubbleText" />
         </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/layout_new_message_bubble"
-        android:layout_width="wrap_content"
-        android:layout_height="30dp"
+        style="@style/MessageListCountBubble"
         android:layout_gravity="end|bottom"
         android:layout_marginBottom="80dp"
-        android:background="@drawable/bg_unread_bubble"
-        android:gravity="center"
-        android:paddingStart="8dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="4dp"
-        tools:visibility="visible"
-        android:orientation="horizontal"
+        android:translationX="60dp"
         android:visibility="gone"
-        android:translationX="60dp">
+        tools:visibility="visible">
 
         <ImageView
-            android:layout_width="12dp"
-            android:layout_height="12dp"
-            android:layout_marginEnd="4dp"
-            android:src="@drawable/ic_arrow_down"
-            android:scaleType="fitCenter" />
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_marginEnd="5dp"
+            android:contentDescription="@string/msg_new_count_icon_desc"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_double_chevron_down" />
 
         <TextView
             android:id="@+id/tv_new_message_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            style="@style/MessageListCountBubbleText" />
     </LinearLayout>
 
 </FrameLayout>

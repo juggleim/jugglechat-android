@@ -16,6 +16,7 @@
 
     <!-- 消息列表 -->
     <string name="msg_new_count">%1$s条新消息</string>
+    <string name="msg_new_count_icon_desc">跳转到消息</string>
     <string name="msg_mention_me">有人@我</string>
     <string name="msg_selected_count">已选择%1$d条消息</string>
     <string name="msg_edited">（已修改）</string>

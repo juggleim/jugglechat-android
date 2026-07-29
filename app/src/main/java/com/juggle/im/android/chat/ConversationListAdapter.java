@@ -3,9 +3,13 @@ package com.juggle.im.android.chat;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.text.SpannableString;
 import android.text.Spanned;
@@ -14,6 +18,7 @@ import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.PathInterpolator;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -43,6 +48,25 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     private OnNewConversationListener newConversationListener;
     private RecyclerView recyclerView; // 持有RecyclerView引用,用于直接控制滚动
     private int selectedPosition = -1;
+
+    /** 选中态过渡动画的时长（毫秒） */
+    private static final long SELECTION_ANIM_DURATION = 220L;
+    /** 悬浮时额外放大的比例 */
+    private static final float FLOAT_EXTRA_SCALE = 0.03f;
+    /** 悬浮时上抬的距离（dp） */
+    private static final float FLOAT_LIFT_DP = 3f;
+    /** 悬浮时的投影高度（dp） */
+    private static final float FLOAT_ELEVATION_DP = 14f;
+    /** 悬浮卡片的圆角（dp） */
+    private static final float FLOAT_CORNER_DP = 16f;
+    /** 悬浮卡片描边的最大透明度 */
+    private static final int FLOAT_STROKE_ALPHA = 0x1F;
+    /** 非选中会话弱化后的透明度 */
+    private static final float DIM_ALPHA = 0.35f;
+    /** 非选中会话虚化的最大模糊半径（px） */
+    private static final float DIM_BLUR_RADIUS = 6f;
+
+    private static final ArgbEvaluator ARGB_EVALUATOR = new ArgbEvaluator();
 
     public interface OnConversationClickListener {
         void onConversationClick(UiConversation uiConversation);
@@ -272,7 +296,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         UiConversation uiConversation = uiConversations.get(position);
         holder.bind(uiConversation);
-        updateSelectionVisuals(holder, position, uiConversation);
+        applySelectionState(holder, uiConversation, false);
     }
 
     @Override
@@ -280,56 +304,39 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         if (payloads.contains("selection")) {
             // 只更新选中状态的视觉效果，不重新绑定数据（避免头像闪烁）
             UiConversation uiConversation = uiConversations.get(position);
-            updateSelectionVisuals(holder, position, uiConversation);
+            applySelectionState(holder, uiConversation, true);
         } else {
             // 完整绑定
             super.onBindViewHolder(holder, position, payloads);
         }
     }
 
-    private void updateSelectionVisuals(@NonNull ViewHolder holder, int position, UiConversation uiConversation) {
-        // 长按弹窗打开时：被选中会话保持清晰，其它会话弱化并虚化。
-        if (selectedPosition >= 0) {
-            boolean isSelected = position == selectedPosition;
-            holder.itemView.setAlpha(isSelected ? 1f : 0.35f);
-            applyCardMargins(holder.itemView, isSelected);
-            holder.itemView.setBackgroundResource(isSelected
-                    ? R.drawable.bg_conversation_item_floating
-                    : R.color.white);
-            holder.itemView.setScaleX(isSelected ? 1.02f : 1f);
-            holder.itemView.setScaleY(isSelected ? 1.02f : 1f);
-            holder.itemView.setTranslationY(isSelected ? -dpToPx(holder.itemView, 3f) : 0f);
-            holder.setDividerVisible(!isSelected);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                holder.itemView.setElevation(isSelected ? dpToPx(holder.itemView, 18f) : 0f);
-                holder.itemView.setTranslationZ(isSelected ? dpToPx(holder.itemView, 10f) : 0f);
-                holder.itemView.setClipToOutline(isSelected);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                holder.itemView.setRenderEffect(isSelected
-                        ? null
-                        : RenderEffect.createBlurEffect(6f, 6f, Shader.TileMode.CLAMP));
-            }
-        } else {
-            holder.itemView.setAlpha(1f);
-            applyCardMargins(holder.itemView, false);
-            // 置顶会话使用浅灰色背景，非置顶使用白色背景
-            holder.itemView.setBackgroundResource(uiConversation.isTop()
-                    ? R.color.conversation_top_bg
-                    : R.color.white);
-            holder.itemView.setScaleX(1f);
-            holder.itemView.setScaleY(1f);
-            holder.itemView.setTranslationY(0f);
-            holder.setDividerVisible(true);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                holder.itemView.setElevation(0f);
-                holder.itemView.setTranslationZ(0f);
-                holder.itemView.setClipToOutline(false);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                holder.itemView.setRenderEffect(null);
-            }
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        super.onViewRecycled(holder);
+        // 复用前必须终止动画并复位，否则动画中途被回收会把中间态带给下一条会话。
+        holder.resetSelectionVisuals();
+    }
+
+    /**
+     * 应用会话项的长按选中态视觉
+     *
+     * @param holder         目标 ViewHolder
+     * @param uiConversation 会话数据，用于取常态下的底色（置顶为浅灰）
+     * @param animated       true 表示渐变过渡，false 表示直接落到目标态（首次绑定/复用时使用）
+     */
+    private void applySelectionState(@NonNull ViewHolder holder, UiConversation uiConversation, boolean animated) {
+        int position = holder.getAbsoluteAdapterPosition();
+        if (position == RecyclerView.NO_POSITION) {
+            return;
         }
+        // 长按弹窗打开时：被选中会话悬浮成卡片，其它会话弱化并虚化。
+        boolean contextMode = selectedPosition >= 0;
+        boolean isSelected = contextMode && position == selectedPosition;
+        holder.transitionSelection(uiConversation,
+                isSelected ? 1f : 0f,
+                contextMode && !isSelected ? 1f : 0f,
+                animated);
     }
 
     @Override
@@ -341,21 +348,7 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void clearSelectedPosition() {
         if (selectedPosition >= 0) {
             selectedPosition = -1;
-            // 直接遍历可见的 ViewHolder 更新视觉效果，避免 notify 导致的重新绑定
-            if (recyclerView != null) {
-                int childCount = recyclerView.getChildCount();
-                for (int i = 0; i < childCount; i++) {
-                    View child = recyclerView.getChildAt(i);
-                    RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
-                    if (holder instanceof ViewHolder) {
-                        int position = holder.getAbsoluteAdapterPosition();
-                        if (position != RecyclerView.NO_POSITION) {
-                            UiConversation uiConversation = uiConversations.get(position);
-                            updateSelectionVisualsForView((ViewHolder) holder, uiConversation);
-                        }
-                    }
-                }
-            }
+            refreshVisibleSelectionVisuals();
         }
     }
 
@@ -363,73 +356,29 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
     public void setSelectedPosition(int position) {
         int target = position >= 0 ? position : -1;
         if (selectedPosition != target) {
-            // 保存旧位置和新位置
-            int oldPosition = selectedPosition;
             selectedPosition = target;
-
-            // 直接遍历可见的 ViewHolder 更新视觉效果
-            if (recyclerView != null) {
-                int childCount = recyclerView.getChildCount();
-                for (int i = 0; i < childCount; i++) {
-                    View child = recyclerView.getChildAt(i);
-                    RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
-                    if (holder instanceof ViewHolder) {
-                        int pos = holder.getAbsoluteAdapterPosition();
-                        if (pos != RecyclerView.NO_POSITION) {
-                            UiConversation uiConversation = uiConversations.get(pos);
-                            updateSelectionVisualsForView((ViewHolder) holder, uiConversation);
-                        }
-                    }
-                }
-            }
+            refreshVisibleSelectionVisuals();
         }
     }
 
     /**
-     * 直接更新单个 ViewHolder 的选中状态视觉效果，不触发重新绑定
+     * 以渐变方式刷新当前可见项的选中态视觉。
+     * TIPS: 直接遍历可见 ViewHolder 而不走 notifyItemChanged，避免重新绑定引起的头像闪烁；
+     * 且所有视觉变化都走属性动画，不触碰 LayoutParams，因此不会引发列表重排抖动。
      */
-    private void updateSelectionVisualsForView(ViewHolder holder, UiConversation uiConversation) {
-        int position = holder.getAbsoluteAdapterPosition();
-        if (position == RecyclerView.NO_POSITION) return;
-
-        if (selectedPosition >= 0) {
-            boolean isSelected = position == selectedPosition;
-            holder.itemView.setAlpha(isSelected ? 1f : 0.35f);
-            applyCardMargins(holder.itemView, isSelected);
-            holder.itemView.setBackgroundResource(isSelected
-                    ? R.drawable.bg_conversation_item_floating
-                    : R.color.white);
-            holder.itemView.setScaleX(isSelected ? 1.02f : 1f);
-            holder.itemView.setScaleY(isSelected ? 1.02f : 1f);
-            holder.itemView.setTranslationY(isSelected ? -dpToPx(holder.itemView, 3f) : 0f);
-            holder.setDividerVisible(!isSelected);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                holder.itemView.setElevation(isSelected ? dpToPx(holder.itemView, 18f) : 0f);
-                holder.itemView.setTranslationZ(isSelected ? dpToPx(holder.itemView, 10f) : 0f);
-                holder.itemView.setClipToOutline(isSelected);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                holder.itemView.setRenderEffect(isSelected
-                        ? null
-                        : RenderEffect.createBlurEffect(6f, 6f, Shader.TileMode.CLAMP));
-            }
-        } else {
-            holder.itemView.setAlpha(1f);
-            applyCardMargins(holder.itemView, false);
-            holder.itemView.setBackgroundResource(uiConversation.isTop()
-                    ? R.color.conversation_top_bg
-                    : R.color.white);
-            holder.itemView.setScaleX(1f);
-            holder.itemView.setScaleY(1f);
-            holder.itemView.setTranslationY(0f);
-            holder.setDividerVisible(true);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                holder.itemView.setElevation(0f);
-                holder.itemView.setTranslationZ(0f);
-                holder.itemView.setClipToOutline(false);
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                holder.itemView.setRenderEffect(null);
+    private void refreshVisibleSelectionVisuals() {
+        if (recyclerView == null) {
+            return;
+        }
+        int childCount = recyclerView.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View child = recyclerView.getChildAt(i);
+            RecyclerView.ViewHolder holder = recyclerView.getChildViewHolder(child);
+            if (holder instanceof ViewHolder) {
+                int pos = holder.getAbsoluteAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    applySelectionState((ViewHolder) holder, uiConversations.get(pos), true);
+                }
             }
         }
     }
@@ -446,7 +395,17 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         private ImageView ivMsgStatus;
         private View itemDivider;
 
-
+        /** 会话项背景：常态为纯色，悬浮时渐变出圆角与描边 */
+        private final GradientDrawable cardBackground = new GradientDrawable();
+        /** 悬浮进度：0=平铺常态，1=完全悬浮 */
+        private float floatFraction = 0f;
+        /** 弱化进度：0=清晰，1=完全弱化虚化 */
+        private float dimFraction = 0f;
+        /** 常态底色，悬浮时向白色过渡 */
+        private int baseColor = Color.WHITE;
+        private ValueAnimator selectionAnimator;
+        /** 上一次已下发的模糊半径，用于抑制每帧重复创建 RenderEffect */
+        private float appliedBlurRadius = -1f;
 
         ViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -460,7 +419,9 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             progressBar = itemView.findViewById(R.id.msg_progress);
             ivMsgStatus = itemView.findViewById(R.id.iv_msg_status);
             itemDivider = itemView.findViewById(R.id.item_divider);
-
+            // TIPS: 背景统一交给可变的 GradientDrawable，圆角/描边/底色都能按帧插值，
+            // 避免长按瞬间切换 backgroundResource 造成的视觉突跳。
+            itemView.setBackground(cardBackground);
 
             itemView.setOnClickListener(v -> {
                 int position = getAbsoluteAdapterPosition();
@@ -579,14 +540,104 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
             return Math.round(dp * density);
         }
 
-        void setDividerVisible(boolean visible) {
-            itemDivider.setVisibility(visible ? VISIBLE : GONE);
-        }
-    }
+        /**
+         * 过渡到目标选中态
+         *
+         * @param uiConversation 会话数据，用于取常态底色
+         * @param floatTarget    悬浮目标值：1=悬浮成卡片，0=回到平铺
+         * @param dimTarget      弱化目标值：1=弱化虚化，0=恢复清晰
+         * @param animated       true 走渐变动画，false 直接落到目标值
+         */
+        void transitionSelection(UiConversation uiConversation, float floatTarget, float dimTarget, boolean animated) {
+            cancelSelectionAnimator();
+            baseColor = itemView.getResources().getColor(uiConversation != null && uiConversation.isTop()
+                    ? R.color.conversation_top_bg
+                    : R.color.white);
 
-    private float dpToPx(@NonNull View view, float dp) {
-        float density = view.getResources().getDisplayMetrics().density;
-        return dp * density;
+            if (!animated || (floatFraction == floatTarget && dimFraction == dimTarget)) {
+                floatFraction = floatTarget;
+                dimFraction = dimTarget;
+                renderSelectionFrame();
+                return;
+            }
+
+            final float floatFrom = floatFraction;
+            final float dimFrom = dimFraction;
+            ValueAnimator animator = ValueAnimator.ofFloat(0f, 1f);
+            animator.setDuration(SELECTION_ANIM_DURATION);
+            // 标准减速曲线：起手快、收尾稳，视觉上是"浮起来"而不是"弹一下"
+            animator.setInterpolator(new PathInterpolator(0.2f, 0f, 0f, 1f));
+            animator.addUpdateListener(a -> {
+                float progress = (float) a.getAnimatedValue();
+                floatFraction = floatFrom + (floatTarget - floatFrom) * progress;
+                dimFraction = dimFrom + (dimTarget - dimFrom) * progress;
+                renderSelectionFrame();
+            });
+            selectionAnimator = animator;
+            animator.start();
+        }
+
+        /**
+         * 复位选中态视觉，供 ViewHolder 回收时调用
+         */
+        void resetSelectionVisuals() {
+            cancelSelectionAnimator();
+            floatFraction = 0f;
+            dimFraction = 0f;
+            renderSelectionFrame();
+        }
+
+        private void cancelSelectionAnimator() {
+            if (selectionAnimator != null) {
+                selectionAnimator.cancel();
+                selectionAnimator = null;
+            }
+        }
+
+        /**
+         * 按当前进度值渲染一帧选中态视觉。
+         * TIPS: 全部使用属性动画可作用的属性（scale / translation / alpha / 背景 drawable 参数），
+         * 不修改 LayoutParams，因此不会触发 RecyclerView 重新测量布局，也就不会有相邻项抖动。
+         */
+        private void renderSelectionFrame() {
+            float density = itemView.getResources().getDisplayMetrics().density;
+
+            float scale = 1f + FLOAT_EXTRA_SCALE * floatFraction;
+            itemView.setScaleX(scale);
+            itemView.setScaleY(scale);
+            itemView.setTranslationY(-FLOAT_LIFT_DP * density * floatFraction);
+            itemView.setTranslationZ(FLOAT_ELEVATION_DP * density * floatFraction);
+            itemView.setAlpha(1f - (1f - DIM_ALPHA) * dimFraction);
+
+            cardBackground.setColor((int) ARGB_EVALUATOR.evaluate(floatFraction, baseColor, Color.WHITE));
+            cardBackground.setCornerRadius(FLOAT_CORNER_DP * density * floatFraction);
+            cardBackground.setStroke(Math.round(density),
+                    Color.argb(Math.round(FLOAT_STROKE_ALPHA * floatFraction), 0, 0, 0));
+            itemView.setClipToOutline(floatFraction > 0f);
+
+            // 悬浮成卡片后分割线随进度淡出
+            itemDivider.setAlpha(1f - floatFraction);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                applyBlur(DIM_BLUR_RADIUS * dimFraction);
+            }
+        }
+
+        /**
+         * 按目标半径应用虚化效果
+         * TIPS: RenderEffect 每帧新建开销不低，这里按 0.5px 量化，半径变化不足一档时跳过下发。
+         */
+        @androidx.annotation.RequiresApi(api = Build.VERSION_CODES.S)
+        private void applyBlur(float radius) {
+            float quantized = Math.round(radius * 2f) / 2f;
+            if (quantized == appliedBlurRadius) {
+                return;
+            }
+            appliedBlurRadius = quantized;
+            itemView.setRenderEffect(quantized <= 0f
+                    ? null
+                    : RenderEffect.createBlurEffect(quantized, quantized, Shader.TileMode.CLAMP));
+        }
     }
 
     /**
@@ -625,24 +676,6 @@ public class ConversationListAdapter extends RecyclerView.Adapter<ConversationLi
         }
 
         return AppRes.string(R.string.conv_list_mention_someone);
-    }
-
-    private void applyCardMargins(@NonNull View itemView, boolean isCardStyle) {
-        ViewGroup.LayoutParams params = itemView.getLayoutParams();
-        if (!(params instanceof RecyclerView.LayoutParams)) {
-            return;
-        }
-        RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) params;
-        int horizontal = Math.round(dpToPx(itemView, isCardStyle ? 10f : 0f));
-        int vertical = Math.round(dpToPx(itemView, isCardStyle ? 4f : 0f));
-        if (layoutParams.leftMargin == horizontal
-                && layoutParams.rightMargin == horizontal
-                && layoutParams.topMargin == vertical
-                && layoutParams.bottomMargin == vertical) {
-            return;
-        }
-        layoutParams.setMargins(horizontal, vertical, horizontal, vertical);
-        itemView.setLayoutParams(layoutParams);
     }
 
     /**
