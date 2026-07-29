@@ -1,6 +1,12 @@
 <resources>
-    <string name="auth_org_id">组织ID</string>
-    <string name="auth_org_id_not_available">组织ID配置暂未开放</string>
+    <string name="auth_enterprise_id_invalid">请输入正确的组织 ID</string>
+    <string name="auth_enterprise_id_load_failed">组织配置加载失败</string>
+    <string name="auth_enterprise_id_switched">已进入组织</string>
+    <string name="auth_organization_page_title">填写组织信息</string>
+    <string name="auth_organization_id_label">组织ID</string>
+    <string name="auth_organization_id_hint">请输入组织ID</string>
+    <string name="auth_button_enter_organization">进入组织</string>
+    <string name="auth_button_enter_organization_loading">进入中</string>
 
     <string name="auth_welcome_prefix">Hi！欢迎使用 </string>
     <string name="auth_welcome_app_name">Juggle Chat</string>
@@ -64,7 +70,7 @@
 
     <string name="auth_cd_header">认证页头图</string>
     <string name="auth_cd_logo">应用 Logo</string>
-    <string name="auth_cd_org_id">组织 ID</string>
+    <string name="auth_cd_org_id">企业 ID</string>
     <string name="auth_cd_back">返回</string>
     <string name="auth_cd_account">账号</string>
     <string name="auth_cd_password">密码</string>

@@ -105,6 +105,17 @@ public final class SessionRepository {
     }
 
     /**
+     * 判断持久化存储中是否存在过会话数据，不校验令牌是否完整或过期。
+     * <p>
+     * TIPS：该结果必须在 {@link #getValidSession()} 之前读取，因为有效性检查会主动清理失效数据。
+     *
+     * @return true 表示存在待校验的会话数据；false 表示用户从未登录或已主动清理会话
+     */
+    public boolean hasStoredSession() {
+        return storage.readSecureSession() != null || storage.readLegacySession() != null;
+    }
+
+    /**
      * 持久化当前会话。写入加密存储成功后会清理旧版明文字段。
      */
     public void saveSession(@Nullable String appToken, @Nullable String imToken, long expireAtMillis) {

@@ -7,12 +7,11 @@ import androidx.multidex.MultiDexApplication;
 import com.juggle.im.android.auth.SessionRepository;
 import com.juggle.im.android.auth.StartupRouteUseCase;
 import com.juggle.im.android.auth.UserProfileStore;
+import com.juggle.im.android.auth.OrganizationStore;
 import com.juggle.im.android.chat.call.CallIncomingFloatingManager;
 import com.juggle.im.android.core.JIMChatCore;
 import com.juggle.im.android.i18n.LanguageManager;
 import com.juggle.im.android.model.ConfigUtils;
-
-import java.util.Collections;
 
 public class Application extends MultiDexApplication {
 
@@ -23,7 +22,15 @@ public class Application extends MultiDexApplication {
         super.onCreate();
         // tips: 语言必须在任何界面创建前生效，否则首屏会用系统语言
         LanguageManager.init(this);
-        JIMChatCore.getInstance().init(this, Collections.singletonList(ConfigUtils.imServer), ConfigUtils.appKey);
+        // TIPS：企业配置必须早于 HTTP 服务和 IM SDK 初始化恢复，避免冷启动连接到历史默认环境。
+        OrganizationStore.OrganizationConfig organizationConfig =
+                new OrganizationStore(this).read();
+        ConfigUtils.applyOrganization(
+                organizationConfig.getOrganizationId(),
+                organizationConfig.getAppKey(),
+                organizationConfig.getAppServerUrl(),
+                organizationConfig.getImServers());
+        JIMChatCore.getInstance().init(this, ConfigUtils.imServers, ConfigUtils.appKey);
         CallIncomingFloatingManager.getInstance().init(this);
 
         // tips: 原 FlashActivity 逻辑前置，启动时立即恢复 session 并做路由决策

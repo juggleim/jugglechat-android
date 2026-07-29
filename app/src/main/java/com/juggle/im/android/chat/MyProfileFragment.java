@@ -239,7 +239,11 @@ public class MyProfileFragment extends Fragment {
         if (currentUserInfo == null) return;
 
         // 加载头像
-        AvatarUtils.loadAvatar(ivAvatar, currentUserInfo.getAvatar(), currentUserInfo.getNickname());
+        AvatarUtils.loadAvatar(
+                ivAvatar,
+                currentUserInfo.getAvatar(),
+                currentUserInfo.getNickname(),
+                currentUserInfo.getUserId());
 
         // 显示昵称
         if (!TextUtils.isEmpty(currentUserInfo.getNickname())) {

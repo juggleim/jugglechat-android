@@ -199,9 +199,16 @@
                 android:background="@drawable/bg_group_setting_card"
                 android:orientation="vertical">
 
-                <include
-                    android:id="@+id/row_current_user"
-                    layout="@layout/item_group_setting_row" />
+                <LinearLayout
+                    android:id="@+id/account_rows_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <include
+                        android:id="@+id/row_current_user"
+                        layout="@layout/item_group_setting_row" />
+                </LinearLayout>
 
                 <include
                     android:id="@+id/row_add_account"

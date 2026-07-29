@@ -42,7 +42,9 @@
     <string name="personal_add_account">添加账号</string>
     <string name="personal_current_user">当前用户</string>
     <string name="personal_bind_email_todo">绑定邮箱功能开发中</string>
-    <string name="personal_add_account_todo">添加账号功能开发中</string>
+    <string name="personal_add_account_success">账号添加成功</string>
+    <string name="personal_account_expired">该账号登录状态已过期，请重新登录</string>
+    <string name="personal_account_switch_failed">账号切换失败</string>
     <string name="personal_load_failed">获取用户信息失败</string>
     <string name="personal_avatar_upload_failed">头像上传失败</string>
     <string name="personal_avatar_uploading">头像上传中，请稍候</string>

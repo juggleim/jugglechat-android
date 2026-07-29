@@ -1,10 +1,12 @@
 package com.juggle.im.android.app;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -16,16 +18,18 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import com.juggle.im.android.utils.LogUtils;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.auth.AccountStore;
 import com.juggle.im.android.auth.AuthInputValidator;
 import com.juggle.im.android.auth.AuthRequestFactory;
 import com.juggle.im.android.auth.SessionRepository;
@@ -42,6 +46,7 @@ import com.juggle.im.android.utils.ToastUtils;
 public class LoginActivity extends AbsAppActivity {
     private static final String TAG = "LoginActivity";
     private static final long TOKEN_VALIDITY_DURATION = 2L * 24 * 60 * 60 * 1000;
+    private static final String EXTRA_ADD_ACCOUNT_MODE = "add_account_mode";
 
     private TextView accountTab;
     private TextView emailTab;
@@ -59,24 +64,43 @@ public class LoginActivity extends AbsAppActivity {
     private TextView registerText;
     private TextView privacyText;
     private View passwordToggle;
+    private View orgIdContainer;
+    private View loginBack;
+    private View loginTopBar;
 
     private Button loginButton;
-    private ProgressBar loginProgress;
+    private View loginLoadingContent;
 
     private boolean isEmailMode = false;
     private boolean isLoading = false;
     private boolean isSendingCode = false;
     private boolean isPasswordVisible = false;
+    private boolean isAddAccountMode = false;
     private SessionRepository sessionRepository;
+    private AccountStore accountStore;
+
+    /**
+     * 创建“添加账户”模式的登录页 Intent。
+     *
+     * @param context Android 上下文
+     * @return 添加账户登录页 Intent
+     */
+    public static Intent createAddAccountIntent(@NonNull Context context) {
+        return new Intent(context, LoginActivity.class)
+                .putExtra(EXTRA_ADD_ACCOUNT_MODE, true);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setupSystemBars();
         setContentView(R.layout.activity_login);
+        isAddAccountMode = getIntent().getBooleanExtra(EXTRA_ADD_ACCOUNT_MODE, false);
         sessionRepository = SessionRepository.create(this);
+        accountStore = new AccountStore(this);
 
         initViews();
+        applySystemBarInsets();
         setupListeners();
         setupAgreementLinks();
         applyMode(false);
@@ -108,9 +132,31 @@ public class LoginActivity extends AbsAppActivity {
         registerText = findViewById(R.id.registerText);
         privacyText = findViewById(R.id.privacyText);
         passwordToggle = findViewById(R.id.passwordToggle);
+        orgIdContainer = findViewById(R.id.orgIdContainer);
+        loginBack = findViewById(R.id.loginBack);
+        loginTopBar = findViewById(R.id.loginTopBar);
 
         loginButton = findViewById(R.id.loginButton);
-        loginProgress = findViewById(R.id.loginProgress);
+        loginLoadingContent = findViewById(R.id.loginLoadingContent);
+
+        loginBack.setVisibility(isAddAccountMode ? View.VISIBLE : View.GONE);
+        orgIdContainer.setVisibility(isAddAccountMode ? View.GONE : View.VISIBLE);
+    }
+
+    private void applySystemBarInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(loginTopBar, (view, insets) -> {
+            int statusBarTop = insets.getInsets(
+                    WindowInsetsCompat.Type.statusBars()).top;
+            android.view.ViewGroup.MarginLayoutParams layoutParams =
+                    (android.view.ViewGroup.MarginLayoutParams) view.getLayoutParams();
+            if (layoutParams.topMargin != statusBarTop) {
+                // TIPS：沉浸式页面必须避开真实状态栏高度，刘海屏上固定 dp 会让企业 ID 可见但不可点击。
+                layoutParams.topMargin = statusBarTop;
+                view.setLayoutParams(layoutParams);
+            }
+            return insets;
+        });
+        ViewCompat.requestApplyInsets(loginTopBar);
     }
 
     private void setupListeners() {
@@ -122,8 +168,9 @@ public class LoginActivity extends AbsAppActivity {
         getCodeText.setOnClickListener(v -> requestEmailCode());
         passwordToggle.setOnClickListener(v -> togglePasswordVisibility());
 
-        View orgIdContainer = findViewById(R.id.orgIdContainer);
-        orgIdContainer.setOnClickListener(v -> ToastUtils.show(this, R.string.auth_org_id_not_available));
+        orgIdContainer.setOnClickListener(v ->
+                startActivity(new Intent(this, OrganizationLoginActivity.class)));
+        loginBack.setOnClickListener(v -> finish());
 
         TextWatcher watcher = new TextWatcher() {
             @Override
@@ -286,20 +333,48 @@ public class LoginActivity extends AbsAppActivity {
     }
 
     private void onLoginSuccess(LoginResult data) {
-        if (data == null) {
+        if (data == null
+                || TextUtils.isEmpty(data.getUser_id())
+                || TextUtils.isEmpty(data.getAuthorization())
+                || TextUtils.isEmpty(data.getIm_token())) {
             showLoading(false);
             ToastUtils.show(this, R.string.auth_error_login_empty_response);
             return;
         }
 
         Log.i(TAG, "Login success");
+        long expireAtMillis = System.currentTimeMillis() + TOKEN_VALIDITY_DURATION;
+        AccountStore.AccountRecord accountRecord = new AccountStore.AccountRecord(
+                ConfigUtils.organizationId,
+                data.getUser_id(),
+                data.getNickname(),
+                data.getAvatar(),
+                data.getAuthorization(),
+                data.getIm_token(),
+                expireAtMillis);
+        try {
+            accountStore.upsert(accountRecord);
+        } catch (RuntimeException exception) {
+            LogUtils.e(TAG, "-", "auth", "saveAccount", "fail", exception.getMessage());
+            showLoading(false);
+            ToastUtils.show(this, R.string.operation_failed);
+            return;
+        }
+
+        if (isAddAccountMode) {
+            showLoading(false);
+            setResult(RESULT_OK);
+            finish();
+            return;
+        }
+
         ConfigUtils.imToken = data.getIm_token();
         ConfigUtils.appToken = data.getAuthorization();
         ConfigUtils.myName = data.getNickname();
         ConfigUtils.myAvatarUrl = data.getAvatar();
         UserProfileStore.save(this, data.getUser_id(), data.getNickname(), data.getAvatar());
 
-        if (!persistSession(data.getAuthorization(), data.getIm_token())) {
+        if (!persistSession(data.getAuthorization(), data.getIm_token(), expireAtMillis)) {
             showLoading(false);
             return;
         }
@@ -347,9 +422,8 @@ public class LoginActivity extends AbsAppActivity {
         });
     }
 
-    private boolean persistSession(String appToken, String imToken) {
+    private boolean persistSession(String appToken, String imToken, long expireAtMillis) {
         try {
-            long expireAtMillis = System.currentTimeMillis() + TOKEN_VALIDITY_DURATION;
             sessionRepository.saveSession(appToken, imToken, expireAtMillis);
             return true;
         } catch (RuntimeException e) {
@@ -371,14 +445,14 @@ public class LoginActivity extends AbsAppActivity {
 
         if (isLoading) {
             loginButton.setEnabled(false);
-            loginButton.setText(R.string.auth_button_login_loading);
+            loginButton.setText("");
             loginButton.setBackgroundResource(R.drawable.bg_auth_button_loading);
             loginButton.setTextColor(ContextCompat.getColor(this, R.color.white));
-            loginProgress.setVisibility(View.VISIBLE);
+            loginLoadingContent.setVisibility(View.VISIBLE);
             return;
         }
 
-        loginProgress.setVisibility(View.GONE);
+        loginLoadingContent.setVisibility(View.GONE);
         loginButton.setText(R.string.auth_button_login);
         if (canSubmit) {
             loginButton.setEnabled(true);
@@ -405,7 +479,6 @@ public class LoginActivity extends AbsAppActivity {
     private String safeTrim(String value) {
         return value == null ? "" : value.trim();
     }
-
 
     private final class LinkSpan extends ClickableSpan {
         private final Runnable clickAction;

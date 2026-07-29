@@ -11,7 +11,7 @@ resource:
   - app/src/main/java/com/juggle/im/android/model/
   - app/src/main/java/com/juggle/im/android/i18n/
 tags: [app, ui]
-timestamp: 2026-07-28T21:14:14+08:00
+timestamp: 2026-07-29T14:25:27+08:00
 ---
 
 # 应用壳层
@@ -27,14 +27,18 @@ timestamp: 2026-07-28T21:14:14+08:00
 * 各设置页的数据操作走 [网络请求层](/modules/server.md)
 * 用户协议与隐私政策随 APK 内置，由 WebViewPageActivity 按 [多语言约定](/conventions/i18n.md) 选择中英文资源；协议页禁止网络回退
 * “我的”Tab 由 MainActivity 在 Activity 层连续绘制状态栏与个人信息区背景，隐藏公共标题并同步收起标题占位；切换 Tab 时 Fragment 与顶部样式在同一帧生效
-* 主页个人信息入口打开账户设置；账户设置按当前用户匹配本地缓存并优先展示，再以服务端差异更新缓存和界面，同时保护未保存的编辑内容
+* 主页个人信息入口打开账户设置；账户设置按当前用户匹配本地缓存并优先展示，再以服务端差异更新缓存和界面，同时保护未保存的编辑内容；账户区支持添加及快速切换同一企业下最多 5 个账户
+* 登录页右上角仅展示企业入口图标，OrganizationLoginActivity 独立承载企业 ID 输入、加载、失败回滚和成功返回
+* 启动窗口与 iOS 统一使用品牌蓝背景和底部品牌口号；Android 12+ 由系统 Splash 属性承载
 
 ## 关键入口
 
 * `app/MainActivity.java` — 主框架与 Tab 管理
+* `app/LoginActivity.java` — 账密/邮箱登录、添加账户模式及企业入口
+* `app/OrganizationLoginActivity.java` — 企业 ID 页面与企业运行配置切换
 * `app/PersonalSettingsActivity.java` — 账户资料展示、编辑和缓存同步
 * `service/ImForegroundService.java` — IM 长连接保活的常驻通知
-* `model/ConfigUtils.java` — appKey/服务器地址/Zego ID 全局配置，换环境改这里
+* `model/ConfigUtils.java` — 当前企业 ID、appKey、业务/IM 服务器和 Zego ID 运行配置
 * `i18n/LanguageManager.java` — 应用语言持久化与生效，入口在 app/LanguageSettingsActivity
 * `app/WebViewPageActivity.java` — 用户协议和隐私政策的离线、安全承载页
 

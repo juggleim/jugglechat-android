@@ -1,6 +1,12 @@
 <resources>
-    <string name="auth_org_id">Org ID</string>
-    <string name="auth_org_id_not_available">Org ID configuration is not available yet</string>
+    <string name="auth_enterprise_id_invalid">Enter a valid organization ID</string>
+    <string name="auth_enterprise_id_load_failed">Failed to load organization configuration</string>
+    <string name="auth_enterprise_id_switched">Entered organization</string>
+    <string name="auth_organization_page_title">Fill in organization info</string>
+    <string name="auth_organization_id_label">Organization ID</string>
+    <string name="auth_organization_id_hint">Please enter organization ID</string>
+    <string name="auth_button_enter_organization">Enter organization</string>
+    <string name="auth_button_enter_organization_loading">Entering</string>
 
     <string name="auth_welcome_prefix">Hi! Welcome to </string>
     <string name="auth_welcome_app_name">Juggle Chat</string>
@@ -64,7 +70,7 @@
 
     <string name="auth_cd_header">Auth header</string>
     <string name="auth_cd_logo">App logo</string>
-    <string name="auth_cd_org_id">Organization ID</string>
+    <string name="auth_cd_org_id">Enterprise ID</string>
     <string name="auth_cd_back">Back</string>
     <string name="auth_cd_account">Account</string>
     <string name="auth_cd_password">Password</string>

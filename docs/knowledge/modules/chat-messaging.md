@@ -5,7 +5,7 @@ description: 会话列表、消息流、渲染器、输入面板插件、@提及
 resource:
   - app/src/main/java/com/juggle/im/android/chat/
 tags: [chat, message, core]
-timestamp: 2026-07-28T21:14:14+08:00
+timestamp: 2026-07-29T14:25:27+08:00
 ---
 
 # 聊天消息

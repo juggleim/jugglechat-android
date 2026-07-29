@@ -6,12 +6,16 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
+import android.view.LayoutInflater;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.bumptech.glide.Glide;
@@ -19,6 +23,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.auth.AccountStore;
 import com.juggle.im.android.auth.SessionRepository;
 import com.juggle.im.android.auth.UserProfileStore;
 import com.juggle.im.android.component.AbsAppActivity;
@@ -38,6 +43,7 @@ import com.juggle.im.android.utils.LogUtils;
  */
 public class PersonalSettingsActivity extends AbsAppActivity {
     private static final int REQ_PICK_AVATAR = 2201;
+    private static final int REQ_ADD_ACCOUNT = 2202;
 
     private ImageView avatarView;
     private ProgressBar avatarProgress;
@@ -49,6 +55,8 @@ public class PersonalSettingsActivity extends AbsAppActivity {
     private View rowUpdatePwd;
     private View rowCurrentUser;
     private View rowAddAccount;
+    private LinearLayout accountRowsContainer;
+    private AccountStore accountStore;
 
     private String currentUserId;
     private String originalName;
@@ -75,6 +83,8 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         rowUpdatePwd = findViewById(R.id.row_update_pwd);
         rowCurrentUser = findViewById(R.id.row_current_user);
         rowAddAccount = findViewById(R.id.row_add_account);
+        accountRowsContainer = findViewById(R.id.account_rows_container);
+        accountStore = new AccountStore(this);
 
         ((TextView) findViewById(R.id.tv_title)).setText(R.string.personal_settings_title);
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
@@ -85,12 +95,12 @@ public class PersonalSettingsActivity extends AbsAppActivity {
 
         setupRow(rowBindEmail, R.drawable.ic_display_name, getString(R.string.personal_bind_email), getString(R.string.personal_not_set), true);
         setupRow(rowUpdatePwd, R.drawable.ic_setting_privacy, getString(R.string.personal_update_password), "", true);
-//        setupRow(rowCurrentUser, R.drawable.ic_display_name, "当前用户", "xxxxx", true);
         setupRow(rowAddAccount, R.drawable.ic_add, getString(R.string.personal_add_account), "", true);
 
         rowBindEmail.setOnClickListener(v -> Toast.makeText(this, R.string.personal_bind_email_todo, Toast.LENGTH_SHORT).show());
         rowUpdatePwd.setOnClickListener(v -> startActivity(new Intent(this, UpdatePasswordActivity.class)));
-        rowAddAccount.setOnClickListener(v -> Toast.makeText(this, R.string.personal_add_account_todo, Toast.LENGTH_SHORT).show());
+        rowAddAccount.setOnClickListener(v ->
+                startActivityForResult(LoginActivity.createAddAccountIntent(this), REQ_ADD_ACCOUNT));
 
         findViewById(R.id.btn_logout).setOnClickListener(v -> confirmLogout());
 
@@ -100,8 +110,19 @@ public class PersonalSettingsActivity extends AbsAppActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        refreshAccountRows();
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_ADD_ACCOUNT && resultCode == Activity.RESULT_OK) {
+            refreshAccountRows();
+            Toast.makeText(this, R.string.personal_add_account_success, Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (requestCode != REQ_PICK_AVATAR || resultCode != Activity.RESULT_OK || data == null) {
             return;
         }
@@ -150,6 +171,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         ConfigUtils.myAvatarUrl = originalAvatarUrl;
         bindUserData(originalName, originalAccount, avatarUrl);
         hasCachedProfile = true;
+        saveCurrentAccountIfPossible(originalName, originalAvatarUrl);
     }
 
     private void applyRemoteUserInfo(UserInfoBean data) {
@@ -179,6 +201,7 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         ConfigUtils.myAvatarUrl = remoteAvatar;
         UserProfileStore.save(this, remoteAccount, remoteName, remoteAvatar);
         hasCachedProfile = true;
+        saveCurrentAccountIfPossible(remoteName, remoteAvatar);
 
         if (!nameEdited) {
             etName.setText(remoteName);
@@ -199,16 +222,13 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         etName.setText(name);
         etAccount.setText(account);
         bindAvatar(name, avatar);
-        // 同步“当前用户”行，确保页面首次加载时头像与文案都与当前资料一致。
         refreshCurrentUserRow(name, avatar);
+        refreshAccountRows();
     }
 
     private void bindAvatar(String name, String avatar) {
-        if (!TextUtils.isEmpty(avatar)) {
-            AvatarUtils.loadAvatar(avatarView, avatar, name, currentUserId);
-        } else {
-            avatarView.setImageResource(R.drawable.icon_default_avatar);
-        }
+        // TIPS：无网络头像时也必须走 AvatarUtils，保证与“我的”页面使用同一首字母和底色规则。
+        AvatarUtils.loadAvatar(avatarView, avatar, name, currentUserId);
     }
 
     /**
@@ -223,12 +243,107 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         TextView subtitle = rowCurrentUser.findViewById(R.id.tv_row_subtitle);
         ImageView arrow = rowCurrentUser.findViewById(R.id.iv_row_arrow);
 
-        // “当前用户”固定为标题，名称展示在副标题，避免语义混淆。
-        title.setText(R.string.personal_current_user);
+        title.setText(safeText(name, currentUserId));
         subtitle.setVisibility(View.VISIBLE);
-        subtitle.setText(safeText(name, currentUserId));
+        subtitle.setText(R.string.personal_current_user);
+        subtitle.setTextColor(ContextCompat.getColor(this, R.color.design_color_success));
         arrow.setVisibility(View.GONE);
         AvatarUtils.loadAvatar(icon, avatar, name, currentUserId);
+    }
+
+    private void refreshAccountRows() {
+        if (accountRowsContainer == null || accountStore == null) {
+            return;
+        }
+        while (accountRowsContainer.getChildCount() > 1) {
+            accountRowsContainer.removeViewAt(accountRowsContainer.getChildCount() - 1);
+        }
+
+        java.util.List<AccountStore.AccountRecord> accounts =
+                accountStore.getAccounts(ConfigUtils.organizationId);
+        for (AccountStore.AccountRecord account : accounts) {
+            if (TextUtils.equals(currentUserId, account.getUserId())) {
+                continue;
+            }
+            View row = LayoutInflater.from(this)
+                    .inflate(R.layout.item_group_setting_row, accountRowsContainer, false);
+            bindAccountRow(row, account);
+            accountRowsContainer.addView(row);
+        }
+        rowAddAccount.setVisibility(
+                accounts.size() < AccountStore.MAX_ACCOUNT_COUNT ? View.VISIBLE : View.GONE);
+    }
+
+    private void bindAccountRow(@NonNull View row,
+                                @NonNull AccountStore.AccountRecord account) {
+        ImageView icon = row.findViewById(R.id.iv_row_icon);
+        TextView title = row.findViewById(R.id.tv_row_title);
+        TextView subtitle = row.findViewById(R.id.tv_row_subtitle);
+        ImageView arrow = row.findViewById(R.id.iv_row_arrow);
+
+        title.setText(safeText(account.getNickname(), account.getUserId()));
+        subtitle.setVisibility(View.VISIBLE);
+        subtitle.setText(account.getUserId());
+        arrow.setVisibility(View.VISIBLE);
+        AvatarUtils.loadAvatar(
+                icon,
+                account.getAvatar(),
+                account.getNickname(),
+                account.getUserId());
+        row.setOnClickListener(v -> switchAccount(account));
+    }
+
+    private void switchAccount(@NonNull AccountStore.AccountRecord account) {
+        if (TextUtils.equals(currentUserId, account.getUserId())) {
+            return;
+        }
+        if (!account.isSessionValid(System.currentTimeMillis())) {
+            Toast.makeText(this, R.string.personal_account_expired, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            // TIPS：先断开旧连接，再替换全部会话与资料，避免界面进入新用户后旧连接仍回调数据。
+            JIM.getInstance().getConnectionManager().disconnect(false);
+            SessionRepository.create(this).saveSession(
+                    account.getAppToken(),
+                    account.getImToken(),
+                    account.getExpireAtMillis());
+            UserProfileStore.save(
+                    this,
+                    account.getUserId(),
+                    account.getNickname(),
+                    account.getAvatar());
+            ConfigUtils.appToken = account.getAppToken();
+            ConfigUtils.imToken = account.getImToken();
+            ConfigUtils.myName = account.getNickname();
+            ConfigUtils.myAvatarUrl = account.getAvatar();
+
+            Intent intent = new Intent(this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        } catch (RuntimeException exception) {
+            LogUtils.e("PersonalSettingsActivity", "-", "auth", "switchAccount",
+                    "fail", exception.getMessage());
+            Toast.makeText(this, R.string.personal_account_switch_failed, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void saveCurrentAccountIfPossible(String name, String avatar) {
+        SessionRepository.SessionState session =
+                SessionRepository.create(this).getValidSession();
+        if (session == null || TextUtils.isEmpty(currentUserId)) {
+            return;
+        }
+        accountStore.upsert(new AccountStore.AccountRecord(
+                ConfigUtils.organizationId,
+                currentUserId,
+                name,
+                avatar,
+                session.getAppToken(),
+                session.getImToken(),
+                session.getExpireAtMillis()));
+        refreshAccountRows();
     }
 
     private void openAvatarPicker() {
@@ -354,7 +469,12 @@ public class PersonalSettingsActivity extends AbsAppActivity {
         avatarUrl = avatar;
         ConfigUtils.myName = name;
         ConfigUtils.myAvatarUrl = avatar;
-        UserProfileStore.save(this, account, name, avatar);
+        UserProfileStore.save(this, currentUserId, name, avatar);
+        accountStore.updateProfile(
+                ConfigUtils.organizationId,
+                currentUserId,
+                name,
+                avatar);
         Toast.makeText(this, R.string.personal_save_success, Toast.LENGTH_SHORT).show();
         finish();
     }

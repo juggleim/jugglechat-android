@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@color/white" />
+    <item android:drawable="@color/app_primary" />
 
     <item
-        android:gravity="center_horizontal|center_vertical"
-        android:top="-28dp">
+        android:width="300dp"
+        android:height="120dp"
+        android:gravity="bottom|center_horizontal">
         <bitmap
             android:antialias="true"
-            android:gravity="center"
-            android:src="@drawable/ic_brand_logo" />
+            android:gravity="fill"
+            android:src="@drawable/splash_branding_legacy" />
     </item>
 </layer-list>

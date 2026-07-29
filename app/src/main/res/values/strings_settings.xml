@@ -42,7 +42,9 @@
     <string name="personal_add_account">Add account</string>
     <string name="personal_current_user">Current user</string>
     <string name="personal_bind_email_todo">Email binding is not available yet</string>
-    <string name="personal_add_account_todo">Adding accounts is not available yet</string>
+    <string name="personal_add_account_success">Account added</string>
+    <string name="personal_account_expired">This account session expired. Please sign in again.</string>
+    <string name="personal_account_switch_failed">Failed to switch account</string>
     <string name="personal_load_failed">Failed to load profile</string>
     <string name="personal_avatar_upload_failed">Failed to upload avatar</string>
     <string name="personal_avatar_uploading">Uploading avatar, please wait</string>

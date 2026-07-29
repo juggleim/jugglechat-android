@@ -50,6 +50,7 @@ public class JIMChatCore {
     private static final String tag = "JIMCore";
     private static volatile JIMChatCore instance;
     private static final Object lock = new Object();
+    private boolean listenerInitialized;
     
     private JIMChatCore() {
         // 私有构造函数，防止外部实例化
@@ -76,29 +77,36 @@ public class JIMChatCore {
      * @param serverList 服务器列表
      * @param appKey 应用密钥
      */
-    public void init(Context context, List<String> serverList, String appKey) {
+    public synchronized void init(Context context, List<String> serverList, String appKey) {
         if (context == null || serverList == null || appKey == null) {
             throw new IllegalArgumentException("Invalid arguments");
         }
-        /**
-         * 需要申请对应自己音视频 ID，这个仅仅用来测试
-         */
-        JIM.getInstance().getCallManager().initZegoEngine(ConfigUtils.zegoId, context);
+        if (!listenerInitialized) {
+            /**
+             * 需要申请对应自己音视频 ID，这个仅仅用来测试
+             */
+            JIM.getInstance().getCallManager().initZegoEngine(ConfigUtils.zegoId, context);
+        }
         JIM.getInstance().setServerUrls(serverList);
         JIM.InitConfig.Builder builder = new JIM.InitConfig.Builder();
         JLogConfig.Builder logBuilder = new JLogConfig.Builder(context);
         logBuilder.setLogConsoleLevel(JLogLevel.JLogLevelVerbose);
         builder.setJLogConfig(new JLogConfig(logBuilder));
-        JIM.getInstance().getMessageManager().registerContentType(FriendNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(GroupNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(LifeTimeNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(MomentNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(SyncDataNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(TimelineNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(TypingNotifyMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(StickerGameMessage.class);
-        JIM.getInstance().getMessageManager().registerContentType(StickerEmojiMessage.class);
+        if (!listenerInitialized) {
+            JIM.getInstance().getMessageManager().registerContentType(FriendNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(GroupNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(LifeTimeNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(MomentNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(SyncDataNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(TimelineNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(TypingNotifyMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(StickerGameMessage.class);
+            JIM.getInstance().getMessageManager().registerContentType(StickerEmojiMessage.class);
+        }
         JIM.getInstance().init(context, appKey, builder.build());
+        if (listenerInitialized) {
+            return;
+        }
         initListener();
         JIM.getInstance().getConnectionManager().addConnectionStatusListener("conn", new IConnectionManager.IConnectionStatusListener() {
             @Override
@@ -118,6 +126,19 @@ public class JIMChatCore {
                 Log.i(tag, "db close");
             }
         });
+        listenerInitialized = true;
+    }
+
+    /**
+     * 在登录页切换企业运行配置。
+     *
+     * @param context Android 上下文
+     * @param serverList 新企业的 IM 服务器列表
+     * @param appKey 新企业的应用密钥
+     */
+    public void switchOrganization(Context context, List<String> serverList, String appKey) {
+        JIM.getInstance().getConnectionManager().disconnect(false);
+        init(context.getApplicationContext(), serverList, appKey);
     }
 
     /**

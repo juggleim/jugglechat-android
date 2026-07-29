@@ -39,9 +39,17 @@ public final class AuthGuard {
     public boolean requireValidSessionForWrite(@NonNull Activity activity, @NonNull String action) {
         String traceId = TraceContext.currentOrNew();
         try {
+            // TIPS：先记录会话存在性，getValidSession 会清理过期数据；未登录用户不应收到过期提示。
+            boolean hadStoredSession = sessionRepository.hasStoredSession();
             SessionRepository.SessionState sessionState = sessionRepository.getValidSession();
             if (sessionState == null) {
-                blockAndRedirect(activity, traceId, action, "session_absent_or_expired", false);
+                blockAndRedirect(
+                        activity,
+                        traceId,
+                        action,
+                        "session_absent_or_expired",
+                        false,
+                        hadStoredSession);
                 return false;
             }
             ConfigUtils.appToken = sessionState.getAppToken();
@@ -59,7 +67,7 @@ public final class AuthGuard {
     public void handleSessionInvalid(@NonNull Activity activity, @NonNull String reason) {
         String traceId = TraceContext.currentOrNew();
         try {
-            blockAndRedirect(activity, traceId, "session.invalid", reason, true);
+            blockAndRedirect(activity, traceId, "session.invalid", reason, true, true);
         } finally {
             TraceContext.clear();
         }
@@ -69,7 +77,8 @@ public final class AuthGuard {
                                   @NonNull String traceId,
                                   @NonNull String action,
                                   @NonNull String reason,
-                                  boolean remoteKickOut) {
+                                  boolean remoteKickOut,
+                                  boolean showMessage) {
         sessionRepository.clearSession();
         UserProfileStore.clear(activity);
         ConfigUtils.appToken = null;
@@ -77,10 +86,12 @@ public final class AuthGuard {
         LogUtils.e(TAG, traceId, FEATURE, "auth.guard.blocked", "fail",
                 "action=" + action + ",reason=" + reason);
 
-        int toastRes = remoteKickOut
-                ? R.string.auth_error_account_logged_in_other_device
-                : R.string.auth_error_session_invalid;
-        ToastUtils.show(activity, toastRes);
+        if (showMessage) {
+            int toastRes = remoteKickOut
+                    ? R.string.auth_error_account_logged_in_other_device
+                    : R.string.auth_error_session_invalid;
+            ToastUtils.show(activity, toastRes);
+        }
 
         Intent intent = new Intent(activity, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK);

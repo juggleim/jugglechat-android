@@ -21,25 +21,39 @@
         android:layout_width="0dp"
         android:layout_height="44dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="25dp"
+        android:layout_marginTop="0dp"
         android:layout_marginEnd="16dp"
-        android:gravity="center_vertical|end"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <ImageView
+            android:id="@+id/loginBack"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@string/auth_cd_back"
+            android:src="@drawable/ic_back"
+            android:visibility="gone" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
         <LinearLayout
             android:id="@+id/orgIdContainer"
-            android:layout_width="wrap_content"
+            android:layout_width="44dp"
             android:layout_height="match_parent"
-            android:gravity="center_vertical"
+            android:contentDescription="@string/auth_cd_org_id"
+            android:gravity="center"
             android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:contentDescription="@string/auth_cd_org_id"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:importantForAccessibility="no"
                 android:src="@drawable/ic_org" />
         </LinearLayout>
     </LinearLayout>
@@ -71,10 +85,10 @@
 
                 <ImageView
                     android:id="@+id/appLogo"
-                    android:layout_width="84dp"
-                    android:layout_height="wrap_content"
-                    android:adjustViewBounds="true"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
                     android:contentDescription="@string/auth_cd_logo"
+                    android:scaleType="fitCenter"
                     android:src="@drawable/ic_brand_logo" />
 
                 <LinearLayout
@@ -196,6 +210,7 @@
                     android:paddingEnd="16dp"
                     android:textColor="@color/auth_text_primary"
                     android:textColorHint="@color/auth_text_secondary"
+                    android:textCursorDrawable="@drawable/cursor_edittext"
                     android:textSize="15sp" />
 
                 <LinearLayout
@@ -241,6 +256,7 @@
                         android:inputType="textPassword"
                         android:textColor="@color/auth_text_primary"
                         android:textColorHint="@color/auth_text_secondary"
+                        android:textCursorDrawable="@drawable/cursor_edittext"
                         android:textSize="15sp" />
 
                     <ImageView
@@ -295,6 +311,7 @@
                     android:paddingEnd="16dp"
                     android:textColor="@color/auth_text_primary"
                     android:textColorHint="@color/auth_text_secondary"
+                    android:textCursorDrawable="@drawable/cursor_edittext"
                     android:textSize="15sp" />
 
                 <LinearLayout
@@ -341,6 +358,7 @@
                         android:maxLength="6"
                         android:textColor="@color/auth_text_primary"
                         android:textColorHint="@color/auth_text_secondary"
+                        android:textCursorDrawable="@drawable/cursor_edittext"
                         android:textSize="15sp" />
 
                     <View
@@ -376,13 +394,28 @@
                     android:textAllCaps="false"
                     android:textColor="@color/auth_button_disabled_text" />
 
-                <ProgressBar
-                    android:id="@+id/loginProgress"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                <LinearLayout
+                    android:id="@+id/loginLoadingContent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
                     android:layout_gravity="center"
-                    android:indeterminateTint="@color/white"
-                    android:visibility="gone" />
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <TextView
+                        style="@style/TextAppearance.Auth.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/auth_button_login_loading"
+                        android:textColor="@color/white" />
+
+                    <ProgressBar
+                        android:layout_width="18dp"
+                        android:layout_height="18dp"
+                        android:layout_marginStart="8dp"
+                        android:indeterminateTint="@color/white" />
+                </LinearLayout>
             </FrameLayout>
 
             <LinearLayout

@@ -3,6 +3,7 @@ package com.juggle.im.android.auth;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -47,10 +48,20 @@ public class SessionRepositoryTest {
         storage.secure = new SessionRepository.SessionState("app-expired", "im-expired", 999L);
 
         SessionRepository repository = new SessionRepository(storage, () -> 1000L);
+        assertTrue(repository.hasStoredSession());
         SessionRepository.SessionState session = repository.getValidSession();
 
         assertNull(session);
         assertTrue(storage.clearedSecure);
+        assertFalse(repository.hasStoredSession());
+    }
+
+    @Test
+    public void shouldReportNoStoredSessionBeforeFirstLogin() {
+        FakeSessionStorage storage = new FakeSessionStorage();
+        SessionRepository repository = new SessionRepository(storage, () -> 1000L);
+
+        assertFalse(repository.hasStoredSession());
     }
 
     @Test
