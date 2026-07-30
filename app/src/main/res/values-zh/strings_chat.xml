@@ -74,6 +74,8 @@
     <string name="group_notify_you">你</string>
     <string name="group_notify_add_member">%1$s 邀请 %2$s 加入群聊</string>
     <string name="group_notify_remove_member">%1$s 将 %2$s 移除群聊</string>
+    <string name="group_notify_quit">%1$s 退出群聊</string>
+    <string name="group_notify_quit_self">你已退出群聊</string>
     <string name="group_notify_rename">%1$s 修改群名称为 %2$s</string>
     <string name="group_notify_change_owner">%1$s 已成为新群主</string>
     <string name="group_notify_join">%1$s 加入群聊</string>

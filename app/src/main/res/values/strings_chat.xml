@@ -74,6 +74,8 @@
     <string name="group_notify_you">You</string>
     <string name="group_notify_add_member">%1$s invited %2$s to the group</string>
     <string name="group_notify_remove_member">%1$s removed %2$s from the group</string>
+    <string name="group_notify_quit">%1$s left the group</string>
+    <string name="group_notify_quit_self">You left the group</string>
     <string name="group_notify_rename">%1$s changed the group name to %2$s</string>
     <string name="group_notify_change_owner">%1$s is the new group owner</string>
     <string name="group_notify_join">%1$s joined the group</string>

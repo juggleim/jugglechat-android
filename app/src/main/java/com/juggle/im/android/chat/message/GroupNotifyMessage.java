@@ -88,12 +88,17 @@ public class GroupNotifyMessage extends MessageContent {
     }
 
     public String description() {
+        String currentUserId = JIM.getInstance().getCurrentUserId();
         boolean isSender = !TextUtils.isEmpty(mOperator.getUserId())
-                && mOperator.getUserId().equals(JIM.getInstance().getCurrentUserId());
+                && mOperator.getUserId().equals(currentUserId);
         String sender = isSender ? AppRes.string(R.string.group_notify_you) : mOperator.getUserName();
         StringBuilder userList = new StringBuilder();
         for (UserInfo member : mMembers) {
-            userList.append(member.getUserName()).append(", ");
+            // 涉及自己时统一显示"你"，避免出现自己的昵称
+            boolean isSelf = !TextUtils.isEmpty(member.getUserId())
+                    && member.getUserId().equals(currentUserId);
+            userList.append(isSelf ? AppRes.string(R.string.group_notify_you) : member.getUserName())
+                    .append(", ");
         }
         String newOwner = "";
         boolean isOwner = false;
@@ -116,6 +121,13 @@ public class GroupNotifyMessage extends MessageContent {
             case ADD_MEMBER:
                 return AppRes.string(R.string.group_notify_add_member, sender, ul);
             case REMOVE_MEMBER:
+                // TIPS: 主动退群时服务端下发的也是 REMOVE_MEMBER，操作人与被移除人是同一个人；
+                // 若不区分就会渲染成"你 将 你 移除群聊"，这里按"退出群聊"单独出文案。
+                if (isSelfQuit()) {
+                    return isSender
+                            ? AppRes.string(R.string.group_notify_quit_self)
+                            : AppRes.string(R.string.group_notify_quit, sender);
+                }
                 return AppRes.string(R.string.group_notify_remove_member, sender, ul);
             case RENAME:
                 return AppRes.string(R.string.group_notify_rename, sender, mName);
@@ -126,6 +138,20 @@ public class GroupNotifyMessage extends MessageContent {
             default:
                 return "";
         }
+    }
+
+    /**
+     * 是否为成员主动退群。
+     *
+     * @return true 表示操作人与被移除成员是同一人（自己退出群聊）
+     */
+    private boolean isSelfQuit() {
+        if (mMembers == null || mMembers.size() != 1) {
+            return false;
+        }
+        String operatorId = mOperator == null ? null : mOperator.getUserId();
+        String memberId = mMembers.get(0) == null ? null : mMembers.get(0).getUserId();
+        return !TextUtils.isEmpty(operatorId) && operatorId.equals(memberId);
     }
 
     public enum GroupNotifyType {

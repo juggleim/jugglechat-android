@@ -5,7 +5,7 @@ description: 会话列表、消息流、渲染器、输入面板插件、@提及
 resource:
   - app/src/main/java/com/juggle/im/android/chat/
 tags: [chat, message, core]
-timestamp: 2026-07-30T10:54:00+08:00
+timestamp: 2026-07-30T11:05:00+08:00
 ---
 
 # 聊天消息
@@ -47,3 +47,5 @@ timestamp: 2026-07-30T10:54:00+08:00
 - 语音播放一律走本地文件：消息批量落地后由 `VoiceMessageDownloader.prefetch` 预下载，点击时本地缺失
   才下载（按 messageId 去重）。直接把远端 URL 交给 MediaPlayer 会让每次点击都重新走网络缓冲，出声明显延迟。
 - 图片消息占位图按目标宽高比在竖版/横版两张灰底图中就近取用，与 iOS MessageImagePlaceholderRenderer 同规则。
+- 主动退群时服务端下发的群通知类型同样是 `REMOVE_MEMBER`（操作人与被移除成员为同一人），
+  渲染灰条前必须识别这种自退场景单独出文案，否则会出现"你 将 你 移除群聊"。
