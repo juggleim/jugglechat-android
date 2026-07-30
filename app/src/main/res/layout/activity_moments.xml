@@ -16,10 +16,9 @@
             android:layout_width="match_parent"
             android:layout_height="250dp"
             android:fitsSystemWindows="true"
-            app:collapsedTitleTextAppearance="@style/TitleTextAppearance"
             app:contentScrim="@android:color/white"
-            app:expandedTitleTextAppearance="@style/NoTitleTextAppearance"
-            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+            app:layout_scrollFlags="scroll|exitUntilCollapsed"
+            app:titleEnabled="false">
             <!-- 添加背景图片 -->
             <ImageView
                 android:layout_width="match_parent"
@@ -62,9 +61,19 @@
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:gravity="center"
-                app:layout_collapseMode="pin"
-                app:title="@string/moments_title"
-                app:titleTextColor="@color/white">
+                app:layout_collapseMode="pin">
+
+                <!-- 折叠后显示的标题，居中于标题栏，透明度随折叠进度渐显 -->
+                <TextView
+                    android:id="@+id/tv_toolbar_title"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:alpha="0"
+                    android:text="@string/moments_title"
+                    android:textColor="@color/conversation_primary_text"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
 
                 <ImageView
                     android:id="@+id/btn_camera"

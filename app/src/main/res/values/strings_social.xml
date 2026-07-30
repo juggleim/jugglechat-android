@@ -52,4 +52,10 @@
     <!-- 相机选项 -->
     <string name="camera_option_take_photo">Take photo</string>
     <string name="camera_option_from_album">Choose from album</string>
+    <string name="moments_comment_send_failed">Failed to send, please retry</string>
+    <string name="moments_like_failed">Failed to like, please retry</string>
+    <string name="moments_unlike">Liked</string>
+    <string name="moments_delete_failed">Failed to delete, please retry</string>
+    <string name="moments_comment_delete_failed">Failed to delete comment, please retry</string>
+    <string name="moments_delete_confirm_message">Delete this moment?</string>
 </resources>

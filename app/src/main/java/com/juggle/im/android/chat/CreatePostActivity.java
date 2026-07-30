@@ -15,6 +15,10 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import com.juggle.im.android.component.AbsAppActivity;
+import com.juggle.im.android.event.MomentPublishedEvent;
+import com.juggle.im.android.widget.SubmitButtonState;
+
+import org.greenrobot.eventbus.EventBus;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -38,6 +42,7 @@ public class CreatePostActivity extends AbsAppActivity {
     private RecyclerView mImageRecyclerView;
     private MediaAdapter mMediaAdapter;
     private TextView tvSend;
+    private SubmitButtonState sendButtonState;
     private LinkedHashMap<String, String> mImageUrls = new LinkedHashMap<>();
     private String mVideoUrl = null;
     private static final int REQUEST_CODE_PICK_IMAGES = 1001;
@@ -70,6 +75,7 @@ public class CreatePostActivity extends AbsAppActivity {
         tvSend = findViewById(R.id.tv_send);
 
         // 发送按钮点击事件
+        sendButtonState = SubmitButtonState.bind(tvSend, R.string.common_sending);
         tvSend.setOnClickListener(v -> submitPost());
 
         // 初始化RecyclerView
@@ -146,11 +152,17 @@ public class CreatePostActivity extends AbsAppActivity {
             }
         }
 
-        tvSend.setEnabled(false);
+        if (!sendButtonState.begin()) {
+            return;
+        }
 
         JIM.getInstance().getMomentManager().addMoment(content, mediaList, new JIMConst.IResultCallback<Moment>() {
             @Override
             public void onSuccess(Moment data) {
+                // TIPS: 广播发布事件，已打开的动态流据此自行刷新，不依赖 startActivityForResult 的返回链路
+                EventBus.getDefault().post(new MomentPublishedEvent(
+                        JIM.getInstance().getCurrentUserId(),
+                        data == null ? null : data.getMomentId()));
                 runOnUiThread(() -> {
                     Toast.makeText(CreatePostActivity.this, R.string.moments_post_success, Toast.LENGTH_SHORT).show();
                     InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -166,7 +178,7 @@ public class CreatePostActivity extends AbsAppActivity {
             @Override
             public void onError(int errorCode) {
                 runOnUiThread(() -> {
-                    tvSend.setEnabled(true);
+                    sendButtonState.end();
                     LogUtils.serverError("moments", "createPost", errorCode, "");
                     Toast.makeText(CreatePostActivity.this, R.string.moments_post_failed, Toast.LENGTH_SHORT).show();
                 });

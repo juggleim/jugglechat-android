@@ -47,13 +47,23 @@ import com.juggle.im.model.MomentMedia;
 import com.juggle.im.model.MomentReaction;
 import com.juggle.im.model.UserInfo;
 import com.juggle.im.android.utils.PermissionComponent;
+import com.juggle.im.android.event.MomentPublishedEvent;
+import com.juggle.im.android.widget.AppConfirmDialog;
+import com.juggle.im.android.widget.LoadingOverlay;
+import com.juggle.im.android.widget.SubmitButtonState;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.chat.utils.FileUtils;
 
 import android.widget.GridLayout;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import com.juggle.im.android.utils.LogUtils;
 
 /**
@@ -73,12 +83,24 @@ public class MomentsActivity extends AbsAppActivity {
     private MomentsAdapter adapter;
     private TextView tvName;
     private ImageView ivAvatar;
+    private SubmitButtonState commentSubmitState;
+    /** 正在请求点赞的动态 ID，避免连点重复发请求 */
+    private final Set<String> likingMomentIds = new HashSet<>();
 
     // 分页相关变量
     private int currentPage = 0;
     private int pageSize = 20;
     private boolean isLoading = false;
     private boolean hasMore = true;
+
+    private static final String TAG = "MomentsActivity";
+    private static final String FEATURE_MOMENTS = "moments";
+
+    /** 点赞在 SDK 里的 reaction key */
+    private static final String REACTION_KEY_LIKE = "like";
+
+    /** 标题开始渐显的折叠进度阈值 */
+    private static final float TITLE_FADE_IN_START = 0.7f;
 
     // 拍照相关变量
     private static final int REQUEST_CODE_CHOOSE_PHOTO = 1001;
@@ -91,13 +113,19 @@ public class MomentsActivity extends AbsAppActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_moments);
+        EventBus.getDefault().register(this);
 
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            // 标题由居中的 tv_toolbar_title 承担，关闭 ActionBar 自带的左对齐标题
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
         toolbar.setNavigationOnClickListener(v -> finish());
 
         appBarLayout = findViewById(R.id.appbar);
+        setupCollapsedTitle();
         recyclerView = findViewById(R.id.rv_moments);
         swipeRefreshLayout = findViewById(R.id.swipe_refresh);
         tvName = findViewById(R.id.tv_name);
@@ -118,7 +146,7 @@ public class MomentsActivity extends AbsAppActivity {
         });
         findViewById(R.id.btn_camera).setOnLongClickListener(l -> {
             Intent it = new Intent(MomentsActivity.this, CreatePostActivity.class);
-            startActivityForResult(it, 100);
+            startActivityForResult(it, REQUEST_CODE_CREATE_POST);
             return true;
         });
 
@@ -194,16 +222,22 @@ public class MomentsActivity extends AbsAppActivity {
                     bottomSheetDialog.setContentView(sheetView);
                     sheetView.findViewById(R.id.btn_delete).setOnClickListener(v -> {
                         bottomSheetDialog.dismiss();
+                        LoadingOverlay overlay = LoadingOverlay.show(MomentsActivity.this);
                         JIM.getInstance().getMomentManager().removeComment(moment.getMomentId(), comment.getCommentId(), new IMessageManager.ISimpleCallback() {
                             @Override
                             public void onSuccess() {
+                                runOnUiThread(() -> LoadingOverlay.dismiss(overlay));
                                 refreshMomentItem(moment);
                             }
 
                             @Override
                             public void onError(int errorCode) {
                                 runOnUiThread(() -> {
-                                    Toast.makeText(MomentsActivity.this, "Failed to delete comment: " + errorCode, Toast.LENGTH_SHORT).show();
+                                    LoadingOverlay.dismiss(overlay);
+                                    Toast.makeText(MomentsActivity.this,
+                                            R.string.moments_comment_delete_failed,
+                                            Toast.LENGTH_SHORT).show();
+                                    LogUtils.serverError(FEATURE_MOMENTS, "removeComment", errorCode, "");
                                 });
                             }
                         });
@@ -239,58 +273,126 @@ public class MomentsActivity extends AbsAppActivity {
 
             @Override
             public void onDeletePost(int position, Moment moment) {
-                JIM.getInstance().getMomentManager().removeMoment(moment.getMomentId(), new IMessageManager.ISimpleCallback() {
-                    @Override
-                    public void onSuccess() {
-                        runOnUiThread(() -> {
-                            adapter.items.remove(position);
-                            adapter.notifyItemRemoved(position);
-                        });
-                    }
+                // 与 iOS 一致：删除动态不可撤销，先确认再执行；确认按钮自带加载态承载这次请求
+                AppConfirmDialog.builder(MomentsActivity.this)
+                        .setMessage(getString(R.string.moments_delete_confirm_message))
+                        .setNegativeText(getString(R.string.txt_cancel))
+                        .setPositiveText(getString(R.string.create_group_confirm))
+                        .setOnPositiveAsyncClick(action ->
+                                JIM.getInstance().getMomentManager().removeMoment(moment.getMomentId(),
+                                        new IMessageManager.ISimpleCallback() {
+                                            @Override
+                                            public void onSuccess() {
+                                                runOnUiThread(() -> {
+                                                    action.succeed();
+                                                    adapter.items.remove(position);
+                                                    adapter.notifyItemRemoved(position);
+                                                });
+                                            }
 
-                    @Override
-                    public void onError(int errorCode) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(MomentsActivity.this, "Failed to delete moment: " + errorCode, Toast.LENGTH_SHORT).show();
-                        });
-                    }
-                });
+                                            @Override
+                                            public void onError(int errorCode) {
+                                                runOnUiThread(() -> {
+                                                    action.fail();
+                                                    Toast.makeText(MomentsActivity.this,
+                                                            R.string.moments_delete_failed,
+                                                            Toast.LENGTH_SHORT).show();
+                                                });
+                                                LogUtils.serverError(FEATURE_MOMENTS, "removeMoment", errorCode, "");
+                                            }
+                                        }))
+                        .show();
             }
         });
 
-        findViewById(R.id.btn_send_comment).setOnClickListener(v -> {
-            if (selectedMoment != null) {
-                String commentText = editTextField.getText().toString().trim();
-                if (!TextUtils.isEmpty(commentText)) {
-                    JIM.getInstance().getMomentManager().addComment(
-                            selectedMoment.getMomentId(),
-                            selectedComment != null ? selectedComment.getCommentId() : null,
-                            commentText,
-                            new JIMConst.IResultCallback<MomentComment>() {
-                                @Override
-                                public void onSuccess(MomentComment data) {
-                                    refreshMomentItem(selectedMoment);
-                                    runOnUiThread(() -> {
-                                        hideCommentInput();
-                                        editTextField.setText("");
-                                    });
-                                }
-
-                                @Override
-                                public void onError(int errorCode) {
-                                    runOnUiThread(() -> {
-                                        Log.e("MomentsActivity", "Failed to add comment: " + errorCode);
-                                    });
-                                }
-                            }
-                    );
-                }
+        TextView sendCommentView = findViewById(R.id.btn_send_comment);
+        commentSubmitState = SubmitButtonState.bind(sendCommentView, R.string.common_sending);
+        sendCommentView.setOnClickListener(v -> {
+            if (selectedMoment == null) {
+                return;
             }
+            String commentText = editTextField.getText().toString().trim();
+            if (TextUtils.isEmpty(commentText)) {
+                return;
+            }
+            // TIPS: 评论是会产生脏数据的写操作，必须先占住提交态再发请求，否则弱网下会重复评论
+            if (!commentSubmitState.begin()) {
+                return;
+            }
+            Moment commentTarget = selectedMoment;
+            JIM.getInstance().getMomentManager().addComment(
+                    commentTarget.getMomentId(),
+                    selectedComment != null ? selectedComment.getCommentId() : null,
+                    commentText,
+                    new JIMConst.IResultCallback<MomentComment>() {
+                        @Override
+                        public void onSuccess(MomentComment data) {
+                            refreshMomentItem(commentTarget);
+                            runOnUiThread(() -> {
+                                commentSubmitState.end();
+                                hideCommentInput();
+                                editTextField.setText("");
+                            });
+                        }
+
+                        @Override
+                        public void onError(int errorCode) {
+                            runOnUiThread(() -> {
+                                commentSubmitState.end();
+                                Toast.makeText(MomentsActivity.this,
+                                        R.string.moments_comment_send_failed,
+                                        Toast.LENGTH_SHORT).show();
+                                LogUtils.serverError("moments", "addComment", errorCode, "");
+                            });
+                        }
+                    }
+            );
         });
 
         // 初始加载数据
         swipeRefreshLayout.setRefreshing(true);
         loadMoments();
+    }
+
+    /**
+     * 折叠标题渐显。
+     * TIPS: CollapsingToolbarLayout 自带标题的折叠位置会被导航按钮挤偏，无法真正居中，
+     * 因此关闭其 titleEnabled，改由 Toolbar 内居中的 TextView 承担，按折叠进度控制透明度。
+     */
+    private void setupCollapsedTitle() {
+        TextView titleView = findViewById(R.id.tv_toolbar_title);
+        if (appBarLayout == null || titleView == null) {
+            return;
+        }
+        appBarLayout.addOnOffsetChangedListener((AppBarLayout.OnOffsetChangedListener) (bar, verticalOffset) -> {
+            int scrollRange = bar.getTotalScrollRange();
+            if (scrollRange <= 0) {
+                titleView.setAlpha(0f);
+                return;
+            }
+            float collapsedRatio = Math.min(1f, Math.abs(verticalOffset) / (float) scrollRange);
+            // 接近完全折叠时才渐显，避免与封面上的昵称同时出现
+            float alpha = (collapsedRatio - TITLE_FADE_IN_START) / (1f - TITLE_FADE_IN_START);
+            titleView.setAlpha(Math.max(0f, Math.min(1f, alpha)));
+        });
+    }
+
+    /**
+     * 收到朋友圈发布成功事件后刷新动态流。
+     *
+     * @param event 发布事件
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMomentPublished(MomentPublishedEvent event) {
+        LogUtils.i(TAG, null, FEATURE_MOMENTS, "publish", "received",
+                "momentId=" + (event == null ? "" : event.getMomentId()));
+        refreshMoments();
+    }
+
+    @Override
+    protected void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
     }
 
     private void showCameraOptions() {
@@ -371,18 +473,143 @@ public class MomentsActivity extends AbsAppActivity {
         });
     }
 
+    /**
+     * 点赞 / 取消点赞。
+     * TIPS: 点赞是高频轻量操作，转圈反而打断手感，因此走乐观更新——先本地增删自己，
+     * 请求成功再用服务端数据校正，失败则回滚并提示；与 iOS 的 toggleLike 行为对齐。
+     *
+     * @param position 列表位置
+     * @param moment   目标动态
+     */
     private void likePost(int position, Moment moment) {
-        JIM.getInstance().getMomentManager().addReaction(moment.getMomentId(), "like", new IMessageManager.ISimpleCallback() {
+        String momentId = moment.getMomentId();
+        if (momentId == null || !likingMomentIds.add(momentId)) {
+            return;
+        }
+        boolean liked = isLikedByCurrentUser(moment);
+        boolean localApplied = applyLocalLike(moment, !liked);
+        if (localApplied) {
+            adapter.notifyItemChanged(position);
+        }
+        IMessageManager.ISimpleCallback callback = new IMessageManager.ISimpleCallback() {
             @Override
             public void onSuccess() {
+                // TIPS: SDK 回调不保证在主线程，点赞标记与列表数据都只在主线程增删，避免并发改动
+                runOnUiThread(() -> likingMomentIds.remove(momentId));
                 refreshMomentItem(moment);
             }
 
             @Override
             public void onError(int errorCode) {
-                Log.e("MomentsActivity", "Failed to add reaction: " + errorCode);
+                runOnUiThread(() -> {
+                    likingMomentIds.remove(momentId);
+                    if (localApplied) {
+                        applyLocalLike(moment, liked);
+                        adapter.notifyItemChanged(position);
+                    }
+                    Toast.makeText(MomentsActivity.this,
+                            R.string.moments_like_failed,
+                            Toast.LENGTH_SHORT).show();
+                });
+                LogUtils.serverError(FEATURE_MOMENTS, liked ? "removeReaction" : "addReaction", errorCode, "");
             }
-        });
+        };
+        if (liked) {
+            JIM.getInstance().getMomentManager().removeReaction(momentId, REACTION_KEY_LIKE, callback);
+        } else {
+            JIM.getInstance().getMomentManager().addReaction(momentId, REACTION_KEY_LIKE, callback);
+        }
+    }
+
+    /**
+     * 判断当前用户是否已点赞该动态。
+     *
+     * @param moment 目标动态
+     * @return true 表示已点赞
+     */
+    private boolean isLikedByCurrentUser(@NonNull Moment moment) {
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        if (TextUtils.isEmpty(currentUserId) || moment.getReactionList() == null) {
+            return false;
+        }
+        for (MomentReaction reaction : moment.getReactionList()) {
+            if (!REACTION_KEY_LIKE.equals(reaction.getKey()) || reaction.getUserList() == null) {
+                continue;
+            }
+            for (UserInfo user : reaction.getUserList()) {
+                if (user != null && currentUserId.equals(user.getUserId())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 在本地动态数据里增删当前用户的点赞。
+     *
+     * @param moment 目标动态
+     * @param liked  true 表示插入点赞，false 表示回滚
+     * @return 是否真的改动了数据（已点过赞时插入会返回 false）
+     */
+    private boolean applyLocalLike(@NonNull Moment moment, boolean liked) {
+        String currentUserId = JIM.getInstance().getCurrentUserId();
+        if (TextUtils.isEmpty(currentUserId)) {
+            return false;
+        }
+        List<MomentReaction> reactionList = moment.getReactionList();
+        if (reactionList == null) {
+            reactionList = new ArrayList<>();
+            moment.setReactionList(reactionList);
+        }
+        MomentReaction likeReaction = null;
+        for (MomentReaction reaction : reactionList) {
+            if (REACTION_KEY_LIKE.equals(reaction.getKey())) {
+                likeReaction = reaction;
+                break;
+            }
+        }
+        if (likeReaction == null) {
+            if (!liked) {
+                return false;
+            }
+            likeReaction = new MomentReaction();
+            likeReaction.setKey(REACTION_KEY_LIKE);
+            likeReaction.setUserList(new ArrayList<>());
+            reactionList.add(likeReaction);
+        }
+        List<UserInfo> userList = likeReaction.getUserList();
+        if (userList == null) {
+            userList = new ArrayList<>();
+            likeReaction.setUserList(userList);
+        }
+        int existingIndex = -1;
+        for (int i = 0; i < userList.size(); i++) {
+            UserInfo user = userList.get(i);
+            if (user != null && currentUserId.equals(user.getUserId())) {
+                existingIndex = i;
+                break;
+            }
+        }
+        if (liked) {
+            if (existingIndex >= 0) {
+                return false;
+            }
+            UserInfo self = new UserInfo();
+            self.setUserId(currentUserId);
+            self.setUserName(ConfigUtils.myName);
+            self.setPortrait(ConfigUtils.myAvatarUrl);
+            userList.add(self);
+            return true;
+        }
+        if (existingIndex < 0) {
+            return false;
+        }
+        userList.remove(existingIndex);
+        if (userList.isEmpty()) {
+            reactionList.remove(likeReaction);
+        }
+        return true;
     }
 
     private void showPostComment(int position, Moment moment, MomentComment comment) {
@@ -791,7 +1018,12 @@ public class MomentsActivity extends AbsAppActivity {
                 PopupWindow popupWindow = new PopupWindow(popupView, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
 
                 // Set click listeners for popup menu items
-                popupView.findViewById(R.id.btn_like).setOnClickListener(view -> {
+                // 与 iOS 一致：按钮文案跟随当前点赞状态在"赞/已赞"之间切换
+                TextView likeView = popupView.findViewById(R.id.btn_like);
+                likeView.setText(isLikedByCurrentUser(moment)
+                        ? R.string.moments_unlike
+                        : R.string.moments_like);
+                likeView.setOnClickListener(view -> {
                     popupWindow.dismiss();
                     likePost(position, moment);
                 });
@@ -884,7 +1116,7 @@ public class MomentsActivity extends AbsAppActivity {
                 break;
 
             case REQUEST_CODE_CREATE_POST:
-                refreshMoments(); // 重新加载数据
+                // 发布结果由 MomentPublishedEvent 统一驱动刷新，这里不再重复拉取
                 break;
 
             default:

@@ -8,7 +8,7 @@ resource:
   - app/src/main/java/com/juggle/im/android/server/http/MomentService.java
   - app/src/main/java/com/juggle/im/android/server/http/MomentServiceImpl.java
 tags: [moments, social]
-timestamp: 2026-07-03T14:00:00+08:00
+timestamp: 2026-07-30T10:52:00+08:00
 ---
 
 # 朋友圈
@@ -30,3 +30,7 @@ timestamp: 2026-07-03T14:00:00+08:00
 ## 注意事项
 
 - MomentsActivity 内有一处已知未解决的滚动 TODO（"执行滚动无效，已经在最底部"），改滚动逻辑时注意。
+- 发布成功后由 CreatePostActivity 广播 `MomentPublishedEvent`，动态流订阅后自行刷新（对齐 iOS 的
+  MomentDidPublish 通知）；不要再依赖 startActivityForResult 的返回链路刷新，否则从其他入口发布会漏刷。
+- 点赞走乐观更新 + 失败回滚，并按 momentId 去重；SDK 的 MomentManager 回调不保证主线程，改 UI 或
+  改本地列表数据前先切回主线程。

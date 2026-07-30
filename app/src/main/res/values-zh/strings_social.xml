@@ -52,4 +52,10 @@
     <!-- 相机选项 -->
     <string name="camera_option_take_photo">拍照</string>
     <string name="camera_option_from_album">从相册选择</string>
+    <string name="moments_comment_send_failed">发送失败，请重试</string>
+    <string name="moments_like_failed">点赞失败，请重试</string>
+    <string name="moments_unlike">已赞</string>
+    <string name="moments_delete_failed">删除失败，请重试</string>
+    <string name="moments_comment_delete_failed">删除评论失败，请重试</string>
+    <string name="moments_delete_confirm_message">确认删除这条朋友圈？</string>
 </resources>
