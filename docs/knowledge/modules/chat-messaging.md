@@ -5,7 +5,7 @@ description: 会话列表、消息流、渲染器、输入面板插件、@提及
 resource:
   - app/src/main/java/com/juggle/im/android/chat/
 tags: [chat, message, core]
-timestamp: 2026-07-30T10:50:00+08:00
+timestamp: 2026-07-30T10:54:00+08:00
 ---
 
 # 聊天消息
@@ -42,3 +42,8 @@ timestamp: 2026-07-30T10:50:00+08:00
 - 定时删除仅影响设置后发送的新消息；群聊入口受 `group_set_msg_life_right` 控制，当前会话周期不能附加到转发目标会话。
 - “我的”页版本信息必须读取安装包元数据，不能维护独立的硬编码版本号。
 - “我的”页首次展示不得重复请求资料；缓存与当前登录用户不匹配时不得展示，服务端返回相同资料时不得重新绑定界面。
+- 聊天背景在「通用设置」里全局设置，落地点在 MessageListFragment 的背景图层：onViewCreated/onResume
+  各应用一次，另订阅 `ChatBackgroundChangedEvent` 做即时换图；改会话页布局时别把背景图层盖掉。
+- 语音播放一律走本地文件：消息批量落地后由 `VoiceMessageDownloader.prefetch` 预下载，点击时本地缺失
+  才下载（按 messageId 去重）。直接把远端 URL 交给 MediaPlayer 会让每次点击都重新走网络缓冲，出声明显延迟。
+- 图片消息占位图按目标宽高比在竖版/横版两张灰底图中就近取用，与 iOS MessageImagePlaceholderRenderer 同规则。

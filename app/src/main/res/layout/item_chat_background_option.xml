@@ -11,6 +11,16 @@
         android:layout_height="match_parent"
         android:scaleType="centerCrop" />
 
+    <TextView
+        android:id="@+id/tv_background_blank"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/general_chat_background_blank"
+        android:textColor="@color/conversation_secondary_text"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
     <com.juggle.im.android.widget.JuggleCheckBox
         android:id="@+id/checkbox"
         android:layout_width="22dp"

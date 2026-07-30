@@ -35,7 +35,14 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.juggle.im.JIM;
 import com.juggle.im.JIMConst;
 import com.juggle.im.android.R;
+import com.juggle.im.android.app.AppSettingsStore;
 import com.juggle.im.android.app.ContactDetailActivity;
+import com.juggle.im.android.chat.utils.VoiceMessageDownloader;
+import com.juggle.im.android.event.ChatBackgroundChangedEvent;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 import com.juggle.im.android.chat.message.InsertTimeStatusMessage;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.chat.view.ChatInputActionBar;
@@ -150,6 +157,8 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
     private UiMessage contextPinnedMessage;
     private String contextPinnedMessageId = "";
     private View layoutUnreadBubble;
+    /** 聊天背景图层，跟随「通用设置 - 聊天背景」变化 */
+    private ImageView chatBackgroundView;
     private boolean unreadJumpInProgress = false;
     // New Message Bubble
     private View layoutNewMessageBubble;
@@ -217,6 +226,10 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
             isGroup = getArguments().getBoolean(ARG_IS_GROUP, false);
             unreadCount = getArguments().getInt(ARG_UNREAD_COUNT, 0);
         }
+
+        chatBackgroundView = view.findViewById(R.id.iv_chat_background);
+        applyChatBackground();
+        EventBus.getDefault().register(this);
 
         swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_messages);
         recyclerView = view.findViewById(R.id.recycler_view_messages);
@@ -1118,6 +1131,9 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
                         }
 
                         DataWindow beforeMergeWindow = captureDataWindow();
+                        // TIPS: 与 iOS prefetchVoiceMessagesIfNeeded 一致——本批消息落地后就把语音文件提前下到本地，
+                        // 用户点播放时直接读本地文件，不必等网络缓冲
+                        VoiceMessageDownloader.prefetch(list);
                         List<UiMessage> incoming = mapToUiMessages(list);
                         String incomingRange = formatIncomingRange(incoming);
                         if (!incoming.isEmpty()) {
@@ -2287,8 +2303,45 @@ public class MessageListFragment extends Fragment implements MessageStreamSink {
         }
     }
 
+    /**
+     * 聊天背景变更后立即换图。
+     *
+     * @param event 背景变更事件
+     */
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onChatBackgroundChanged(ChatBackgroundChangedEvent event) {
+        applyChatBackground();
+    }
+
+    /**
+     * 应用「通用设置 - 聊天背景」的当前选择。
+     * TIPS: 与 iOS applyChatBackground 一致——选了图就铺满裁切显示，选「无背景」则隐藏图层露出纯色底；
+     * onViewCreated 与 onResume 都会调用，保证从设置页返回时无需重建页面也能生效。
+     */
+    private void applyChatBackground() {
+        if (chatBackgroundView == null || !isAdded()) {
+            return;
+        }
+        int backgroundRes = AppSettingsStore.getChatBackgroundRes(requireContext());
+        if (backgroundRes == 0) {
+            chatBackgroundView.setImageDrawable(null);
+            chatBackgroundView.setVisibility(GONE);
+            return;
+        }
+        chatBackgroundView.setImageResource(backgroundRes);
+        chatBackgroundView.setVisibility(VISIBLE);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        applyChatBackground();
+    }
+
     @Override
     public void onDestroyView() {
+        EventBus.getDefault().unregister(this);
+        chatBackgroundView = null;
         if (recyclerView != null && clearHighlightRunnable != null) {
             recyclerView.removeCallbacks(clearHighlightRunnable);
         }

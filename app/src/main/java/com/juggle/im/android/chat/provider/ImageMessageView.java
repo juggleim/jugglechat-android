@@ -28,6 +28,10 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
     private static final float LANDSCAPE_RATIO_THRESHOLD = 1.35f;
     private static final float PORTRAIT_RATIO_THRESHOLD = 0.75f;
     private static final float EXTREME_RATIO_LIMIT = 2.80f;
+    /** 竖版占位图比例，与 iOS message_image_placeholder_primary(512x908) 一致 */
+    private static final float PLACEHOLDER_PRIMARY_RATIO = 512f / 908f;
+    /** 横版占位图比例，与 iOS message_image_placeholder_secondary(512x289) 一致 */
+    private static final float PLACEHOLDER_SECONDARY_RATIO = 512f / 289f;
 
     public ImageMessageView(@NonNull ViewGroup root) {
         super(root, R.layout.content_image);
@@ -41,17 +45,19 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
     @Override
     public void bindItem(UiMessage m, ImageMessage img, boolean isGroup) {
         ImageView imageView = this.itemView.findViewById(R.id.image_message_thumb);
-        applyBestSize(imageView, img);
+        int[] displaySize = applyBestSize(imageView, img);
         imageView.setClipToOutline(true);
+        int placeholderRes = resolvePlaceholderRes(displaySize[0], displaySize[1]);
 
         String url = resolveImageSource(img);
         if (TextUtils.isEmpty(url)) {
-            imageView.setImageResource(R.drawable.ic_default_img);
+            imageView.setImageResource(placeholderRes);
         } else {
             Glide.with(imageView)
                     .load(url)
                     .centerCrop()
-                    .placeholder(R.drawable.ic_default_img)
+                    .placeholder(placeholderRes)
+                    .error(placeholderRes)
                     .dontAnimate()
                     .into(imageView);
         }
@@ -97,7 +103,33 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
         return img.getUrl();
     }
 
-    private void applyBestSize(ImageView imageView, ImageMessage img) {
+    /**
+     * 选择与展示比例最接近的占位图。
+     * TIPS: 与 iOS MessageImagePlaceholderRenderer 同一套规则——两张灰底占位图分别对应竖图(512:908)
+     * 和横图(512:289)，按目标宽高比就近取用，配合 ImageView 的 centerCrop 铺满整块图片区域，
+     * 避免出现原来那种"小图标被裁切/拉伸 + 透明边"的观感。
+     *
+     * @param displayWidth  展示宽度（px）
+     * @param displayHeight 展示高度（px）
+     * @return 占位图资源 id
+     */
+    private int resolvePlaceholderRes(int displayWidth, int displayHeight) {
+        float targetRatio = displayWidth / (float) Math.max(displayHeight, 1);
+        float primaryDistance = Math.abs(targetRatio - PLACEHOLDER_PRIMARY_RATIO);
+        float secondaryDistance = Math.abs(targetRatio - PLACEHOLDER_SECONDARY_RATIO);
+        return primaryDistance <= secondaryDistance
+                ? R.drawable.message_image_placeholder_primary
+                : R.drawable.message_image_placeholder_secondary;
+    }
+
+    /**
+     * 计算并应用图片展示尺寸。
+     *
+     * @param imageView 图片控件
+     * @param img       图片消息
+     * @return 实际应用的宽高（px）
+     */
+    private int[] applyBestSize(ImageView imageView, ImageMessage img) {
         int width = img.getWidth();
         int height = img.getHeight();
 
@@ -116,6 +148,7 @@ public class ImageMessageView extends MessageView<UiMessage, ImageMessage> {
             params.height = target[1];
         }
         imageView.setLayoutParams(params);
+        return target;
     }
 
     private int[] resolveLocalImageSize(ImageMessage img) {

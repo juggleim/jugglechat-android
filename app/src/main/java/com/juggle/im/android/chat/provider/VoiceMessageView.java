@@ -12,11 +12,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.utils.VoiceMessageDownloader;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.model.Message;
+import com.juggle.im.model.MediaMessageContent;
 import com.juggle.im.model.messages.VoiceMessage;
 
 import java.io.IOException;
@@ -129,6 +132,7 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
         voiceContainer.setEnabled(true);
         btnPlay.setAlpha(1f);
         voiceContainer.setOnClickListener(v -> togglePlay(
+                m.getMessage(),
                 url,
                 waveBars,
                 waveColor,
@@ -145,13 +149,17 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
 
     /**
      * 切换语音播放状态。
+     * TIPS: 播放一律走本地文件（对齐 iOS）——本地已有就直接播，缺失时先用 SDK 下载再播；
+     * 直接把远端 URL 丢给 MediaPlayer 会让每次点击都重新走网络缓冲，出声延迟明显。
      *
-     * @param url 语音地址
+     * @param message 语音消息，用于按需下载媒体文件
+     * @param fallbackUrl 兜底地址：拿不到本地文件且下载失败时使用
      * @param waveBars 音波条
      * @param waveColor 音波颜色
      * @param playButton 播放点击区域
      */
-    private void togglePlay(@NonNull String url,
+    private void togglePlay(@Nullable Message message,
+                            @NonNull String fallbackUrl,
                             @NonNull View[] waveBars,
                             int waveColor,
                             @NonNull View playButton) {
@@ -180,9 +188,54 @@ public class VoiceMessageView extends MessageView<UiMessage, VoiceMessage> {
             updateWaveBarColor(waveBars, waveColor);
         };
 
+        String localPath = message == null
+                ? null
+                : VoiceMessageDownloader.playableLocalPath(
+                        message.getContent() instanceof MediaMessageContent
+                                ? (MediaMessageContent) message.getContent()
+                                : null);
+        if (localPath != null) {
+            startPlayback(localPath, animationHolder, waveBars, playButton);
+            return;
+        }
+
+        final Runnable[] pendingAnimationHolder = animationHolder;
+        VoiceMessageDownloader.ensureLocal(message, new VoiceMessageDownloader.Callback() {
+            @Override
+            public void onReady(@NonNull String readyPath) {
+                if (!currentPreparing) {
+                    // 下载期间用户已取消播放
+                    return;
+                }
+                startPlayback(readyPath, pendingAnimationHolder, waveBars, playButton);
+            }
+
+            @Override
+            public void onFailed() {
+                if (!currentPreparing) {
+                    return;
+                }
+                // 下载失败时退回边下边播，至少不至于点了没反应
+                startPlayback(fallbackUrl, pendingAnimationHolder, waveBars, playButton);
+            }
+        });
+    }
+
+    /**
+     * 以指定数据源开始播放。
+     *
+     * @param dataSource 本地文件路径或远端地址
+     * @param animationHolder 动画持有器，准备完成后替换为播放动画
+     * @param waveBars 音波条
+     * @param playButton 播放点击区域
+     */
+    private void startPlayback(@NonNull String dataSource,
+                               @NonNull Runnable[] animationHolder,
+                               @NonNull View[] waveBars,
+                               @NonNull View playButton) {
         currentPlayer = new MediaPlayer();
         try {
-            currentPlayer.setDataSource(url);
+            currentPlayer.setDataSource(dataSource);
             currentPlayer.prepareAsync();
             currentPlayer.setOnPreparedListener(mp -> {
                 if (currentPlayer != mp) {

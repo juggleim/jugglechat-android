@@ -6,6 +6,15 @@
     android:clipChildren="false"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- 聊天背景图：铺在消息列表下方，未设置背景时隐藏，仅显示 FrameLayout 的纯色底 -->
+    <ImageView
+        android:id="@+id/iv_chat_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipe_refresh_messages"
         android:layout_width="match_parent"

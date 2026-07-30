@@ -15,15 +15,20 @@ public final class AppSettingsStore {
     private static final String KEY_APP_NOTIFY = "general_app_notify";
     private static final String KEY_CHAT_BG_INDEX = "chat_background_index";
 
+    /**
+     * 聊天背景候选项，与 iOS ChatBackgroundStore.BackgroundOption 一一对应：
+     * 首项为「无背景」（0 表示不铺图，仅用纯色底），其后为 8 张与 iOS 同源的背景图。
+     */
     private static final int[] CHAT_BACKGROUNDS = new int[] {
-            R.drawable.bg_chat_preview_1,
-            R.drawable.bg_chat_preview_2,
-            R.drawable.bg_chat_preview_3,
-            R.drawable.bg_chat_preview_4,
-            R.drawable.bg_chat_preview_5,
-            R.drawable.bg_chat_preview_6,
-            R.drawable.bg_chat_preview_7,
-            R.drawable.bg_chat_preview_8
+            0,
+            R.drawable.chat_background_1,
+            R.drawable.chat_background_2,
+            R.drawable.chat_background_3,
+            R.drawable.chat_background_4,
+            R.drawable.chat_background_5,
+            R.drawable.chat_background_6,
+            R.drawable.chat_background_7,
+            R.drawable.chat_background_8
     };
 
     private AppSettingsStore() {
@@ -57,8 +62,24 @@ public final class AppSettingsStore {
         prefs(context).edit().putInt(KEY_CHAT_BG_INDEX, safeIndex).apply();
     }
 
+    /**
+     * 获取当前选中的聊天背景图资源。
+     *
+     * @param context 上下文
+     * @return 背景图资源 id；选择「无背景」时返回 0
+     */
     public static int getChatBackgroundRes(@NonNull Context context) {
         return CHAT_BACKGROUNDS[getChatBackgroundIndex(context)];
+    }
+
+    /**
+     * 是否设置过聊天背景图。
+     *
+     * @param context 上下文
+     * @return true 表示选择了背景图而非「无背景」
+     */
+    public static boolean hasChatBackground(@NonNull Context context) {
+        return getChatBackgroundRes(context) != 0;
     }
 
     private static SharedPreferences prefs(@NonNull Context context) {

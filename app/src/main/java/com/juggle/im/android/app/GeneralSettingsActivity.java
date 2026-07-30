@@ -97,7 +97,10 @@ public class GeneralSettingsActivity extends AbsAppActivity {
         TextView subtitle = rowChatBackground.findViewById(R.id.tv_row_subtitle);
         ImageView arrow = rowChatBackground.findViewById(R.id.iv_row_arrow);
         subtitle.setVisibility(View.VISIBLE);
-        subtitle.setText(R.string.general_chat_background_set);
+        // 副标题反映真实状态：选了图显示"已设置"，选「无背景」显示"无背景"
+        subtitle.setText(AppSettingsStore.hasChatBackground(this)
+                ? R.string.general_chat_background_set
+                : R.string.general_chat_background_blank);
         arrow.setVisibility(View.VISIBLE);
     }
 
