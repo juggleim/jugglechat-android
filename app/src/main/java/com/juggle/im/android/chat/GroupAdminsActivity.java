@@ -32,6 +32,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
+import com.juggle.im.android.widget.LoadingOverlay;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -164,18 +165,20 @@ public class GroupAdminsActivity extends AbsAppActivity {
                 .setMessage(getString(R.string.group_admins_remove_message, nickname))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
-                .setOnPositiveClick(() -> {
+                .setOnPositiveAsyncClick(action -> {
                     ArrayList<String> ids = new ArrayList<>();
                     ids.add(member.getUserId());
                     ServiceManager.getUserService().removeGroupAdmins(groupId, ids, new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {
+                            action.succeed();
                             Toast.makeText(GroupAdminsActivity.this, R.string.group_admins_remove_success, Toast.LENGTH_SHORT).show();
                             loadAdmins();
                         }
 
                         @Override
                         public void onError(int code, String message) {
+                            action.fail();
                             LogUtils.serverError("group", "removeAdmin", code, message);
                             Toast.makeText(GroupAdminsActivity.this,
                                     R.string.group_admins_remove_failed,
@@ -205,15 +208,19 @@ public class GroupAdminsActivity extends AbsAppActivity {
             selected = new ArrayList<>(selected.subList(0, available));
             Toast.makeText(this, R.string.group_admins_limit_truncated, Toast.LENGTH_SHORT).show();
         }
+        // TIPS: 添加成功后还会重新拉一次管理员列表，遮罩要盖住"提交 + 刷新"两段等待
+        LoadingOverlay overlay = LoadingOverlay.show(this);
         ServiceManager.getUserService().addGroupAdmins(groupId, selected, new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
+                LoadingOverlay.dismiss(overlay);
                 Toast.makeText(GroupAdminsActivity.this, R.string.group_admins_add_success, Toast.LENGTH_SHORT).show();
                 loadAdmins();
             }
 
             @Override
             public void onError(int code, String message) {
+                LoadingOverlay.dismiss(overlay);
                 LogUtils.serverError("group", "addAdmin", code, message);
                 Toast.makeText(GroupAdminsActivity.this,
                         R.string.group_admins_add_failed,

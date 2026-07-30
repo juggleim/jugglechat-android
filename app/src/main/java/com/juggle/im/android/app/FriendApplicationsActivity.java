@@ -24,7 +24,9 @@ import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.model.Conversation;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import com.juggle.im.android.utils.LogUtils;
 
 public class FriendApplicationsActivity extends AbsAppActivity {
@@ -94,6 +96,8 @@ public class FriendApplicationsActivity extends AbsAppActivity {
 
     class ApplicationsAdapter extends RecyclerView.Adapter<ApplicationsAdapter.ViewHolder> {
         private List<FriendApplicationBean> items;
+        /** 正在处理中的申请人 ID，用于给对应条目上处理态并防重复点击 */
+        private final Set<String> pendingSponsorIds = new HashSet<>();
 
         ApplicationsAdapter(List<FriendApplicationBean> items) {
             this.items = items;
@@ -116,6 +120,8 @@ public class FriendApplicationsActivity extends AbsAppActivity {
             FriendApplicationBean app = items.get(position);
             boolean isSponsor = app.isSponsor();
             int status = app.getStatus();
+            String sponsorId = app.getUserInfo() == null ? null : app.getUserInfo().getUser_id();
+            boolean pending = sponsorId != null && pendingSponsorIds.contains(sponsorId);
 
             // 设置头像和昵称
             if (app.getUserInfo() != null) {
@@ -133,7 +139,7 @@ public class FriendApplicationsActivity extends AbsAppActivity {
             }
 
             // 根据是否发起者和状态设置右侧显示
-            if (!isSponsor && status == STATUS_APPLYING) {
+            if (!isSponsor && status == STATUS_APPLYING && !pending) {
                 // 对方发起，且申请中：显示接受和拒绝按钮
                 holder.buttonsContainer.setVisibility(View.VISIBLE);
                 holder.tvStatus.setVisibility(View.GONE);
@@ -149,6 +155,12 @@ public class FriendApplicationsActivity extends AbsAppActivity {
                 // 其他情况：显示状态文字
                 holder.buttonsContainer.setVisibility(View.GONE);
                 holder.tvStatus.setVisibility(View.VISIBLE);
+
+                if (pending) {
+                    // 请求在途：按钮收起、右侧改为处理中，天然屏蔽重复点击
+                    holder.tvStatus.setText(R.string.common_processing);
+                    return;
+                }
 
                 String statusText;
                 if (isSponsor) {
@@ -194,11 +206,13 @@ public class FriendApplicationsActivity extends AbsAppActivity {
         private void acceptApplication(FriendApplicationBean app, int position) {
             String sponsorId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
             if (sponsorId == null) return;
+            if (!beginPending(sponsorId, position)) return;
 
             ServiceManager.getUserService().acceptFriendApplication(sponsorId, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
                     // 更新状态
+                    endPending(sponsorId);
                     app.setStatus(STATUS_AGREED);
                     notifyItemChanged(position);
                     Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_accept_success, Toast.LENGTH_SHORT).show();
@@ -206,6 +220,8 @@ public class FriendApplicationsActivity extends AbsAppActivity {
 
                 @Override
                 public void onError(int code, String message) {
+                    endPending(sponsorId);
+                    notifyItemChanged(position);
                     LogUtils.serverError("contact", "acceptFriendApplication", code, message);
                     Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_accept_failed, Toast.LENGTH_SHORT).show();
                 }
@@ -215,11 +231,13 @@ public class FriendApplicationsActivity extends AbsAppActivity {
         private void refuseApplication(FriendApplicationBean app, int position) {
             String sponsorId = app.getUserInfo() != null ? app.getUserInfo().getUser_id() : null;
             if (sponsorId == null) return;
+            if (!beginPending(sponsorId, position)) return;
 
             ServiceManager.getUserService().refuseFriendApplication(sponsorId, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
                     // 更新状态
+                    endPending(sponsorId);
                     app.setStatus(STATUS_REJECTED);
                     notifyItemChanged(position);
                     Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_reject_success, Toast.LENGTH_SHORT).show();
@@ -227,10 +245,36 @@ public class FriendApplicationsActivity extends AbsAppActivity {
 
                 @Override
                 public void onError(int code, String message) {
+                    endPending(sponsorId);
+                    notifyItemChanged(position);
                     LogUtils.serverError("contact", "rejectFriendApplication", code, message);
                     Toast.makeText(FriendApplicationsActivity.this, R.string.friend_apply_reject_failed, Toast.LENGTH_SHORT).show();
                 }
             });
+        }
+
+        /**
+         * 标记某条申请进入处理中。
+         *
+         * @param sponsorId 申请人 ID
+         * @param position  条目位置
+         * @return false 表示该条已有请求在途，调用方应直接返回
+         */
+        private boolean beginPending(String sponsorId, int position) {
+            if (!pendingSponsorIds.add(sponsorId)) {
+                return false;
+            }
+            notifyItemChanged(position);
+            return true;
+        }
+
+        /**
+         * 清除某条申请的处理中标记。
+         *
+         * @param sponsorId 申请人 ID
+         */
+        private void endPending(String sponsorId) {
+            pendingSponsorIds.remove(sponsorId);
         }
 
         @Override

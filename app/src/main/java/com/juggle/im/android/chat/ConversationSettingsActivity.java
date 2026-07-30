@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -36,6 +37,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
+import com.juggle.im.android.widget.SubmitButtonState;
 import com.juggle.im.model.Conversation;
 import com.juggle.im.model.UserInfo;
 
@@ -396,30 +398,48 @@ public class ConversationSettingsActivity extends AbsAppActivity {
             input.setSelection(input.getText().length());
         }
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.conv_row_display_name)
                 .setView(input)
                 .setNegativeButton(R.string.txt_cancel, null)
-                .setPositiveButton(R.string.send, (dialog, which) -> {
-                    String newName = input.getText() == null ? "" : input.getText().toString().trim();
-                    ServiceManager.getUserService().setGroupDisplayName(conversationId, newName, new ApiCallback<Void>() {
-                        @Override
-                        public void onSuccess(Void data) {
-                            String display = TextUtils.isEmpty(newName) ? getString(R.string.conv_not_set) : newName;
-                            displayNameRow.subtitle.setText(display);
-                            Toast.makeText(ConversationSettingsActivity.this, R.string.conv_save_success, Toast.LENGTH_SHORT).show();
-                        }
+                .setPositiveButton(R.string.send, null)
+                .create();
+        // TIPS: 确定按钮置空后在 onShow 里自行接管点击，才能做到"请求中不关闭弹窗、按钮转保存态"
+        dialog.setOnShowListener(d -> {
+            Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+            SubmitButtonState submitState = SubmitButtonState.bind(positive, R.string.common_saving);
+            positive.setOnClickListener(v -> {
+                if (!submitState.begin()) {
+                    return;
+                }
+                negative.setEnabled(false);
+                dialog.setCanceledOnTouchOutside(false);
+                String newName = input.getText() == null ? "" : input.getText().toString().trim();
+                ServiceManager.getUserService().setGroupDisplayName(conversationId, newName, new ApiCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void data) {
+                        submitState.end();
+                        dialog.dismiss();
+                        String display = TextUtils.isEmpty(newName) ? getString(R.string.conv_not_set) : newName;
+                        displayNameRow.subtitle.setText(display);
+                        Toast.makeText(ConversationSettingsActivity.this, R.string.conv_save_success, Toast.LENGTH_SHORT).show();
+                    }
 
-                        @Override
-                        public void onError(int code, String message) {
-                            LogUtils.serverError("conversation", "setGroupDisplayName", code, message);
-                            Toast.makeText(ConversationSettingsActivity.this,
-                                    R.string.conv_save_failed,
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                })
-                .show();
+                    @Override
+                    public void onError(int code, String message) {
+                        submitState.end();
+                        negative.setEnabled(true);
+                        dialog.setCanceledOnTouchOutside(true);
+                        LogUtils.serverError("conversation", "setGroupDisplayName", code, message);
+                        Toast.makeText(ConversationSettingsActivity.this,
+                                R.string.conv_save_failed,
+                                Toast.LENGTH_SHORT).show();
+                    }
+                });
+            });
+        });
+        dialog.show();
     }
 
     private void onQuitOrDissolveGroup() {
@@ -438,10 +458,11 @@ public class ConversationSettingsActivity extends AbsAppActivity {
                 .setMessage(getString(confirmRes))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
-                .setOnPositiveClick(() -> {
+                .setOnPositiveAsyncClick(action -> {
                     ApiCallback<Void> callback = new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {
+                            action.succeed();
                             Toast.makeText(ConversationSettingsActivity.this,
                                     successRes,
                                     Toast.LENGTH_SHORT).show();
@@ -450,6 +471,7 @@ public class ConversationSettingsActivity extends AbsAppActivity {
 
                         @Override
                         public void onError(int code, String message) {
+                            action.fail();
                             LogUtils.serverError("conversation", "quitOrDissolveGroup", code, message);
                             Toast.makeText(ConversationSettingsActivity.this,
                                     failedRes,

@@ -35,6 +35,8 @@ import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Locale;
 import com.juggle.im.android.i18n.AppRes;
@@ -218,9 +220,14 @@ public class AddFriendActivity extends AbsAppActivity {
         if (friendBean == null || TextUtils.isEmpty(friendBean.getUser_id())) {
             return;
         }
-        ServiceManager.getUserService().applyFriend(friendBean.getUser_id(), new ApiCallback<FriendApplicationBean>() {
+        String userId = friendBean.getUser_id();
+        if (!adapter.beginPending(userId)) {
+            return;
+        }
+        ServiceManager.getUserService().applyFriend(userId, new ApiCallback<FriendApplicationBean>() {
             @Override
             public void onSuccess(FriendApplicationBean data) {
+                adapter.endPending(userId);
                 Toast.makeText(AddFriendActivity.this,
                         R.string.add_friend_request_sent,
                         Toast.LENGTH_SHORT).show();
@@ -228,6 +235,7 @@ public class AddFriendActivity extends AbsAppActivity {
 
             @Override
             public void onError(int code, String message) {
+                adapter.endPending(userId);
                 LogUtils.serverError("contact", "applyFriend", code, message);
                 Toast.makeText(AddFriendActivity.this,
                         R.string.add_friend_request_failed,
@@ -255,6 +263,8 @@ public class AddFriendActivity extends AbsAppActivity {
     static class SearchAdapter extends RecyclerView.Adapter<SearchAdapter.ItemViewHolder> {
 
         private final List<FriendBean> items = new ArrayList<>();
+        /** 正在发送申请的用户 ID，用于给对应条目上处理态并防重复点击 */
+        private final Set<String> pendingUserIds = new HashSet<>();
         private OnAddClickListener onAddClickListener;
 
         void setItems(List<FriendBean> newItems) {
@@ -282,6 +292,12 @@ public class AddFriendActivity extends AbsAppActivity {
             String displayName = resolveDisplayName(item);
             holder.nameView.setText(displayName);
             AvatarUtils.loadAvatar(holder.avatarView, item.getAvatar(), displayName);
+            boolean pending = item.getUser_id() != null && pendingUserIds.contains(item.getUser_id());
+            holder.addView.setEnabled(!pending);
+            holder.addView.setAlpha(pending ? 0.5f : 1f);
+            holder.addView.setText(pending
+                    ? R.string.common_sending
+                    : R.string.contact_add);
             holder.addView.setOnClickListener(v -> {
                 if (onAddClickListener != null) {
                     onAddClickListener.onAddClick(item);
@@ -292,6 +308,31 @@ public class AddFriendActivity extends AbsAppActivity {
         @Override
         public int getItemCount() {
             return items.size();
+        }
+
+        /**
+         * 标记某个用户的好友申请进入发送中。
+         *
+         * @param userId 用户 ID
+         * @return false 表示已有请求在途，调用方应直接返回
+         */
+        boolean beginPending(String userId) {
+            if (userId == null || !pendingUserIds.add(userId)) {
+                return false;
+            }
+            notifyItemRangeChanged(0, items.size());
+            return true;
+        }
+
+        /**
+         * 清除某个用户的发送中标记。
+         *
+         * @param userId 用户 ID
+         */
+        void endPending(String userId) {
+            if (userId != null && pendingUserIds.remove(userId)) {
+                notifyItemRangeChanged(0, items.size());
+            }
         }
 
         private String resolveDisplayName(FriendBean item) {

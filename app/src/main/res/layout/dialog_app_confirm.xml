@@ -51,17 +51,32 @@
             android:layout_width="12dp"
             android:layout_height="match_parent" />
 
-        <TextView
-            android:id="@+id/btn_dialog_positive"
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="44dp"
-            android:layout_weight="1"
-            android:background="@drawable/bg_app_confirm_btn_positive"
-            android:clickable="true"
-            android:focusable="true"
-            android:gravity="center"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:layout_weight="1">
+
+            <TextView
+                android:id="@+id/btn_dialog_positive"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_app_confirm_btn_positive"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- 异步确认时在确认按钮内展示的进度指示 -->
+            <ProgressBar
+                android:id="@+id/pb_dialog_positive"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:indeterminateTint="@android:color/white"
+                android:visibility="gone" />
+        </FrameLayout>
     </LinearLayout>
 </LinearLayout>

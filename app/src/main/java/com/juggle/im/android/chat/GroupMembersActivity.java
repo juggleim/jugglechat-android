@@ -29,6 +29,7 @@ import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
+import com.juggle.im.android.widget.LoadingOverlay;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -180,14 +181,17 @@ public class GroupMembersActivity extends AbsAppActivity {
     private void muteMember(GroupMemberBean member) {
         List<String> memberIds = new ArrayList<>();
         memberIds.add(member.getUserId());
+        LoadingOverlay overlay = LoadingOverlay.show(this);
         ServiceManager.getUserService().setGroupMemberMute(groupId, memberIds, true, new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
+                LoadingOverlay.dismiss(overlay);
                 Toast.makeText(GroupMembersActivity.this, R.string.group_member_muted, Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onError(int code, String message) {
+                LoadingOverlay.dismiss(overlay);
                 LogUtils.serverError("group", "muteMember", code, message);
                 Toast.makeText(GroupMembersActivity.this, R.string.group_member_mute_failed, Toast.LENGTH_SHORT).show();
             }
@@ -200,12 +204,13 @@ public class GroupMembersActivity extends AbsAppActivity {
                 .setMessage(getString(R.string.group_member_remove_message, safeName(member)))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
-                .setOnPositiveClick(() -> {
+                .setOnPositiveAsyncClick(action -> {
                     List<String> memberIds = new ArrayList<>();
                     memberIds.add(member.getUserId());
                     ServiceManager.getUserService().removeGroupMembers(groupId, memberIds, new ApiCallback<Void>() {
                         @Override
                         public void onSuccess(Void data) {
+                            action.succeed();
                             adapter.remove(member);
                             Toast.makeText(GroupMembersActivity.this, R.string.group_member_remove_success, Toast.LENGTH_SHORT).show();
                             if (adapter.getItemCount() == 0) {
@@ -216,6 +221,7 @@ public class GroupMembersActivity extends AbsAppActivity {
 
                         @Override
                         public void onError(int code, String message) {
+                            action.fail();
                             LogUtils.serverError("group", "removeMember", code, message);
                             Toast.makeText(GroupMembersActivity.this,
                                     R.string.group_member_remove_failed,

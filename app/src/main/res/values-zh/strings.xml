@@ -81,6 +81,11 @@
     <string name="chat_cleared">聊天记录已清空</string>
     <string name="left_group">已退出群聊</string>
     <string name="operation_failed">操作失败</string>
+    <string name="general_chat_background_blank">无背景</string>
+    <!-- 通用提交态文案 -->
+    <string name="common_processing">处理中…</string>
+    <string name="common_saving">保存中…</string>
+    <string name="common_sending">发送中…</string>
     <string name="msg_clear">清空聊天记录</string>
     <string name="msg_set_top">置顶会话</string>
     <string name="msg_mute">消息免打扰</string>

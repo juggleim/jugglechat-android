@@ -11,6 +11,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import com.juggle.im.android.component.AbsAppActivity;
+import com.juggle.im.android.widget.SubmitButtonState;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.juggle.im.JIM;
@@ -35,6 +36,7 @@ public class GroupInfoActivity extends AbsAppActivity {
 
     private ImageView avatarView;
     private EditText groupNameInput;
+    private SubmitButtonState saveButtonState;
 
     public static Intent intentFor(Context context, String groupId) {
         Intent intent = new Intent(context, GroupInfoActivity.class);
@@ -55,6 +57,7 @@ public class GroupInfoActivity extends AbsAppActivity {
 
         findViewById(R.id.iv_back).setOnClickListener(v -> finish());
         findViewById(R.id.tv_change_avatar).setOnClickListener(v -> pickGroupAvatar());
+        saveButtonState = SubmitButtonState.bind(findViewById(R.id.tv_save), R.string.common_saving);
         findViewById(R.id.tv_save).setOnClickListener(v -> saveGroupInfo());
 
         loadGroupInfo();
@@ -155,15 +158,20 @@ public class GroupInfoActivity extends AbsAppActivity {
             Toast.makeText(this, R.string.group_info_name_empty, Toast.LENGTH_SHORT).show();
             return;
         }
+        if (!saveButtonState.begin()) {
+            return;
+        }
         ServiceManager.getUserService().updateGroupInfo(groupId, groupName, portrait, new ApiCallback<Void>() {
             @Override
             public void onSuccess(Void data) {
+                saveButtonState.end();
                 Toast.makeText(GroupInfoActivity.this, R.string.group_info_save_success, Toast.LENGTH_SHORT).show();
                 finish();
             }
 
             @Override
             public void onError(int code, String message) {
+                saveButtonState.end();
                 LogUtils.serverError("group", "saveGroupInfo", code, message);
                 Toast.makeText(GroupInfoActivity.this,
                         R.string.group_info_save_failed,

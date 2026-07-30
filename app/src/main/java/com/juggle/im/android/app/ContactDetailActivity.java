@@ -18,6 +18,7 @@ import com.juggle.im.android.server.beans.FriendApplicationBean;
 import com.juggle.im.android.server.beans.UserInfoBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
+import com.juggle.im.android.widget.SubmitButtonState;
 import com.juggle.im.android.utils.AvatarUtils;
 import com.juggle.im.android.widget.AppConfirmDialog;
 
@@ -41,6 +42,7 @@ public class ContactDetailActivity extends AbsAppActivity {
     private View layoutUserInfo;
     private ProgressBar progressBar;
     private TextView tvAddFriend;
+    private SubmitButtonState addFriendState;
     private View cardFriendActions, cardFriendTips;
     private View rowSendMessage;
     private View rowAudioVideoCall;
@@ -70,6 +72,7 @@ public class ContactDetailActivity extends AbsAppActivity {
         layoutUserInfo = findViewById(R.id.layout_user_info);
         progressBar = findViewById(R.id.progress_bar);
         tvAddFriend = findViewById(R.id.tv_add_friend);
+        addFriendState = SubmitButtonState.bind(tvAddFriend, R.string.common_sending);
         cardFriendActions = findViewById(R.id.card_friend_actions);
         cardFriendTips = findViewById(R.id.card_friend_tips);
         rowSendMessage = findViewById(R.id.row_send_message);
@@ -213,12 +216,15 @@ public class ContactDetailActivity extends AbsAppActivity {
         if (TextUtils.isEmpty(userId) || addRequestSent) {
             return;
         }
-        tvAddFriend.setEnabled(false);
+        if (!addFriendState.begin()) {
+            return;
+        }
 
         ServiceManager.getUserService().applyFriend(userId,
                 new ApiCallback<FriendApplicationBean>() {
                     @Override
                     public void onSuccess(FriendApplicationBean data) {
+                        addFriendState.end();
                         addRequestSent = true;
                         updateActionButtons();
                         Toast.makeText(ContactDetailActivity.this,
@@ -227,7 +233,7 @@ public class ContactDetailActivity extends AbsAppActivity {
 
                     @Override
                     public void onError(int code, String message) {
-                        tvAddFriend.setEnabled(true);
+                        addFriendState.end();
                         LogUtils.serverError("contact", "addFriend", code, message);
                         Toast.makeText(ContactDetailActivity.this,
                                 R.string.contact_detail_add_failed,

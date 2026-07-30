@@ -48,6 +48,34 @@ public final class AppConfirmDialog {
     }
 
     /**
+     * 异步确认回调：点击确认后弹窗不关闭，由业务方在请求结束时决定关闭还是恢复。
+     */
+    @FunctionalInterface
+    public interface OnAsyncActionClickListener {
+        /**
+         * 确认按钮点击事件。
+         *
+         * @param action 请求结束后必须调用其 succeed/fail，否则弹窗会一直停在加载态
+         */
+        void onClick(@NonNull AsyncAction action);
+    }
+
+    /**
+     * 异步确认的收尾句柄。
+     */
+    public interface AsyncAction {
+        /**
+         * 请求成功：关闭弹窗。
+         */
+        void succeed();
+
+        /**
+         * 请求失败：恢复确认按钮，弹窗保留以便重试。
+         */
+        void fail();
+    }
+
+    /**
      * 确认弹窗参数构建器。
      */
     public static final class Builder {
@@ -60,6 +88,7 @@ public final class AppConfirmDialog {
         private boolean canceledOnTouchOutside = true;
         private OnActionClickListener onPositiveClickListener;
         private OnActionClickListener onNegativeClickListener;
+        private OnAsyncActionClickListener onPositiveAsyncClickListener;
 
         private Builder(@NonNull Context context) {
             this.context = context;
@@ -154,6 +183,20 @@ public final class AppConfirmDialog {
         }
 
         /**
+         * 设置异步确认回调。
+         * TIPS: 用于"确认后要发网络请求"的场景——点击确认不关闭弹窗，确认按钮转为加载态并屏蔽再次点击，
+         * 请求成功调 {@link AsyncAction#succeed()} 关闭，失败调 {@link AsyncAction#fail()} 恢复重试。
+         * 与 {@link #setOnPositiveClick} 互斥，同时设置时以异步回调为准。
+         *
+         * @param listener 回调实例
+         * @return 当前构建器
+         */
+        public Builder setOnPositiveAsyncClick(@Nullable OnAsyncActionClickListener listener) {
+            this.onPositiveAsyncClickListener = listener;
+            return this;
+        }
+
+        /**
          * 展示弹窗。
          *
          * @return 弹窗实例；若当前上下文不可用则返回 null
@@ -168,6 +211,7 @@ public final class AppConfirmDialog {
             TextView messageView = contentView.findViewById(R.id.tv_dialog_message);
             TextView negativeButton = contentView.findViewById(R.id.btn_dialog_negative);
             TextView positiveButton = contentView.findViewById(R.id.btn_dialog_positive);
+            View positiveProgress = contentView.findViewById(R.id.pb_dialog_positive);
 
             bindText(titleView, title);
             bindText(messageView, message);
@@ -200,13 +244,74 @@ public final class AppConfirmDialog {
                     onNegativeClickListener.onClick();
                 }
             });
-            positiveButton.setOnClickListener(v -> {
-                dialog.dismiss();
-                if (onPositiveClickListener != null) {
-                    onPositiveClickListener.onClick();
-                }
-            });
+            if (onPositiveAsyncClickListener != null) {
+                bindAsyncPositive(dialog, positiveButton, negativeButton, positiveProgress);
+            } else {
+                positiveButton.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    if (onPositiveClickListener != null) {
+                        onPositiveClickListener.onClick();
+                    }
+                });
+            }
             return dialog;
+        }
+
+        /**
+         * 绑定异步确认按钮：点击后进入加载态，直到业务方回调收尾。
+         *
+         * @param dialog          弹窗实例
+         * @param positiveButton  确认按钮
+         * @param negativeButton  取消按钮
+         * @param positiveProgress 确认按钮内的进度指示
+         */
+        private void bindAsyncPositive(@NonNull AlertDialog dialog,
+                @NonNull TextView positiveButton,
+                @NonNull TextView negativeButton,
+                @Nullable View positiveProgress) {
+            CharSequence idleText = positiveButton.getText();
+            boolean[] pending = new boolean[]{false};
+
+            AsyncAction action = new AsyncAction() {
+                @Override
+                public void succeed() {
+                    pending[0] = false;
+                    dialog.dismiss();
+                }
+
+                @Override
+                public void fail() {
+                    if (!pending[0]) {
+                        return;
+                    }
+                    pending[0] = false;
+                    positiveButton.setText(idleText);
+                    positiveButton.setEnabled(true);
+                    negativeButton.setEnabled(true);
+                    dialog.setCancelable(cancelable);
+                    dialog.setCanceledOnTouchOutside(canceledOnTouchOutside);
+                    if (positiveProgress != null) {
+                        positiveProgress.setVisibility(View.GONE);
+                    }
+                }
+            };
+
+            positiveButton.setOnClickListener(v -> {
+                if (pending[0]) {
+                    return;
+                }
+                pending[0] = true;
+                positiveButton.setText("");
+                positiveButton.setEnabled(false);
+                negativeButton.setEnabled(false);
+                // 请求进行中禁止返回键/点击外部关闭，避免弹窗消失后请求结果无处落地
+                dialog.setCancelable(false);
+                dialog.setCanceledOnTouchOutside(false);
+                if (positiveProgress != null) {
+                    positiveProgress.setVisibility(View.VISIBLE);
+                }
+                onPositiveAsyncClickListener.onClick(action);
+            });
         }
 
         private void bindText(@NonNull TextView textView, @Nullable CharSequence content) {

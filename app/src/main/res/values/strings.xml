@@ -81,6 +81,11 @@
     <string name="chat_cleared">Chat history cleared</string>
     <string name="left_group">You left the group</string>
     <string name="operation_failed">Operation failed</string>
+    <string name="general_chat_background_blank">No background</string>
+    <!-- 通用提交态文案 -->
+    <string name="common_processing">Processing…</string>
+    <string name="common_saving">Saving…</string>
+    <string name="common_sending">Sending…</string>
     <string name="msg_clear">Clear chat history</string>
     <string name="msg_set_top">Pin conversation</string>
     <string name="msg_mute">Mute notifications</string>

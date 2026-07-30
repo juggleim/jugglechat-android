@@ -11,7 +11,7 @@ resource:
   - app/src/main/java/com/juggle/im/android/model/
   - app/src/main/java/com/juggle/im/android/i18n/
 tags: [app, ui]
-timestamp: 2026-07-29T14:25:27+08:00
+timestamp: 2026-07-30T10:50:00+08:00
 ---
 
 # 应用壳层
@@ -47,3 +47,7 @@ timestamp: 2026-07-29T14:25:27+08:00
 - 日志必须走 utils/LogUtils 的结构化格式，见 [结构化日志约定](/conventions/structured-logging.md)。
 - 新页面继承 AbsAppActivity，别自己处理状态栏。
 - 界面文案一律走资源，取串规则见 [多语言约定](/conventions/i18n.md)。
+- 写操作（提交/删除/确认类）的加载态统一用 widget/ 三件套，不要各页面自己维护布尔位：
+  按钮型用 `SubmitButtonState`（`begin()` 返回 false 即代表已有请求在途，兼作防重判断）；
+  确认弹窗型用 `AppConfirmDialog.setOnPositiveAsyncClick`（请求中不关闭弹窗、确认按钮转 spinner）；
+  从别的页面返回后直接发起、页面上没有按钮可承载加载态的场景用 `LoadingOverlay`。

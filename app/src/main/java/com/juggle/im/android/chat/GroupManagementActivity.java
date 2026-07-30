@@ -24,6 +24,7 @@ import com.juggle.im.android.server.beans.GroupManagementBean;
 import com.juggle.im.android.server.http.ApiCallback;
 import com.juggle.im.android.server.http.ServiceManager;
 import com.juggle.im.android.widget.AppConfirmDialog;
+import com.juggle.im.android.widget.LoadingOverlay;
 
 import java.util.ArrayList;
 import com.juggle.im.android.utils.LogUtils;
@@ -60,6 +61,8 @@ public class GroupManagementActivity extends AbsAppActivity {
     private TextView dissolveButton;
 
     private boolean bindingHistorySwitch;
+    /** 历史消息开关是否有请求在途 */
+    private boolean savingHistorySwitch;
 
     /**
      * 构建群组管理页面的启动参数。
@@ -161,15 +164,17 @@ public class GroupManagementActivity extends AbsAppActivity {
                 .setMessage(getString(R.string.group_dissolve_confirm))
                 .setNegativeText(getString(R.string.txt_cancel))
                 .setPositiveText(getString(R.string.create_group_confirm))
-                .setOnPositiveClick(() -> ServiceManager.getUserService().dissolveGroup(groupId, new ApiCallback<Void>() {
+                .setOnPositiveAsyncClick(action -> ServiceManager.getUserService().dissolveGroup(groupId, new ApiCallback<Void>() {
                     @Override
                     public void onSuccess(Void data) {
+                        action.succeed();
                         Toast.makeText(GroupManagementActivity.this, R.string.group_dissolve_success, Toast.LENGTH_SHORT).show();
                         finish();
                     }
 
                     @Override
                     public void onError(int code, String message) {
+                        action.fail();
                         LogUtils.serverError("group", "dissolveGroup", code, message);
                         Toast.makeText(GroupManagementActivity.this,
                                 R.string.group_dissolve_failed,
@@ -192,14 +197,24 @@ public class GroupManagementActivity extends AbsAppActivity {
             if (bindingHistorySwitch || management == null) {
                 return;
             }
+            if (savingHistorySwitch) {
+                return;
+            }
+            // TIPS: 请求在途时屏蔽开关，避免用户反复拨动打出请求风暴、回滚也互相覆盖
+            savingHistorySwitch = true;
+            rowHistory.setRowEnabled(false);
             ServiceManager.getUserService().setGroupHistoryMessageVisible(groupId, isChecked, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
+                    savingHistorySwitch = false;
+                    rowHistory.setRowEnabled(true);
                     management.setHistoryMessageVisible(isChecked ? 1 : 0);
                 }
 
                 @Override
                 public void onError(int code, String message) {
+                    savingHistorySwitch = false;
+                    rowHistory.setRowEnabled(true);
                     bindingHistorySwitch = true;
                     rowHistory.setSwitchChecked(!isChecked);
                     bindingHistorySwitch = false;
@@ -339,15 +354,19 @@ public class GroupManagementActivity extends AbsAppActivity {
             if (TextUtils.isEmpty(ownerId)) {
                 return;
             }
+            // TIPS: 选人页返回后直接发请求，页面上没有可承载加载态的按钮，用阻塞遮罩兜住这段等待
+            LoadingOverlay overlay = LoadingOverlay.show(this);
             ServiceManager.getUserService().changeGroupOwner(groupId, ownerId, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void data) {
+                    LoadingOverlay.dismiss(overlay);
                     Toast.makeText(GroupManagementActivity.this, R.string.group_transfer_success, Toast.LENGTH_SHORT).show();
                     finish();
                 }
 
                 @Override
                 public void onError(int code, String message) {
+                    LoadingOverlay.dismiss(overlay);
                     LogUtils.serverError("group", "transferOwner", code, message);
                     Toast.makeText(GroupManagementActivity.this,
                             R.string.group_transfer_failed,

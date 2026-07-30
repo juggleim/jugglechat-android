@@ -81,6 +81,7 @@ import com.juggle.im.model.messages.TextMessage;
 import com.juggle.im.model.messages.VoiceMessage;
 import com.juggle.im.android.utils.LogUtils;
 import com.juggle.im.android.utils.ToastUtils;
+import com.juggle.im.android.widget.LoadingOverlay;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -1119,6 +1120,8 @@ public class ConversationActivity extends AbsAppActivity {
             return;
         }
         timedDeleteConfigSaving = true;
+        // TIPS: 选项弹窗点完即关，页面上没有可承载加载态的控件，用阻塞遮罩兜住保存等待
+        LoadingOverlay overlay = LoadingOverlay.show(this, R.string.common_saving);
         ServiceManager.getUserService().setConversationMessageLifeTime(
                 conversation.getConversationId(),
                 conversation.getConversationType().getValue(),
@@ -1127,6 +1130,7 @@ public class ConversationActivity extends AbsAppActivity {
                 new ApiCallback<Void>() {
                     @Override
                     public void onSuccess(Void data) {
+                        LoadingOverlay.dismiss(overlay);
                         timedDeleteConfigSaving = false;
                         timedDeleteConfigLoaded = true;
                         timedDeleteStateVersion++;
@@ -1143,6 +1147,7 @@ public class ConversationActivity extends AbsAppActivity {
 
                     @Override
                     public void onError(int code, String message) {
+                        LoadingOverlay.dismiss(overlay);
                         timedDeleteConfigSaving = false;
                         LogUtils.serverError(FEATURE_TIMED_DELETE, "save", code, message);
                         if (!isFinishing() && !isDestroyed()) {
