@@ -62,4 +62,8 @@
 
     <!-- @提及 文本颜色 -->
     <color name="mention_text_color">#2465FF</color>
+
+    <!-- 消息内网址链接颜色：收到的消息为浅底深字，发出的消息为深底白字 -->
+    <color name="message_link_received">#2465FF</color>
+    <color name="message_link_sent">#FFFFFF</color>
 </resources>

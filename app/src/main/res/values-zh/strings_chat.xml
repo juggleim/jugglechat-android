@@ -100,6 +100,9 @@
     <string name="api_error_server">服务响应异常，请稍后重试</string>
     <string name="api_error_default">请求失败，请稍后再试</string>
 
+    <!-- 消息内链接 -->
+    <string name="chat_link_fallback_browser">应用内无法打开该页面，已为你跳转浏览器</string>
+
     <!-- 资料校验 -->
     <string name="profile_validation_empty">用户资料不能为空</string>
     <string name="profile_validation_avatar">头像字段必须是 http/https URL</string>

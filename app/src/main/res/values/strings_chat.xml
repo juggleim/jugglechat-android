@@ -100,6 +100,9 @@
     <string name="api_error_server">Unexpected server response, please try again later</string>
     <string name="api_error_default">Request failed, please try again later</string>
 
+    <!-- 消息内链接 -->
+    <string name="chat_link_fallback_browser">Can\'t open this page in the app, opening your browser</string>
+
     <!-- 资料校验 -->
     <string name="profile_validation_empty">Profile cannot be empty</string>
     <string name="profile_validation_avatar">Avatar must be an http/https URL</string>

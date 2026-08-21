@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
+import com.juggle.im.android.chat.utils.MessageLinkUtils;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.model.Message;
@@ -25,11 +26,14 @@ public class TextMessageView extends MessageView<UiMessage, TextMessage> {
     public void bindItem(UiMessage m, TextMessage t, boolean isGroup) {
         TextView tvContent = this.itemView.findViewById(R.id.text_message_content);
 
+        boolean isSend = m.getDirection() == Message.MessageDirection.SEND;
+
         // 处理 @提及 文本高亮（将 {userId} 替换为 @用户名）
         SpannableString spannable = MessageUtils.formatMentionText(t.getContent(), m.getMessage().getMentionInfo(), itemView.getContext());
-        tvContent.setText(spannable);
+        // 识别文本中的网址并支持点击打开内置 WebView
+        MessageLinkUtils.applyLinks(tvContent, spannable, isSend);
 
-        if (m.getDirection() == Message.MessageDirection.SEND) {
+        if (isSend) {
             tvContent.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.white));
         } else {
             tvContent.setTextColor(ContextCompat.getColor(itemView.getContext(), R.color.black));

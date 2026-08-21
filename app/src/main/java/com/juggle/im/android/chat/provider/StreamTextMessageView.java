@@ -9,6 +9,7 @@ import androidx.core.content.ContextCompat;
 
 import com.juggle.im.android.R;
 import com.juggle.im.android.chat.utils.MarkdownRenderer;
+import com.juggle.im.android.chat.utils.MessageLinkUtils;
 import com.juggle.im.android.chat.utils.MessageUtils;
 import com.juggle.im.android.model.UiMessage;
 import com.juggle.im.model.Message;
@@ -38,10 +39,13 @@ public class StreamTextMessageView extends MessageView<UiMessage, StreamTextMess
             // 含 @提及 的消息：保留原有的提及高亮逻辑（AI 流式文本基本不会带提及）
             SpannableString spannable = MessageUtils.formatMentionText(
                     t.getContent(), m.getMessage().getMentionInfo(), itemView.getContext());
-            tvContent.setText(spannable);
+            MessageLinkUtils.applyLinks(tvContent, spannable,
+                    m.getDirection() == Message.MessageDirection.SEND);
         } else {
             // AI 流式文本支持 Markdown 渲染；流式过程中即使是不完整片段，Markwon 也会尽力渲染
             MarkdownRenderer.render(tvContent, t.getContent());
+            // Markwon 默认装的 LinkMovementMethod 会吞掉气泡长按，改用统一的链接触摸处理
+            MessageLinkUtils.attachLinkTouchHandler(tvContent);
         }
     }
 

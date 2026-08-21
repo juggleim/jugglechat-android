@@ -5,7 +5,7 @@ description: 会话列表、消息流、渲染器、输入面板插件、@提及
 resource:
   - app/src/main/java/com/juggle/im/android/chat/
 tags: [chat, message, core]
-timestamp: 2026-07-30T11:05:00+08:00
+timestamp: 2026-08-21T10:00:00+08:00
 ---
 
 # 聊天消息
@@ -47,5 +47,9 @@ timestamp: 2026-07-30T11:05:00+08:00
 - 语音播放一律走本地文件：消息批量落地后由 `VoiceMessageDownloader.prefetch` 预下载，点击时本地缺失
   才下载（按 messageId 去重）。直接把远端 URL 交给 MediaPlayer 会让每次点击都重新走网络缓冲，出声明显延迟。
 - 图片消息占位图按目标宽高比在竖版/横版两张灰底图中就近取用，与 iOS MessageImagePlaceholderRenderer 同规则。
+- 消息里的网址由 `MessageLinkUtils` 统一识别高亮，点击进 `WebViewPageActivity` 的远程模式。
+  不能给气泡文本装 `LinkMovementMethod`：它会把 TextView 置为 clickable/longClickable，长按菜单会被吞掉；
+  链接触摸自行处理（命中链接才消费事件，链接上的长按转发给气泡）。App 全局禁止明文流量，
+  http 页面在 WebView 内必然失败，主文档加载失败兜底跳系统浏览器。
 - 主动退群时服务端下发的群通知类型同样是 `REMOVE_MEMBER`（操作人与被移除成员为同一人），
   渲染灰条前必须识别这种自退场景单独出文案，否则会出现"你 将 你 移除群聊"。

@@ -3,7 +3,11 @@ package com.juggle.im.android.chat.utils;
 import android.content.Context;
 import android.widget.TextView;
 
+import com.juggle.im.android.app.WebViewPageActivity;
+
+import io.noties.markwon.AbstractMarkwonPlugin;
 import io.noties.markwon.Markwon;
+import io.noties.markwon.MarkwonConfiguration;
 import io.noties.markwon.ext.strikethrough.StrikethroughPlugin;
 import io.noties.markwon.ext.tables.TablePlugin;
 import io.noties.markwon.linkify.LinkifyPlugin;
@@ -30,6 +34,14 @@ public final class MarkdownRenderer {
                             .usePlugin(StrikethroughPlugin.create())
                             .usePlugin(TablePlugin.create(context.getApplicationContext()))
                             .usePlugin(LinkifyPlugin.create())
+                            .usePlugin(new AbstractMarkwonPlugin() {
+                                @Override
+                                public void configureConfiguration(MarkwonConfiguration.Builder builder) {
+                                    // 链接统一走应用内 WebView，与普通文本消息保持一致
+                                    builder.linkResolver((view, link) ->
+                                            WebViewPageActivity.navToUrl(view.getContext(), link));
+                                }
+                            })
                             .build();
                 }
             }
